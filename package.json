@@ -1,0 +1,34 @@
+{
+  "name": "jsapplib",
+  "version": "0.1.0",
+  "description": "HTML Component library for simple, straight-forward web application development.",
+  "main": "src/jsAppLib.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/rdking/JSAppLib.git"
+  },
+  "keywords": [
+    "UI",
+    "components",
+    "modules",
+    "web",
+    "front-end",
+    "library"
+  ],
+  "author": "Ranando D. King",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/rdking/JSAppLib/issues"
+  },
+  "homepage": "https://github.com/rdking/JSAppLib#readme",
+  "devDependencies": {
+    "jest": "^25.1.0"
+  },
+  "dependencies": {
+    "classicjs": "git+https://github.com/rdking/ClassicJS.git",
+    "require_everywhere": "git+https://github.com/rdking/require_everywhere.git"
+  }
+}

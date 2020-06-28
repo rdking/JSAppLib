@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+    <head>
+        <title>JSAppLib Demo</title>
+        <script>
+            async function getApp() {
+                await require("jsapplib/jsAppLib.js");
+                require("jsapplib/jsLabel.js");
+            }
+        </script>
+        <script src="/node_modules/require_everywhere/require_web.js" onload="getApp()"></script>
+    </head>
+    <body>
+        <js-app >
+            <js-label>This is a text </br>label "&lt;jsLabel&gt;"</js-label>
+            <js-label>This is a text label "&lt;jsLabel&gt;"</js-label>
+            <js-label>This is a text label "&lt;jsLabel&gt;"</js-label>
+            <js-label>This is a text label "&lt;jsLabel&gt;"</js-label>
+        </js-app>
+    </body>
+</html>

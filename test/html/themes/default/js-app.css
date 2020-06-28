@@ -1,0 +1,9 @@
+div.js_app {
+    width: 100vw;
+    height: 100vh;
+    background-color: #1f3f7f;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    overflow: auto;
+}
