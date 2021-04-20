@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "classicjs": "git+https://github.com/rdking/ClassicJS.git",
+    "css-unit-converter": "^1.1.2",
     "require_everywhere": "git+https://github.com/rdking/require_everywhere.git"
   }
 }

@@ -1,6 +1,6 @@
 let _rGid = Symbol();
 require("classicjs", _rGid);
-require("jsapplib/theming/theme.js", _rGid);
+require("jsapplib/theming/theme", _rGid);
 let [Class, Theme] = await require(_rGid);
 Class.UseStrings = true;
 
@@ -25,8 +25,8 @@ let ThemeManager = Class({
     public: {
         constructor(owner) {
             this.$owner = owner;
-            owner.addEventListener("enableThemes", this.$onThemesEnabled);
-            owner.addEventListener("disableThemes", this.$onThemesDisabled);
+            owner.addEventListener("enableThemes", this.$onThemesEnabled.bind(this));
+            owner.addEventListener("disableThemes", this.$onThemesDisabled.bind(this));
         },
 
         get themeBase() { return this.$themeBase; },

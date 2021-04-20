@@ -1,7 +1,7 @@
 let _rGid = Symbol();
 require("classicjs", _rGid);
 require("jsapplib/jsTagBase", _rGid);
-require("jsapplib/theming/themeManager.js", _rGid);
+require("jsapplib/theming/themeManager", _rGid);
 let [Class, TagBase, ThemeManager] = await require(_rGid);
 Class.UseStrings = true;
 
@@ -13,13 +13,26 @@ Class.UseStrings = true;
 let App = Class(TagBase, {
     className: "App",
     static: {
+        private: {
+            tagName: "js-app",
+
+            defer(fn) {
+                setTimeout(fn, 1);
+            }
+        },
         public: {
             constructor() {
-                this.$registerTag("js-app");
+                this.$registerTag(this.$tagName);
             },
-
+            get tagName() {
+                return this.$tagName;
+            },
             get observedAttributes() {
-                return this.super.observedAttributes.concat(["use_themes", "theme_base", "default_theme", "data_bind_base", "main", "debug"]);
+                return TagBase.observedAttributes.concat([
+                    "use_themes", "theme_base", "default_theme", 
+                    "data_bind_base", "main", "debug", "style", 
+                    "classList"
+                ]);
             }
         }
     },
@@ -54,41 +67,61 @@ let App = Class(TagBase, {
         onThemeChanged() {
 
         }
-
     },
     protected: {
         render() {
-            let shadow = this.$shadow;
-            let appArea = document.createElement("div");
-            let content = document.createElement("slot");
-            appArea.appendChild(content);
-            appArea.classList.add("js_app");
-            shadow.appendChild(appArea);
-            // shadow.mode = "closed";
+            this.$renderContent(` 
+                <style>
+                    .app {
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        position: absolute;
+                        top: 0px;
+                        left: 0px;
+                        bottom: 0px;
+                        right: 0px;
+                        cursor: default;
+                        user-select: none;
+                    }
+                    .content {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: stretch;
+                        flex: 1 0 auto;
+                    }
+                </style>
+                <div class="app">
+                    <slot name="header"></slot>
+                    <slot class="content"></slot>
+                    <slot name="footer"></slot>
+                </div>
+            `);
         }
     },
     public: {
         constructor() {
-            if (window.App) { //The Highlander rule
+            if (window.app) { //The Highlander rule
                 alert("Error: A window can only have 1 <js-app> tag.");
                 throw new ReferenceError("An application container already exists in this window.");
             }
             this.super();
-            window.App = this;
-            this.addEventListener("themeChanged", this.$onThemeChanged.bind(this));
-            this.addEventListener("render", this.$render.bind(this));
+            window.app = this;
+            this.addEventListener("themeChanged", this.$onThemeChanged);
             this.$themeManager = new ThemeManager(this);
+            let event = new CustomEvent("ready", { detail: {} });
+            window.dispatchEvent(event);            
         },
         attributeChangedCallback(name, oldVal, newVal) {
             switch (name) {
                 case "use_themes":
-                    this.$genericEvent(`${(newVal) ? "en" : "dis"}ableThemes`);
+                    this.fireEvent(`${(newVal) ? "en" : "dis"}ableThemes`);
                     break;
                 case "theme_base":
-                    this.$genericEvent("themeChanged");
+                    this.fireEvent("themeChanged");
                     break;
                 case "data_bind_base":
-                    this.$genericEvent("dataBindChanged");
+                    this.fireEvent("dataBindChanged");
                     break;
                 default:
                     this.super.attributeChangedCallback(name, oldVal, newVal);
@@ -113,11 +146,11 @@ let App = Class(TagBase, {
             if (val !== this.useThemes) {
                 if (val) {
                     this.setAttribute("use_themes", "");
-                    this.$genericEvent("enableThemes");
+                    this.fireEvent("enableThemes");
                 }
                 else {
                     this.removeAttribute("use_themes");
-                    this.$genericEvent("disableThemes");
+                    this.fireEvent("disableThemes");
                 }
             }
         },
@@ -125,7 +158,7 @@ let App = Class(TagBase, {
         get themeBase() { return this.getAttribute("theme_base"); },
         set themeBase(val) {
             this.setAttribute("theme_base", val);
-            this.$genericEvent("themeChanged");
+            this.fireEvent("themeChanged");
         },
 
         get dataBindBase() { return this.getAttribute("data_bind_base"); },
@@ -137,8 +170,12 @@ let App = Class(TagBase, {
         set main(val) {
             this.$main = val;
             this.$launch();
+        },
+
+        get menu() {
+            return this.querySelector("js-menu");
         }
     }
 });
 
-console.log("Class 'App' Created...");
+module.exports = App;

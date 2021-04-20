@@ -7,12 +7,18 @@ Class.UseStrings = true;
 let Theme = Class(TagBase, {
     className: "Theme",
     static: {
+        private: {
+            tagName: "js-theme"
+        },
         public: {
             constructor() {
-                this.$registerTag("js-theme");
+                this.$registerTag(this.$tagName);
+            },
+            get tagName() {
+                return this.$tagName;
             },
             get observedAttributes() {
-                return ["name"];
+                return TagBase.observedAttributes.concat(["name"]);
             }
         }
     },
@@ -44,6 +50,7 @@ let Theme = Class(TagBase, {
             this.$themeManager = manager;
             this.$component = component;
             manager.addEventListener("themeChanged", this.$onThemeChanged.bind(this));
+            this.addEventListener("render", this.$render.bind(this));
         },
         attributeChangedCallback(name, oldVal, newVal) {
             this[name] = newVal;

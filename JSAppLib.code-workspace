@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../require_everywhere"
+		},
+		{
+			"path": "../ClassicJS"
+		}
+	],
+	"settings": {}
+}

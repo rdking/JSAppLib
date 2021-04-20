@@ -13,49 +13,59 @@ let Label = Class(TagBase, {
     className: "Label",
 
     static: {
+        private: {
+            tagName: "js-label"
+        },
         public: {
             constructor() {
-                this.$registerTag("js-label");
+                this.$registerTag(this.$tagName);
+            },
+            get tagName() {
+                return this.$tagName;
             },
             get observedAttributes() {
-                return ["text"]; 
+                return TagBase.observedAttributes.concat(["caption", "align-end"]); 
             }
         }
     },
     private: {
         render() {
-            let shadow = this.$shadow;
             let content = window.document.createElement("div");
-            content.style = "display: inline-block;";
-            content.innerText = this.$encodeHTML(this.getAttribute("text"));
-            shadow.innerHTML = "";
-            shadow.appendChild(content);
+            content.style = `
+                height: 1.5em;
+                display: flex;
+                align-items: center;
+                ${this.alignEnd ? "justify-content: flex-end;": ""}`;
+            let slot = window.document.createElement("slot");
+            content.appendChild(slot);
+            this.$renderContent(content);
         },
-        onTextChanged() {
-            let content = this.$shadow.querySelector("div");
-            content.innerText = this.$encodeHTML(this.getAttribute("text"));
+        onCaptionChanged(vals) {
+            this.setAttribute(vals.name, vals.newVal);
+            this.innerHTML = this.getAttribute("caption");
+        },
+        onAlignEndChanged(vals) {
+            this.fireEvent("render");
         }
     },
     public: {
-        constructor() {
-            this.super();
-            this.addEventListener("render", this.$render.bind(this));
-            this.addEventListener("onTextChanged", this.$onTextChanged.bind(this));
-            this.text = this.$encodeHTML(this.innerHTML);
-            this.innerHTML = "";
+        constructor(...args) {
+            this.super(...args);
+            this.addEventListener("captionChanged", this.$onCaptionChanged);
+            this.addEventListener("alignEndChanged", this.$onAlignEndChanged);
         },
-        attributeChanged(name, oldVal, newVal) {
-            switch(name) {
-                case "text":
-                    this.$genericEvent("onTextChanged");
-                    break;
-                default:
-                    this.super.attributeChangedCallback(name, oldVal, newVal);
-            }
-        },
+        get caption() { return this.getAttribute("caption"); },
+        set caption(val) { this.setAttribute("caption", val); },
 
-        get text() { return this.getAttribute("text"); },
-        set text(val) { this.setAttribute("text", val.toString()); }
+        get alignEnd() { return this.hasAttribute("align-end"); },
+        set alignEnd(val) {
+            if (val) {
+                this.setAttribute("align-end", "");
+            }
+            else {
+                this.removeAttribute("align-end");
+            }
+        }
     }
 });
 
