@@ -1,8 +1,7 @@
 let _rGid = Symbol();
 require("classicjs", _rGid);
 require("jsapplib/jsMenu", _rGid);
-require("jsapplib/utils/unitMath", _rGid);
-let [Class, Menu, UnitMath] = await require(_rGid);
+let [Class, Menu] = await require(_rGid);
 Class.UseStrings = true;
 
 let PopupMenu = Class(Menu, {
