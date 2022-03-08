@@ -1,0 +1,10 @@
+slot {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--brush-input);
+    color: var(--pen-input);
+}
+
+.listview {
+    display: flex;
+}

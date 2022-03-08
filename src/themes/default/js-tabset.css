@@ -1,0 +1,110 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+.tabrow {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    background-color: var(--brush-normal);
+}
+.tabstart {
+    display: flex;
+    justify-content: flex-start;
+    flex: 1 0 auto;
+    background-color: inherit;
+}
+.tabnav {
+    background-color: var(--brush-normal);
+    color: var(--pen-normal);
+    border: none;
+    margin: 0px;
+    padding: 0.25em;
+}
+.tabnav[disabled=""], .tabnav[disabled=""]:hover {
+    background-color: var(--brush-disabled);
+    color: var(--pen-disabled);
+}
+.tabnav:hover, .roundButton:hover {
+    background-color: var(--brush-shadow);
+    color: var(--pen-selected);
+}
+.tabnav:active, .tabnav.selected, .roundButton:active {
+    background-color: var(--brush-selected);
+    color: var(--pen-selected);
+}
+.tabslider {
+    display: flex;
+    overflow: hidden;
+    position: relative;
+    flex: 1 0 auto;
+    background-color: var(--brush-shadow);
+}
+.stub {
+    opacity: 0;
+}
+#tabs {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    position: absolute;
+}
+.tabend {
+    display: flex;
+    justify-content: flex-end;
+}
+.container {
+    display: flex;
+    flex-direction: row;
+    align-content: stretch;
+    flex: 1 0 auto;
+}
+.tab {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 1em;
+    padding: 0.5em;
+    margin-right: 1px;
+    margin-top: 0.25em;
+    white-space: nowrap;
+    border-top-left-radius: 0.5em;
+    border-top-right-radius: 0.5em;
+    background-color: var(--brush-normal);
+    color: var(--pen-normal);
+}
+.tab.selected {
+    margin-top: 0px;
+    padding-bottom: 0.75em;
+    background-color: var(--brush-selected);
+    color: var(--pen-selected);
+}
+.tab.selected > .roundButton {
+    background-color: var(--brush-selected);
+    color: var(--pen-selected);
+}
+.tab.selected > .roundButton:hover {
+    background-color: var(--brush-normal);
+    color: var(--pen-normal);
+}
+.tab.selected > .roundButton:active {
+    background-color: var(--brush-shadow);
+    color: var(--pen-selected);
+}
+.roundButton {
+    border: none;
+    border-radius: 1em;
+    margin-left: 8px;
+    padding: 0px 0.3em;
+    background-color: var(--brush-normal);
+    color: var(--pen-normal);
+}
+.hidden {
+    display: none;
+}

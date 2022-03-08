@@ -28,6 +28,7 @@
     "jest": "^25.1.0"
   },
   "dependencies": {
+    "cfprotected": "^1.1.4",
     "classicjs": "git+https://github.com/rdking/ClassicJS.git",
     "require_everywhere": "git+https://github.com/rdking/require_everywhere.git"
   }

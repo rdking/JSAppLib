@@ -1,0 +1,8 @@
+slot {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    padding: 0.3333em;
+    background-color: var(--brush-input);
+    color: var(--pen-input);
+}

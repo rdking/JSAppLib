@@ -1,0 +1,17 @@
+button {
+    border: none;
+    min-width: 28px;
+    min-height: 28px;
+    background-color: transparent;
+    color: inherit;
+}
+
+button:hover {
+    background-color: var(--brush-shadow);
+    color: var(--pen-selected);
+}
+
+button:active {
+    background-color: var(--brush-selected);
+    color: var(--pen-selected);
+}

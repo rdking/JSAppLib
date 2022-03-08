@@ -1,0 +1,51 @@
+:host {
+    display: flex;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    right: 0px;
+    cursor: default;
+    user-select: none;
+    overflow: hidden;
+    background-color: var(--brush-normal);
+    color: var(--pen-normal);
+}
+#app {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1 0 auto;
+    max-height: 100vh;
+    max-width: 100vw;
+}
+.hbar {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+    max-width: 100vw;
+    background-color: var(--brush-shadow);
+}
+.appCenter {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+    flex: 1 1 auto;
+}
+.vbar {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: stretch;
+    max-height: 100vh;
+    background-color: var(--brush-shadow);
+}
+.content {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    flex: 1 1 auto;
+    background-color: var(--brush-shadow);
+}

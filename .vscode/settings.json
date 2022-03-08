@@ -1,0 +1,4 @@
+{
+    "livePreview.defaultPreviewPath": "./test/html/",
+    "livePreview.debugOnExternalPreview": true
+}

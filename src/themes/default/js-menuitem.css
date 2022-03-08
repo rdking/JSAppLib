@@ -1,0 +1,37 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5em;
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+    background-color: transparent;
+    color: var(--pen-normal);
+}
+:host(:hover) {
+    background-color: var(--brush-selected);
+    color: var(--pen-selected);
+}
+.description {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+#icon {
+    min-width: 1em;
+    min-height: 1em;
+    padding-right: 4px;
+}
+#caption {
+    white-space: nowrap;
+}
+.caption {
+    padding-right: 3em;
+}
+#hotkey {
+    text-align: right;
+}

@@ -1,0 +1,23 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    margin: 0.125em;
+    background-color: transparent;
+    color: var(--pen-input);
+}
+
+.listitem {
+    display: flex;
+    flex-wrap: nowrap;
+    padding: 0.33333em;
+}
+
+.listitem:hover {
+    background-color: var(--brush-shadow);
+}
+
+.listitem.selected {
+    background-color: var(--brush-selected);
+}

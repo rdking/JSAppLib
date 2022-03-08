@@ -1,0 +1,30 @@
+{
+    "default": {
+        "isDefault": true,
+        "folder": "default",
+        "components": {
+            "global": "default.css",
+            "color": "colors.css",
+            "tags": [
+                "js-app",
+                "js-editor",
+                "js-label",
+                "js-listitem",
+                "js-listview",
+                "js-menu",
+                "js-menuitem",
+                "js-menuseparator",
+                "js-panel",
+                "js-popupmenu",
+                "js-statusbar",
+                "js-tab",
+                "js-tabset",
+                "js-toolbar",
+                "js-toolbutton",
+                "js-treebranch",
+                "js-treeleaf",
+                "js-treeview"
+            ]
+        }
+    }
+}
