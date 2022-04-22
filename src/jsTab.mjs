@@ -14,12 +14,15 @@ export default class Tab extends TagBase {
     #page = null;
     #prot = share(this, Tab, {
         render() {
-            let div = this.pvt.#prot.newTag("div", {id: "page"});
-            this.pvt.#prot.newTag("slot", null, {parent: div});
-            if (!this.selected) {
-                div.classList.add("hidden");
-            }
-            this.pvt.#prot.renderContent(div);
+            const prot = this.pvt.#prot;
+            prot.renderContent(prot.newTag("div", {
+                class: this.selected ? "" : "hidden",
+                id: "page",
+            }, {
+                children: [
+                    prot.newTag("slot")
+                ]
+            }));
         }, 
         onPreRender() {
             this.pvt.#prot.validateParent("js-tabset", "Tabs can only be added to TabSets.");

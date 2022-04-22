@@ -16,10 +16,14 @@ export default class Menu extends TagBase {
 
     #prot = share(this, Menu, {
         render() {
-            let content = window.document.createElement("div");
-            content.classList.add("menu");
-            content.appendChild(window.document.createElement("slot"));
-            this.pvt.#prot.renderContent(content);
+            const prot = this.pvt.#prot;
+            prot.renderContent(prot.newTag("div", {
+                class: "menu"
+            }, {
+                children: [
+                    prot.newTag("slot")
+                ]
+            }));
         },
         onCaptionChanged(e) {
             let match = e.detail.newVal.match(/_(\w)/);

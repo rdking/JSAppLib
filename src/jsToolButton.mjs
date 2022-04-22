@@ -13,9 +13,14 @@ export default class ToolButton extends TagBase {
 
     #prot = share(this, ToolButton, {
         render() {
-            let button = this.pvt.#prot.newTag("button", {type: "button"});
-            this.pvt.#prot.newTag("slot", null, {parent: button});
-            this.pvt.#prot.renderContent(button);
+            const prot = this.pvt.#prot;
+            prot.renderContent(prot.newTag("button", {
+                type: "button"
+            }, {
+                children: [
+                    prot.newTag("slot")
+                ]
+            }));
         }
     });
 

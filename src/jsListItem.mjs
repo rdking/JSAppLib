@@ -1,4 +1,4 @@
-import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
+import { share } from "/node_modules/cfprotected/index.mjs";
 import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
 
 export default class ListItem extends TagBase {
@@ -18,15 +18,26 @@ export default class ListItem extends TagBase {
     }
 
     #populate(template) {
-        let templateText = (typeof(template) == "string")
-            ? template
-            : template.outerHTML;
-        let params = template.match(/\$\{(\w+)}/g);
+        let retval = template;
+        
+        if (typeof(template) == "string") {
+            let params = template.match(/\$\{(\w+)}/g);
+            retval = retval.trim();
 
-        if (params) {
-            for (let param of params) {
-                let key = param.substring(2, param.length - 1);
-                retval = retval.replaceAll(param, this.value[key] || "");
+            if (params) {
+                for (let param of params) {
+                    let key = param.substring(2, param.length - 1);
+                    retval = retval.replaceAll(param, this.value[key] || "");
+                }
+            }
+        }
+        else {
+            if (retval.hasChildNodes()) {
+                for (let child of retval.childNodes) {
+                    this.pvt.#populate(child);
+                }
+            } else {
+                retval.textContent = this.pvt.#populate(retval.textContent);
             }
         }
 
@@ -40,17 +51,24 @@ export default class ListItem extends TagBase {
         render() {
             let prot = this.pvt.#prot;
             let template = prot.getTemplate() || "";
-            prot.renderContent(prot.newTag("div", {
+            let pTemplate = this.pvt.#populate(template);
+            let isString = typeof(template) == "string";
+            let content = prot.newTag("div", {
                 class: "listitem"
             }, {
-                innerHTML: this.pvt.#populate(template)
-            }));
+                innerHTML: isString ? pTemplate : ""
+            });
+            if (!isString) {
+                content.appendChild(pTemplate);
+            }
+            prot.renderContent(content);
+
         },
         onPreRender() {
             this.pvt.#prot.validateParent("js-listview", "ListItems can only be placed in a ListView");
         },
         onClick(e) {
-            e.cancelBubble = true;
+            e.cancelBubble = !e.detail.allowBubble;
             this.selected = !this.selected;
         },
         onSelectedChanged(e) {
@@ -81,12 +99,30 @@ export default class ListItem extends TagBase {
         super.connectedCallback();
     }
 
-    get value() { return window.translator.translate(this.type, "js", this.innerHTML); }
-    set value(v) { this.innerHTML = window.translator.translate("js", this.type, v); }
+    get value() { 
+        const translator = document.querySelector("js-datatranslator");
+        let retval = this.innerHTML;
+
+        if (translator) {
+            retval = translator.translate(this.type, "js", retval);
+        }
+
+        return retval;
+    }
+    set value(v) {
+        const translator = document.querySelector("js-datatranslator");
+        if (translator) {
+            this.innerHTML = translator.translate("js", this.type, v);
+        }
+        else {
+            this.innerHTML = v;
+        }
+    }
     
     get type() { return this.getAttribute("type"); }
     set type(v) {
-        if (!window.translator.isRegistered(v)) {
+        const translator = document.querySelector("js-datatranslator");
+        if (translator && !translator.isRegistered(v)) {
             throw new TypeError(`Unknown data format "${v}"`);
         }
         this.setAttribute("type", v);

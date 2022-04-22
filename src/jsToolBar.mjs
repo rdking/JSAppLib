@@ -13,9 +13,13 @@ export default class ToolBar extends TagBase {
 
     #prot = share(this, ToolBar, {
         render() {
-            let div = this.pvt.#prot.newTag("div", {class: "vr"});
-            let slot = this.pvt.#prot.newTag("slot");
-            this.pvt.#prot.renderContent([div, slot]);
+            const prot = this.pvt.#prot;
+            prot.renderContent([
+                prot.newTag("div", {
+                    class: "vr"
+                }),
+                prot.newTag("slot")
+            ]);
         },
         onStatusChanged(e) {
             let status = this.shadowRoot.querySelector("span.status");

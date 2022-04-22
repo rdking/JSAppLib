@@ -5,7 +5,7 @@ slot[name="caption"] {
     align-items: center;
     background-color: transparent;
     color: var(--pen-input);
-    pointer-events: none;
+    pointer-events-x: none;
 }
 
 .listitem {

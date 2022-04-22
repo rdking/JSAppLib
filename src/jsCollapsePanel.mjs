@@ -28,8 +28,8 @@ export default class CollapsePanel extends TagBase {
 
             prot.renderContent(content);
         },
-        onHeaderClick() {
-            let detail = {canToggleCollapse: true};
+        onHeaderClick(e) {
+            let detail = {canToggleCollapse: true, clickEvent: e};
             this.fireEvent("headerClicked", detail);
             if (detail.canToggleCollapse) {
                 this.collapsed = !this.collapsed;
@@ -48,7 +48,6 @@ export default class CollapsePanel extends TagBase {
     });
 
     connectedCallback() {
-        this.addEventListener
         this.addEventListener("collapsedChanged", this.pvt.#prot.onCollapsedChanged);
         super.connectedCallback();
     }

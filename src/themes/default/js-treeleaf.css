@@ -20,3 +20,16 @@
 .listitem.selected {
     background-color: var(--brush-selected);
 }
+
+.leaf {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+}
+
+.marker {
+    width: 1.5em;
+    text-align: center;
+    font-weight: bold;
+    font-family: monospace;
+}

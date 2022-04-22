@@ -18,15 +18,14 @@ export default class Label extends TagBase {
 
     #prot = share(this, Label, {
         render() {
-            let content = window.document.createElement("div");
-            let slot = window.document.createElement("slot");
-
-            content.appendChild(slot);
-            if (this.alignEnd) {
-                content.classList.add("alignEnd");
-            }
-
-            this.pvt.#prot.renderContent(content);
+            const prot = this.pvt.#prot;
+            prot.renderContent(prot.newTag("div", {
+                class: (this.alignEnd) ? "alignEnd" : ""
+            }, {
+                children: [
+                    prot.newTag("slot")
+                ]
+            }));
         },
     
         onCaptionChanged(vals) {

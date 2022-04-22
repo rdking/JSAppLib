@@ -1,8 +1,11 @@
+:host {
+    background-color: var(--brush-input);
+    color: var(--pen-input);
+}
+
 slot {
     display: flex;
     flex-direction: column;
-    background-color: var(--brush-input);
-    color: var(--pen-input);
 }
 
 .listview {

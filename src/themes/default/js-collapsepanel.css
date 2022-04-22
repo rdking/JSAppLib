@@ -1,0 +1,8 @@
+
+div.body {
+    display: block;
+}
+
+div.body.collapsed {
+    display: none;
+}

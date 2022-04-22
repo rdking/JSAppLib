@@ -1,24 +1,42 @@
-import { final, saveSelf } from "/node_modules/cfprotected/index.mjs";
+import { share } from "/node_modules/cfprotected/index.mjs";
+import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
 
-const DataTranslator = final(class DataTranslator {
-    static {
-        Object.defineProperty(globalThis, "translator", {
-            enumerable: true,
-            value: new this()
-        });
+export default class DataTranslator extends TagBase {
+    static #tagName = "js-datatranslator";
+    static #sprot = share(this, {});
+
+    static { this.#sprot.registerTag(this, true); }
+    static get tagName() { return this.pvt.#tagName; }
+    static get observedAttributes() {
+        return TagBase.observedAttributes; 
     }
 
     #schema = null;
-
     #translators = {};
+    #prot = share(this, DataTranslator, {
+        render() {
+            this.pvt.#prot.renderContent("<slot />");
+        }
+    });
 
     constructor() {
-        saveSelf(this, "pvt");
-        this.registerTranslator("js", {from: doc => doc, to: doc => doc, fixed: true, type: "code"});
+        super();
+        this.registerTranslator("js", {
+            from: doc => doc,
+            to: doc => doc,
+            fixed: true,
+            type: "code"
+        });
         this.registerTranslator("json", {
             from: doc => JSON.parse(doc),
             to: doc => JSON.stringify(doc, null, "   ")
         });
+
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+        this.fireEvent("ready", void 0, true);
     }
 
     get knownFormats() { return Object.getOwnPropertyNames(this.pvt.#translators); }
@@ -74,6 +92,4 @@ const DataTranslator = final(class DataTranslator {
             throw new SyntaxError("An error occured while translating...", e);
         }
     }
-});
-
-export default DataTranslator;
+}

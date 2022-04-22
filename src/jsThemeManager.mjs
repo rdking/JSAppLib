@@ -1,12 +1,23 @@
 import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
 import Theme from "/node_modules/jsapplib/src/theming/theme.mjs";
-import EventHandler from "/node_modules/jsapplib/src/util/EventHandler.mjs";
+import App from "/node_modules/jsapplib/src/jsAppLib.mjs";
+import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
 
-export default class ThemeManager extends EventHandler {
+export default class ThemeManager extends TagBase {
+    static #tagName = "js-thememanager";
+    static #sprot = share(this, {});
+
+    static { this.#sprot.registerTag(this, true); }
+    static get tagName() { return this.pvt.#tagName; }
+    static get observedAttributes() {
+        return TagBase.observedAttributes; 
+    }
+
     #owner = null;
     #themes = {};
     #currentTheme = null;
     #themeBase = null;
+    #ready = false;
     
     #sendChangeNotice() {
         let evnt = new Event("themeChanged");
@@ -23,15 +34,30 @@ export default class ThemeManager extends EventHandler {
         let head = document.querySelector("head");
         let child = div.firstElementChild;
         head.appendChild(child);
-        //head.appendChild(child.nextElementSibling);
+        this.fireEvent("ready", void 0, true);
     }
 
-    constructor(owner) {
-        super();
-        saveSelf(this, "pvt", new.target)
+    async #init() {
+        const path = this.getAttribute("themepath");
+        //Load the default themes
+        await this.loadThemes("/node_modules/jsapplib/src/themes");
+        //Load the user-specified themes
+        if (path && path.trim().length) {
+            await this.loadThemes(path);
+        }
+        this.#ready = true;
+        this.pvt.#setGlobalTheme();
+    }
 
-        this.loadThemes("/node_modules/jsapplib/src/themes");
-        this.addEventListenerOnce("ready", this.pvt.#setGlobalTheme);
+    #prot = share(this, ThemeManager, {
+        render() {
+            this.pvt.#prot.renderContent("<slot />");
+        }
+    });
+
+    connectedCallback() {
+        super.connectedCallback();
+        this.pvt.#init();
     }
 
     get themeBase() { return this.pvt.#themeBase; }
@@ -55,7 +81,6 @@ export default class ThemeManager extends EventHandler {
                 this.pvt.#currentTheme = this.pvt.#currentTheme ?? themeName;
                 this.pvt.#themes[themeName] = new Theme(this, themeInfo[themeName]);
             }
-            this.fireEvent("ready");
         }
         catch(e) {
             console.error(`Failed to load themes from "${path}"`, e);
@@ -72,4 +97,6 @@ export default class ThemeManager extends EventHandler {
     getTagStyle(tagName) {
         return this.pvt.#themes[this.pvt.#currentTheme].componentLink(tagName);
     }
+
+    get ready() { return this.#ready; }
 }

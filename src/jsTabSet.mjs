@@ -28,25 +28,75 @@ export default class TabSet extends TagBase {
 
     #prot = share(this, TabSet, {
         render() {
-            let tabRow = this.pvt.#prot.newTag("div", {id: "tabRow", class: "tabrow"});
-            let tabStart = this.pvt.#prot.newTag("div", {class: "tabstart"}, {parent: tabRow});
-            let tabScroll = this.pvt.#prot.newTag("div", {id: "tabscroll", class: "tabslider"});
-            let stub = this.pvt.#prot.newTag("div", {class: "stub tab"}, {parent: tabScroll});
-            let tabEnd = this.pvt.#prot.newTag("div", {class: "tabend"});
-            let body = this.pvt.#prot.newTag("slot", {class: "container"});
-            
-            this.pvt.#prot.newTag("button", {id: "prev", class: "tabnav", disabled: ""},
-                {parent: tabStart, innerHTML: "&#x25C4"});
-            tabStart.appendChild(tabScroll);
-            this.pvt.#prot.newTag("img", null, {parent: stub});
-            this.pvt.#prot.newTag("span", null, {parent: stub, innerHTML: "&nbsp;"});
-            this.pvt.#prot.newTag("button", {class: "roundButton"}, {parent: stub, innerText: "×"});
-            this.pvt.#prot.newTag("div", {id: "tabs"}, {parent: tabScroll});
-            tabRow.appendChild(tabEnd);
-            this.pvt.#prot.newTag("button", {id: "next", class: "tabnav"}, {parent: tabEnd, innerHTML: "&#x25BA"});
-            this.pvt.#prot.newTag("button", {id: "list", class: "tabnav"}, {parent: tabEnd, innerHTML: "&#x2026"});
-
-            this.pvt.#prot.renderContent([tabRow, body]);
+            const prot = this.pvt.#prot;
+            prot.renderContent([
+                prot.newTag("div", {
+                    id: "tabRow",
+                    class: "tabrow"
+                }, {
+                    children: [
+                        prot.newTag("div", {
+                            class: "tabstart"
+                        }, {
+                            children: [
+                                prot.newTag("button", {
+                                    id: "prev",
+                                    class: "tabnav",
+                                    disabled: ""
+                                }, {
+                                    innerHTML: "&#x25C4"
+                                }),
+                                prot.newTag("div", {
+                                    id: "tabscroll",
+                                    class: "tabslider"
+                                }, {
+                                    children: [
+                                        prot.newTag("div", {
+                                            class: "stub tab"
+                                        }, {
+                                            children: [
+                                                prot.newTag("img"),
+                                                prot.newTag("span", null, {
+                                                    innerHTML: "&nbsp;"
+                                                }),
+                                                prot.newTag("button", {
+                                                    class: "roundButton"
+                                                }, {
+                                                    innerText: "×"
+                                                })
+                                            ]
+                                        }),
+                                        prot.newTag("div", {
+                                            id: "tabs"
+                                        })
+                                    ]
+                                })
+                            ]
+                        }),
+                        prot.newTag("div", {
+                            class: "tabend"
+                        }, {
+                            children: [
+                                prot.newTag("button", {
+                                    id: "next",
+                                    class: "tabnav"
+                                }, {
+                                    innerHTML: "&#x25BA"
+                                }),
+                                prot.newTag("button", {
+                                    id: "list",
+                                    class: "tabnav"
+                                }, {
+                                    innerHTML: "&#x2026"
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                prot.newTag("slot", {
+                    class: "container"
+                })
+            ]);
         }, 
         onPostRender() {
             this.pvt.#prot.validateChildren("js-tab", "Only Tabs can be added to TabSets.");

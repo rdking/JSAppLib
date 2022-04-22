@@ -14,10 +14,11 @@ export default class Editor extends TagBase {
     #value = "";
     #prot = share(this, Editor, {
         render() {
-            let content = window.document.createElement("input");
-            content.name = this.getAttribute("name");
-            content.value = this.pvt.#value;
-            this.pvt.#prot.renderContent(content);
+            const prot = this.pvt.#prot;
+            prot.renderContent(prot.newTag("input", {
+                name: this.getAttribute("name"),
+                value: this.pvt.#value
+            }));
         }
     });
 }

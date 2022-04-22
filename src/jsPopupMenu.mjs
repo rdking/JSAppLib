@@ -1,5 +1,6 @@
 import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
 import Menu from "/node_modules/jsapplib/src/jsMenu.mjs";
+import MenuItem from "/node_modules/jsapplib/src/jsMenuItem.mjs";
 import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
 
 export default class PopupMenu extends Menu {
@@ -17,12 +18,15 @@ export default class PopupMenu extends Menu {
 
     #prot = share(this, PopupMenu, {
         render() {
-            let div = document.createElement("div");
-            let slot = document.createElement("slot");
-            div.appendChild(slot);
-            div.id = "menubody";
-            div.classList.add("hidden", "background");
-            this.pvt.#prot.renderContent(div);
+            const prot = this.pvt.#prot;
+            prot.renderContent(prot.newTag("div", {
+                id: "menubody",
+                class: "hidden background"
+            }, {
+                children: [
+                    prot.newTag("slot")
+                ]
+            }));
         },
         onCaptionChanged(e) {
             let match = e.detail.newVal.match(/_(\w)/);
@@ -42,16 +46,19 @@ export default class PopupMenu extends Menu {
             this.pvt.#prot.validateChildren(["js-menuitem", "js-menuseparator"], "Only MenuItems can be placed in a Menu.");
         },
         onMouseDown(e) {
-            if (!(e.target instanceof MenuItem) && !(e.target instanceof Menu)) {
+            if (e.target instanceof MenuItem) {
                 if (this.pvt.#showing) {
                     this.parentElement.fireEvent("click");
                 }
+            }
+            else {
+                this.hide();
             }
         }
     });
     
     connectedCallback() {
-        this.addEventListener("mousedown", this.pvt.#prot.onMouseDown);
+        //this.addEventListener("mousedown", this.pvt.#prot.onMouseDown);
         this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
         super.connectedCallback();
     }

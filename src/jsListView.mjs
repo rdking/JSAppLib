@@ -24,10 +24,14 @@ export default class ListView extends FocusableTag {
 
     #prot = share(this, ListView, {
         render() {
-            let content = document.createElement("div");
-            content.className = "listview";
-            content.appendChild(document.createElement("slot"));
-            this.pvt.#prot.renderContent(content);
+            const prot = this.pvt.#prot;
+            prot.renderContent(prot.newTag("div", {
+                class: "listview"
+            }, {
+                children: [
+                    prot.newTag("slot")
+                ]
+            }));
         },
         manageSelections(cause, prevItem, items) {
             if (!this.#section.has(cause)) {

@@ -24,4 +24,12 @@ export default class TreeView extends ListView {
             }
         }
     });
+
+    collapseRecursively() {
+        this.querySelectorAll("js-treebranch").forEach(element => element.collapseRecursively());
+    }
+
+    expandRecursively() {
+        this.querySelectorAll("js-treebranch").forEach(element => element.expandRecursively());
+    }
 }

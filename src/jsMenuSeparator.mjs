@@ -13,7 +13,8 @@ let MenuSeparator = final(class MenuSeparator extends MenuItem {
 
     #prot = share(this, MenuSeparator, {
         render() {
-            this.pvt.#prot.renderContent(`<hr/>`);
+            const prot = this.pvt.#prot;
+            prot.renderContent(prot.newTag("hr"));
         },
         onClicked(e) {
             e.cancelBubble = true;

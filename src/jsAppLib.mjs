@@ -1,7 +1,7 @@
-import DataTranslator from "./util/DataTranslator.mjs";
 import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
 import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
-import ThemeManager from "/node_modules/jsapplib/src/theming/themeManager.mjs"
+//import DataTranslator from "/node_modules/jsapplib/src/jsDataTranslator.mjs";
+//import ThemeManager from "/node_modules/jsapplib/src/jsThemeManager.mjs"
 
 /**
  * @class App
@@ -17,7 +17,7 @@ export default class App extends TagBase {
     static get observedAttributes() {
         return TagBase.observedAttributes.concat(["data_bind_base", "main", "debug", "style", "classList"]);
     }
-    static init(tm) { this.pvt.#sprot.initTags(tm); }
+    static init() { this.pvt.#sprot.initTags(); }
 
         // render: () => {
         //     let shadow = this.shadowRoot;

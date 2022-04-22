@@ -9,7 +9,7 @@ export default class TreeBranch extends ListItem {
     static { this.#sprot.registerTag(this); }
     static get tagName() { return this.pvt.#tagName; }
     static get observedAttributes() {
-        return ListItem.observedAttributes.concat(["collapsible"]); 
+        return ListItem.observedAttributes.concat(["collapsible", "collapsed"]); 
     }
 
     #section = new Semaphore();
@@ -22,23 +22,25 @@ export default class TreeBranch extends ListItem {
     #prot = share(this, TreeBranch, {
         getTemplate() {
             let prot = this.pvt.#prot;
-            let content = prot.newTag("js-collapsepanel");
-            let caption = prot.newTag("slot", {
-                name: "caption",
-                slot:"header"
+            let content = prot.newTag("js-collapsepanel", null, {
+                children: [
+                    prot.newTag("slot", {
+                        name: "caption",
+                        slot:"header"
+                    }),
+                    prot.newTag("div", {class: "itembox"}, {
+                        children: [
+                            prot.newTag("slot", {class: "items"})
+                        ]
+                    })
+                ]
             });
-            let body = prot.newTag("div", {class: "itembox"});
-            let items = prot.newTag("slot", {class: "items"});
-            content.appendChild(caption);
-            content.appendChild(body);
-            body.appendChild(items);
 
-            //content.addEventListener("headerClicked", this.pvt.#prot.onHeaderClicked);
-            content.addEventListener("click", this.pvt.#prot.onHeaderClicked);
-            return content.outerHTML;
+            content.addEventListener("headerClicked", this.pvt.#prot.onHeaderClicked);
+            return content;
         },
         onHeaderClicked(e) {
-            e.details.canToggleCollapse = false;
+            e.detail.canToggleCollapse = false;
         },
         onPreRender() {
             this.pvt.#prot.validateChildren(["js-treebranch", "js-treeleaf"],
@@ -61,8 +63,34 @@ export default class TreeBranch extends ListItem {
             this.pvt.#lastItem = this;
 
             this.TreeView.fireEvent("selectedChanged", e);
+        },
+        onCollapsedChanged(e) {
+            let panel = this.shadowRoot.querySelector("js-collapsepanel");
+            if (panel) {
+                panel.collapsed = this.collapsed
+                this.pvt.#prot.onUpdateMarker();
+            }
+        },
+        onCollapsibleChanged(e) {
+            if (!this.collapsible) {
+                this.setBoolAttribute("collapsed", false);
+            }
+        },
+        onUpdateMarker() {
+            let leaf = Array.from(this.children).filter(child => child.slot == "caption")[0];
+            if (leaf) {
+                leaf.fireEvent("updateMarker");
+            }
         }
     });
+
+    connectedCallback() {
+        const prot = this.pvt.#prot;
+        this.addEventListener("collapsedChanged", prot.onCollapsedChanged);
+        this.addEventListener("collapsibleChanged", prot.onCollapsibleChanged);
+        this.addEventListener("updateMarker", prot.onUpdateMarker);
+        super.connectedCallback();
+    }
 
     get TreeView() {
         let retval = this.parentElement;
@@ -70,5 +98,25 @@ export default class TreeBranch extends ListItem {
             retval = retval.TreeView;
         }
         return retval;
+    }
+
+    get collapsed() { return this.hasAttribute("collapsed"); }
+    set collapsed(v) { this.pvt.#prot.setBoolAttribute("collapsed", this.collapsible && v); }
+
+    get collapsible() { return this.hasAttribute("collapsible"); }
+    set collapsible(v) { this.pvt.#prot.setBoolAttribute("collapsible", v); }
+
+    collapseRecursively() {
+        if (this.collapsible) {
+            this.querySelectorAll("js-treebranch").forEach(element => element.collapseRecursively());
+            this.collapsed = true;
+        }
+    }
+
+    expandRecursively() {
+        if (this.collapsible) {
+            this.querySelectorAll("js-treebranch").forEach(element => element.expandRecursively());
+            this.collapsed = false;
+        }
     }
 }

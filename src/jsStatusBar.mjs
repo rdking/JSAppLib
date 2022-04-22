@@ -14,9 +14,15 @@ export default class StatusBar extends TagBase {
     
     #prot = share(this, StatusBar, {
         render() {
-            let status = this.pvt.#prot.newTag("span", {class: "status"}, {innerHTML: this.status});
-            let slot = this.pvt.#prot.newTag("slot");
-            this.pvt.#prot.renderContent([status, slot]);
+            const prot = this.pvt.#prot;
+            prot.renderContent([
+                prot.newTag("span", {
+                    class: "status"
+                }, {
+                    innerHTML: this.status
+                }),
+                prot.newTag("slot")
+            ]);
         },
         onStatusChanged(e) {
             let status = this.shadowRoot.querySelector("span.status");

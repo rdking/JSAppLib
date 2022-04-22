@@ -1,0 +1,18 @@
+:host {
+    display: flex;
+    position: relative;
+    flex: 1 0 auto;
+    background-color: red;
+    border: 3px solid purple;
+}
+
+slot {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    flex: 1 0 auto;
+}
+
+slot.reverse {
+    flex-direction: row-reverse;
+}

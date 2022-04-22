@@ -1,15 +1,26 @@
-import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
+import { share, accessor } from "/node_modules/cfprotected/index.mjs";
 import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
 
 export default class MenuItem extends TagBase {
     static #tagName = "js-menuitem";
-    static #sprot = share(MenuItem, {});
+    static #sprot = share(MenuItem, {
+        actionFieldMap: accessor({
+            get: () => ({
+                caption: "caption",
+                hotkey: "hotkey",
+                icon: "icon",
+                description: "description",
+                disabled: "disabled",
+                ontriggered: "onaction"
+            })
+        })
+    });
 
     static { this.#sprot.registerTag(this); }
     static get tagName() { return this.pvt.#tagName; }
     static get observedAttributes() {
         return TagBase.observedAttributes
-            .concat([ "caption", "icon", "hotkey", "onaction" ]); 
+            .concat([ "caption", "disabled", "icon", "hotkey" ]); 
     }
 
     #htmlCaption = null;
@@ -66,48 +77,60 @@ export default class MenuItem extends TagBase {
 
     #prot = share(this, MenuItem, {
         render() {
-            let parentType = this.parentElement.nodeName.toLowerCase();
-            let desc = document.createElement("span");
-            let hotkey = document.createElement("span");
-            let slot = document.createElement("slot");
-            let label = document.createElement("js-label");
-            let list = [];
-
+            const prot = this.pvt.#prot;
+            const parentType = this.parentElement.nodeName.toLowerCase();
+            const isPopupMenu = parentType == "js-popupmenu";
+            
             if (!["js-menu", "js-menuitem", "js-popupmenu"].includes(parentType)) {
                 throw new SyntaxError("Menu items cannot exist outside of a menu or popup menu.");
             }
-
-            desc.classList.add("description");
-            list.push(desc);
-
-            if (parentType == "js-popupmenu") {
-                let icon = document.createElement("img");
-                icon.id = "icon";
-                icon.src = this.iconSrc || "";
-                desc.appendChild(icon);
-
-                label.classList.add("caption");
-
-                hotkey.id = "hotkey";
-                if (this.pvt.#hasPopup()) {
-                    hotkey.innerText = "►";
-                }
-                else {
-                    hotkey.innerText = this.hotkey || "";
-                }
-                list.push(hotkey);
-            }
-
-            label.id = "caption";
-            label.caption = this.pvt.#htmlCaption;
-            desc.appendChild(label);
-            list.push(slot);
             
-            this.pvt.#prot.renderContent(list);
-        },
-        onActionChanged(e) {
-            this.removeEventListener("action", e.detail.oldVal);
-            this.addEventListener("action", e.detail.newVal);
+            prot.renderContent([
+                prot.newTag("div", {
+                    class: "itemgrid"
+                }, {
+                    children: [
+                        prot.newTag("div", {
+                            class: isPopupMenu ? "iconcol" : ""
+                        }, {
+                            children: [
+                                !isPopupMenu ? null : prot.newTag("img", {
+                                    id: "icon",
+                                    src: this.iconSrc || ""
+                                })
+                            ]
+                        }),
+                        prot.newTag("div", {
+                            class: isPopupMenu ? "captioncol" : ""
+                        }, {
+                            children: [
+                                prot.newTag("js-label", {
+                                    id: "caption",
+                                    caption: this.pvt.#htmlCaption,
+                                    class: isPopupMenu ? "caption" : ""
+                                })        
+                            ]
+                        }),
+                        prot.newTag("div", {
+                            class: "hotkeycol"
+                        }, {
+                            children: [
+                                !isPopupMenu ? null : prot.newTag("span", {
+                                    id: "hotkey"
+                                },{
+                                    innerHTML: this.pvt.#hasPopup() ? "" : (this.hotkey || "")
+                                })
+                            ]
+                        }),
+                        prot.newTag("div", {
+                            class: isPopupMenu ? "markcol" : "",
+                        }, {
+                            innerHTML: isPopupMenu && this.pvt.#hasPopup() ? "&rtrif;" : ""
+                        })
+                    ]
+                }),
+                prot.newTag("slot")
+            ]);
         },
         onPreRender() {
             this.pvt.#prot.validateParent(["js-menu", "js-popupmenu"], "MenuItems can only be placed in a Menu.");
@@ -126,6 +149,9 @@ export default class MenuItem extends TagBase {
             if (label) {
                 label.caption = this.pvt.#htmlCaption;
             }
+        },
+        onDisabledChanged(e) {
+
         },
         onIconSrcChanged(e) {
             let icon = this.shadowRoot.querySelector("#icon");
@@ -150,12 +176,12 @@ export default class MenuItem extends TagBase {
                         this.pvt.#showPopup();
                     }
                 }
-                else {
+                else if (!this.disabled) {
                     if (app.menu && app.menu.currentMenuItem) {
                         app.menu.currentMenuItem.pvt.#hidePopup();
                     }
     
-                    this.fireEvent("action");
+                    Function(this.onaction)();
                 }
             }
         },
@@ -176,8 +202,8 @@ export default class MenuItem extends TagBase {
     });
 
     connectedCallback() {
-        this.addEventListener("actionChanged", this.pvt.#prot.onActionChanged);
         this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
+        this.addEventListener("disabledChanged", this.pvt.#prot.onDisabledChanged);
         this.addEventListener("iconChanged", this.pvt.#prot.onIconSrcChanged);
         this.addEventListener("hotkeyChanged", this.pvt.#prot.onHotkeyChanged);
         this.addEventListener("mouseenter", this.pvt.#prot.onMouseEntered);
@@ -189,12 +215,18 @@ export default class MenuItem extends TagBase {
 
     get caption() { return this.getAttribute("caption"); }
     set caption(v) { this.setAttribute("caption", v); }
+
+    get disabled() { return this.hasAttribute("disabled"); }
+    set disabled(v) { this.pvt.#prot.setBoolAttribute("disabled", v); }
     
     get icon() { return this.getAttribute("icon"); }
     set icon(v) { this.setAttribute("icon", v); }
     
     get hotkey() { return this.getAttribute("hotkey"); }
     set hotkey(v) { this.setAttribute("hotkey", v); }
+
+    get onaction() { return this.getAttribute("onaction"); }
+    set onaction(v) { this.setAttribute("onaction", v); }
     
     get isSelected() { return this.classList.has("selected"); }
 }

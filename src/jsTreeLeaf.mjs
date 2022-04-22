@@ -8,26 +8,67 @@ export default class TreeLeaf extends ListItem {
     static { this.#sprot.registerTag(this); }
     static get tagName() { return this.pvt.#tagName; }
     static get observedAttributes() {
-        return ListItem.observedAttributes.concat(["collapsible"]); 
+        return ListItem.observedAttributes; 
     }
 
     #value = "";
+
+    #getMarker() {
+        return (this.slot == "caption") && this.parentElement.collapsible
+        ? this.parentElement.collapsed
+            ? "&#x229e;"
+            : "&#x229f;"
+        : "&#x2501;"
+    }
+
     #prot = share(this, TreeLeaf, {
         getTemplate() {
-            let template = this.TreeView.querySelector("template");
-            return this.pvt.#prot.newTag("span", {
-                style: "display:flex;flex-flow:row nowrap;align-items:center;"
+            const prot = this.pvt.#prot;
+            let template = this.TreeView.querySelector("template").cloneNode(true);
+            let children = Array.from(template.content.children);
+            template.innerHTML = "";
+
+            let content =  prot.newTag("span", {
+                class: "leaf"
             }, {
-                innerHTML: this.pvt.#prot.newTag("span", {
-                    style: "width:1.5em;text-align:center;font-weight:bold;font-family:monospace;"
-                }, {
-                    innerHTML: (this.slot == "caption") ? this.isOpen ? "&#x229f;" : "&#x229e;" : "&#x2501;"
-                }).outerHTML + template.innerHTML
-            }).outerHTML;
+                children: [
+                    prot.newTag("span", {
+                        class: "marker"
+                    }, {
+                        innerHTML: this.pvt.#getMarker()
+                    })
+                ].concat(children)
+            });
+
+            content.querySelector("span.marker").addEventListener("click", this.pvt.#prot.onMarkerClicked);
+            
+            return content;
         },
         onPreRender() {
             this.pvt.#prot.validateParent(["js-treebranch", "js-treeview"],
-                "TreeLeaf elements can only be placed in a TreeView or TreeBanch");
+            "TreeLeaf elements can only be placed in a TreeView or TreeBanch");
+        },
+        onMarkerClicked(e) {
+            if (this.parentElement.nodeName.toLowerCase() == "js-treebranch") {
+                this.parentElement.collapsed = !this.parentElement.collapsed;
+                e.cancelBubble = true;
+            }
+            this.pvt.#prot.onUpdateMarker();
+        },
+        onUpdateMarker(e) {
+            if (this.parentElement.nodeName.toLowerCase() == "js-treebranch") {
+                this.shadowRoot.querySelector("span.marker").innerHTML = this.pvt.#getMarker()
+            }
+        },
+        onClick(e) {
+            if (typeof(e.detail) == "object") {
+                e.detail.allowBubble = true;
+            }
+            else {
+                e.cancelBubble = false;
+            }
+
+            this.pvt.#prot.$uper.onClick(e);
         }
     });
 
@@ -39,6 +80,8 @@ export default class TreeLeaf extends ListItem {
         return retval;
     }
 
-    get isOpen() { return this.hasAttribute("isopen"); }
-    set isOpen(v) { this.pvt.#prot.setBoolAttribute("isopen", v); }
+    connectedCallback() {
+        this.addEventListener("updateMarker", this.pvt.#prot.onUpdateMarker);
+        super.connectedCallback();
+    }
 }
