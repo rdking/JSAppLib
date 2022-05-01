@@ -60,14 +60,14 @@
                     caption="_New"
                     description="Create a new file."
                     hotkey="Ctrl+N"
-                    icon=""
+                    icon="/images/icons/file-new.svg"
                     ontriggered="alert(`Now we know File->New works!`);"
                 ></js-action>
                 <js-action name="file_open"
                     caption="_Open"
                     description="Open an existing file."
                     hotkey="Ctrl+O"
-                    icon=""
+                    icon="/images/icons/file-open.svg"
                     ontriggered="alert(`Now we know File->Open works!`);"
                 ></js-action>
                 <js-action name="file_save"
@@ -75,7 +75,7 @@
                     description="Save the current file."
                     disabled
                     hotkey="Ctrl+S"
-                    icon=""
+                    icon="/images/icons/file-save.svg"
                     ontriggered="alert(`Now we know File->Save works!`);"
                 ></js-action>
                 <js-action name="file_saveas"
@@ -92,6 +92,41 @@
                     hotkey="Ctrl+Q"
                     icon=""
                     ontriggered="alert(`Closing the demo...`);"
+                ></js-action>
+                <js-action name="edit_undo"
+                    caption="_Undo"
+                    description="Revert the previous action."
+                    hotkey="Ctrl+Z"
+                    icon="/images/icons/edit-undo.svg"
+                    ontriggered="alert(`Now we know Edit->Undo works!`);"
+                ></js-action>
+                <js-action name="edit_redo"
+                    caption="_Redo"
+                    description="Replay the most recently undone action."
+                    hotkey="Ctrl+Shift+Z"
+                    icon="/images/icons/edit-redo.svg"
+                    ontriggered="alert(`Now we know Edit->Redo works!`);"
+                ></js-action>
+                <js-action name="edit_cut"
+                    caption="C_ut"
+                    description="Remove the selected item and place it on the clipboard."
+                    hotkey="Ctrl+X"
+                    icon="/images/icons/edit-cut.svg"
+                    ontriggered="alert(`Now we know Edit->Cut works!`);"
+                ></js-action>
+                <js-action name="edit_copy"
+                    caption="_Copy"
+                    description="Copy the selected item to the clipboard."
+                    hotkey="Ctrl+C"
+                    icon="/images/icons/edit-copy.svg"
+                    ontriggered="alert(`Now we know Edit->Copy works!`);"
+                ></js-action>
+                <js-action name="edit_paste"
+                    caption="_Paste"
+                    description="Copy whatever is on the clipboard into the document."
+                    hotkey="Ctrl+V"
+                    icon="/images/icons/edit-paste.svg"
+                    ontriggered="alert(`Now we know Edit->Paste works!`);"
                 ></js-action>
             </js-actionmanager>
             <js-datatranslator>
@@ -121,12 +156,12 @@
                 </js-menuitem>
                 <js-menuitem caption="_Edit">
                     <js-popupmenu>
-                        <js-menuitem caption="_Undo" hotkey="Ctrl+Z"></js-menuitem>
-                        <js-menuitem caption="_Redo" hotkey="Ctrl+Shift+Z"></js-menuitem>
+                        <js-menuitem action="edit_undo"></js-menuitem>
+                        <js-menuitem action="edit_redo"></js-menuitem>
                         <js-menuseparator></js-menuseparator>
-                        <js-menuitem caption="C_ut" hotkey="Ctrl+X"></js-menuitem>
-                        <js-menuitem caption="_Copy" hotkey="Ctrl+C"></js-menuitem>
-                        <js-menuitem caption="_Paste" hotkey="Ctrl+V"></js-menuitem>
+                        <js-menuitem action="edit_cut"></js-menuitem>
+                        <js-menuitem action="edit_copy"></js-menuitem>
+                        <js-menuitem action="edit_paste"></js-menuitem>
                         <js-menuseparator></js-menuseparator>
                         <js-menuitem caption="Select _All" hotkey="Ctrl+A"></js-menuitem>
                     </js-popupmenu>
@@ -145,7 +180,7 @@
                 <js-label>black</js-label>
             </js-statusbar>
             <js-toolbar slot="toolbarTop">
-                <js-toolbutton>1</js-toolbutton>
+                <js-toolbutton action="file_new" displaymode="iconOnly"></js-toolbutton>
                 <js-toolbutton>2</js-toolbutton>
                 <js-toolbutton>3</js-toolbutton>
                 <js-toolbutton>4</js-toolbutton>

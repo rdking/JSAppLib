@@ -96,7 +96,8 @@ export default class MenuItem extends TagBase {
                             children: [
                                 !isPopupMenu ? null : prot.newTag("img", {
                                     id: "icon",
-                                    src: this.iconSrc || ""
+                                    class: this.icon ? "icon" : "",
+                                    src: this.icon || ""
                                 })
                             ]
                         }),
@@ -156,7 +157,10 @@ export default class MenuItem extends TagBase {
         onIconSrcChanged(e) {
             let icon = this.shadowRoot.querySelector("#icon");
             if (icon) {
-                icon.src = this.iconSrc;
+                const src = e.detail.newVal;
+                icon.className = (typeof(src) == "string") && src.length
+                    ? "icon" : "";
+                icon.src = src;
             }
         },
         onHotkeyChanged(e) {
@@ -186,6 +190,7 @@ export default class MenuItem extends TagBase {
             }
         },
         onMouseEntered(e) {
+            let statusbar = document.querySelector("js-statusbar");
             let currentItem = this.parentElement.currentMenuItem;
             if (currentItem || (app.menu && app.menu.currentMenuItem)) {
                 if (currentItem && (currentItem !== this)) {
@@ -193,10 +198,19 @@ export default class MenuItem extends TagBase {
                 }
                 this.pvt.#showPopup();
             }
+
+            if (statusbar && this.description) {
+                statusbar.status = this.description;
+            }
         },
         onMouseLeft(e) {
+            let statusbar = document.querySelector("js-statusbar");
             if (this.parentElement !== app.menu) {
                 this.pvt.#hidePopup();
+            }
+
+            if (statusbar && (statusbar.status == this.description)) {
+                statusbar.status = "";
             }
         }
     });
@@ -215,6 +229,9 @@ export default class MenuItem extends TagBase {
 
     get caption() { return this.getAttribute("caption"); }
     set caption(v) { this.setAttribute("caption", v); }
+
+    get description() { return this.getAttribute("description"); }
+    set description(v) { this.setAttribute("description", v); }
 
     get disabled() { return this.hasAttribute("disabled"); }
     set disabled(v) { this.pvt.#prot.setBoolAttribute("disabled", v); }
