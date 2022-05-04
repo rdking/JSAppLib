@@ -9,17 +9,9 @@
     color: var(--pen-normal);
 }
 
-:host([disabled]) {
-    color: var(--pen-disabled);
-}
-
-:host(:hover) {
+:host(:hover:not([disabled])) {
     background-color: var(--brush-selected);
     color: var(--pen-selected);
-}
-
-:host(:hover[disabled]) {
-    color: var(--pen-normal);
 }
 
 .itemgrid {
@@ -31,6 +23,10 @@
 .icon {
     width: 20px;
     height: 20px;
+}
+
+:host([disabled]) {
+    filter: opacity(33%)
 }
 
 .iconcol {

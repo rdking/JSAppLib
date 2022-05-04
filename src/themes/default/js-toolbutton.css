@@ -4,14 +4,31 @@ button {
     min-height: 28px;
     background-color: transparent;
     color: inherit;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
 }
 
-button:hover {
+:host(:not([disabled])) button:hover {
     background-color: var(--brush-shadow);
     color: var(--pen-selected);
 }
 
-button:active {
+:host(:not([disabled])) button:active {
     background-color: var(--brush-selected);
     color: var(--pen-selected);
+}
+
+img {
+    width: 24px;
+    height: 24px;
+}
+
+:host([disabled]) {
+    filter: opacity(33%)
+}
+
+:nth-child(2) {
+    padding-left: 4px;
 }

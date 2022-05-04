@@ -11,7 +11,7 @@ export default class MenuItem extends TagBase {
                 icon: "icon",
                 description: "description",
                 disabled: "disabled",
-                ontriggered: "onaction"
+                ontriggered: "onAction"
             })
         })
     });
@@ -163,7 +163,7 @@ export default class MenuItem extends TagBase {
                 icon.src = src;
             }
         },
-        onHotkeyChanged(e) {
+        onHotKeyChanged(e) {
             let hotkey = this.shadowRoot.querySelector("#hotkey");
             if (hotkey) {
                 hotkey.innerHTML = this.hotkey;
@@ -185,7 +185,7 @@ export default class MenuItem extends TagBase {
                         app.menu.currentMenuItem.pvt.#hidePopup();
                     }
     
-                    Function(this.onaction)();
+                    Function(this.onAction)();
                 }
             }
         },
@@ -219,7 +219,7 @@ export default class MenuItem extends TagBase {
         this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
         this.addEventListener("disabledChanged", this.pvt.#prot.onDisabledChanged);
         this.addEventListener("iconChanged", this.pvt.#prot.onIconSrcChanged);
-        this.addEventListener("hotkeyChanged", this.pvt.#prot.onHotkeyChanged);
+        this.addEventListener("hotkeyChanged", this.pvt.#prot.onHotKeyChanged);
         this.addEventListener("mouseenter", this.pvt.#prot.onMouseEntered);
         this.addEventListener("mouseleave", this.pvt.#prot.onMouseLeft);
         this.addEventListener("click", this.pvt.#prot.onClicked);
@@ -242,8 +242,8 @@ export default class MenuItem extends TagBase {
     get hotkey() { return this.getAttribute("hotkey"); }
     set hotkey(v) { this.setAttribute("hotkey", v); }
 
-    get onaction() { return this.getAttribute("onaction"); }
-    set onaction(v) { this.setAttribute("onaction", v); }
+    get onAction() { return this.getAttribute("onaction"); }
+    set onAction(v) { this.setAttribute("onaction", v); }
     
     get isSelected() { return this.classList.has("selected"); }
 }

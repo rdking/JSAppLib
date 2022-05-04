@@ -15,13 +15,13 @@ export default class ToolButton extends TagBase {
             })
         })
     });
-    static #buttonModes = new Enum("ButtonModes", ["iconOnly", "captionOnly", "both"]);
+    static #buttonModes = new Enum("ButtonModes", ["iconOnly", "textOnly", "both"]);
 
     static { this.#sprot.registerTag(this); }
     static get tagName() { return this.pvt.#tagName; }
     static get observedAttributes() {
         return TagBase.observedAttributes
-            .concat([ "caption", "disabled", "displaymode", "icon" ]); 
+            .concat([ "caption", "displaymode", "icon" ]); 
     }
 
     static get ButtonModes() { return this.#buttonModes; }
@@ -32,7 +32,7 @@ export default class ToolButton extends TagBase {
         let contents = button.innerHTML;
         button.innerHTML = "";
 
-        if (this.displayMode !== ToolButton.ButtonModes.captionOnly) {
+        if (this.displayMode !== ToolButton.ButtonModes.textOnly) {
             if (this.icon && this.icon.length) {
                 button.appendChild(
                     prot.newTag("img", { src: this.icon})
@@ -42,8 +42,9 @@ export default class ToolButton extends TagBase {
 
         if (this.displayMode !== ToolButton.ButtonModes.iconOnly) {
             if (this.caption && this.caption.trim().length) {
+                let caption = this.caption.replace("_", "");
                 button.appendChild(
-                    prot.newTag("js-label", null, {caption: this.caption})
+                    prot.newTag("js-label", null, {caption})
                 );
             }
         }
@@ -58,11 +59,11 @@ export default class ToolButton extends TagBase {
             const prot = this.pvt.#prot;
             prot.renderContent(prot.newTag("button", { type: "button" }));
         },
-        onCaptionChanged(e) {
+        onUpdate() {
             this.pvt.#update();
         },
-        onDisabledChanged(e) {
-
+        onCaptionChanged(e) {
+            this.pvt.#update();
         },
         onIconSrcChanged(e) {
             this.pvt.#update();
@@ -89,8 +90,8 @@ export default class ToolButton extends TagBase {
     });
 
     connectedCallback() {
+        this.addEventListener("update", this.pvt.#prot.onUpdate);
         this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
-        this.addEventListener("disabledChanged", this.pvt.#prot.onDisabledChanged);
         this.addEventListener("displaymodeChanged", this.pvt.#prot.onCaptionChanged);
         this.addEventListener("iconChanged", this.pvt.#prot.onIconSrcChanged);
         this.addEventListener("mouseenter", this.pvt.#prot.onMouseEntered);
@@ -116,7 +117,9 @@ export default class ToolButton extends TagBase {
 
     get displayMode() { 
         let dm = this.getAttribute("displaymode");
-        return ToolButton.ButtonModes(dm || "both");
+        dm = dm ? dm : this.parentElement.displayMode;
+        dm = dm ? dm : "both";
+        return ToolButton.ButtonModes(dm);
     }
     set displayMode(v) {
         v = ToolButton.ButtonModes(v);
