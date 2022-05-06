@@ -333,6 +333,15 @@ const TagBase = abstract(class TagBase extends HTMLElement {
         this.pvt.#eventsReady();
     }
 
+    /**
+     * Dispatches the specified event with the data attached to the custom event
+     * on its detail key.
+     * @param {string} evtName Name of the event to be dispatched.
+     * @param {*?} data Optional information about the event.
+     * @param {boolean} now If true, overrides the initial event synchronization
+     * delays required to solve order of operation issues and forces the event
+     * to be dispatched immediately.
+     */
     fireEvent(evtName, data, now) {
         if (now || TagBase.pvt.#ready) {
             let event = new CustomEvent(evtName, { detail: data });
@@ -343,6 +352,13 @@ const TagBase = abstract(class TagBase extends HTMLElement {
         }
     }
 
+    /**
+     * Registers an event handler function to the object.
+     * @param {string} name Name of the event that will cause the handler
+     * function to be called.
+     * @param {function} fn The handler function that will be called when
+     * the element receives the specified event.
+     */
     addEventListener(name, fn) {
         let mapping = this.pvt.#listenerMap.get(fn) || { count: 0, name, boundFn:fn };
         ++mapping.count;
@@ -350,6 +366,30 @@ const TagBase = abstract(class TagBase extends HTMLElement {
 
         if (mapping.count === 1)
             super.addEventListener(name, mapping.boundFn);
+    }
+
+    /**
+     * Registers an event handler function to the object. The event handler
+     * will be immediately unregistered after the handling the first event
+     * that occurs after registration. There is no other way to unregister
+     * this handler.
+     * @param {string} name Name of the event that will cause the handler
+     * function to be called.
+     * @param {function} fn The handler function that will be called when
+     * the element receives the specified event.
+     */
+    addEventListenerOnce(name, fn) {
+        let handler = (...args) => {
+            let retval;
+            try {
+                retval = fn(...args);
+            }
+            finally {
+                this.removeEventListener(name, fn);
+            }
+            return retval;
+        }
+        this.addEventListener(name, handler);
     }
 
     removeEventListener(name, fn) {

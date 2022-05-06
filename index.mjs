@@ -1,10 +1,12 @@
 import * as CFProtected from "/node_modules/cfprotected/index.mjs";
+import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
 import Management from "/node_modules/jsapplib/src/jsManagement.mjs";
 import ActionManager from "/node_modules/jsapplib/src/jsActionManager.mjs";
 import Action from "/node_modules/jsapplib/src/jsAction.mjs";
 import ThemeManager from "/node_modules/jsapplib/src/jsThemeManager.mjs";
 import DataTranslator from "/node_modules/jsapplib/src/jsDataTranslator.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
+import DialogManager from "/node_modules/jsapplib/src/jsDialogManager.mjs";
+import Dialog from "/node_modules/jsapplib/src/jsDialog.mjs";
 import Label from "/node_modules/jsapplib/src/jsLabel.mjs";
 import Editor from "/node_modules/jsapplib/src/jsEditor.mjs";
 import Menu from "/node_modules/jsapplib/src/jsMenu.mjs";
@@ -27,8 +29,8 @@ import TreeLeaf from "/node_modules/jsapplib/src/jsTreeLeaf.mjs";
 import App from "/node_modules/jsapplib/src/jsAppLib.mjs";
 
 export default { 
-    CFProtected, Management, ActionManager, Action, ThemeManager,
-    DataTranslator, TagBase, Label, Editor, Menu, MenuItem, MenuSeparator,
+    CFProtected, TagBase, Management, ActionManager, Action, ThemeManager,
+    DataTranslator, DialogManager, Dialog, Label, Editor, Menu, MenuItem, MenuSeparator,
     PopupMenu, StatusBar, HorizontalPanel, VerticalPanel, TabSet, Tab, ToolBar,
     ToolButton, ListView, ListItem, CollapsePanel, TreeView, TreeBranch,
     TreeLeaf, App

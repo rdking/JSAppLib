@@ -9,6 +9,7 @@
     --brush-input: white;
     --brush-shadow: rgba(64, 64, 64, 0.25);
     --brush-highlight: rgba(255, 255, 255, 0.25);
+    --brush-overlay: rgba(96, 96, 96, 0.5);
 }
 
 :root.light {

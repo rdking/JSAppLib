@@ -10,6 +10,8 @@
                 "js-action",
                 "js-app",
                 "js-collapsepanel",
+                "js-dialog",
+                "js-dialogmanager",
                 "js-editor",
                 "js-label",
                 "js-listitem",

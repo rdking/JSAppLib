@@ -1,7 +1,5 @@
 import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
 import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
-//import DataTranslator from "/node_modules/jsapplib/src/jsDataTranslator.mjs";
-//import ThemeManager from "/node_modules/jsapplib/src/jsThemeManager.mjs"
 
 /**
  * @class App
@@ -19,16 +17,6 @@ export default class App extends TagBase {
     }
     static init() { this.pvt.#sprot.initTags(); }
 
-        // render: () => {
-        //     let shadow = this.shadowRoot;
-        //     let appArea = document.createElement("div");
-        //     let content = document.createElement("slot");
-        //     appArea.appendChild(content);
-        //     appArea.classList.add("js_app");
-        //     shadow.appendChild(appArea);
-        //     // shadow.mode = "closed";
-        // }
-    
     #started = false;
     #debug = false;
     #main = void 0;
@@ -48,17 +36,46 @@ export default class App extends TagBase {
 
     #prot = share(this, App, {
         render() {
-            let content = this.pvt.#prot.newTag("div", {id: "app"});
-            let center = this.pvt.#prot.newTag("div", {class: "appCenter"});
-            this.pvt.#prot.newTag("slot", {class: "hbar", name: "header"}, {parent: content});
-            this.pvt.#prot.newTag("slot", {class: "hbar", name: "toolbarTop"}, {parent: content});
-            content.appendChild(center);
-            this.pvt.#prot.newTag("slot", {class: "vbar", name: "toolbarLeft"}, {parent: center});
-            this.pvt.#prot.newTag("slot", {class: "content"}, {parent: center});
-            this.pvt.#prot.newTag("slot", {class: "vbar", name: "toolbarRight"}, {parent: center});
-            this.pvt.#prot.newTag("slot", {class: "hbar", name: "toolbarBottom"}, {parent: content});
-            this.pvt.#prot.newTag("slot", {class: "hbar", name: "footer"}, {parent: content});
-            this.pvt.#prot.renderContent(content);
+            const prot = this.pvt.#prot;
+            prot.renderContent(prot.newTag("div", {
+                id: "app"
+            }, {
+                children: [
+                    prot.newTag("slot", {
+                        class: "hbar",
+                        name: "header"
+                    }),
+                    prot.newTag("slot", {
+                        class: "hbar",
+                        name: "toolbarTop"
+                    }),
+                    prot.newTag("div", {
+                        class: "appCenter"
+                    }, {
+                        children: [
+                            prot.newTag("slot", {
+                                class: "vbar",
+                                name: "toolbarLeft"
+                            }),
+                            prot.newTag("slot", {
+                                class: "content"
+                            }),
+                            prot.newTag("slot", {
+                                class: "vbar",
+                                name: "toolbarRight"
+                            })
+                        ]
+                    }),
+                    prot.newTag("slot", {
+                        class: "hbar",
+                        name: "toolbarBottom"
+                    }),
+                    prot.newTag("slot", {
+                        class: "hbar",
+                        name: "footer"
+                    })
+                ]
+            }));
         },
         onWindowResized(e) {
             this.fireEvent("parentResized");
