@@ -11,7 +11,7 @@ export default class HorizontalPanel extends TagBase {
         return TagBase.observedAttributes.concat(["status", "slotclass"]);
     }
 
-    #onStatusChanged(e) {
+    #onStatusChange(e) {
         let status = this.shadowRoot.querySelector("span.status");
         if (status) {
             status.innerHTML = e.detail.newVal;
@@ -23,7 +23,7 @@ export default class HorizontalPanel extends TagBase {
             const prot = this.pvt.#prot;
             prot.renderContent(prot.newTag("slot"));
         },
-        onSlotClassChanged(e) {
+        onSlotClassChange(e) {
             let slot = this.shadowRoot.querySelector("slot");
             e.detail.newVal.split(" ").forEach(rule => {
                 this.pvt.#prot.importRule(rule);
@@ -33,7 +33,7 @@ export default class HorizontalPanel extends TagBase {
     });
 
     connectedCallback() {
-        this.addEventListener("slotclassChanged", this.pvt.#prot.onSlotClassChanged);
+        this.addEventListener("slotclassChange", this.pvt.#prot.onSlotClassChange);
         super.connectedCallback();
     }
 

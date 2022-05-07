@@ -7,6 +7,23 @@
                 //Remove the splash screen.
                 document.querySelector("div.overlay").style.display = "none";
             }
+            function handleButtons(event) {
+                if (!handleButtons.saved) {
+                    handleButtons.saved = this.innerHTML;
+                }
+                if (event.detail.button == 'ok') {
+                    event.detail.closeDialog = false;
+                    this.count = this.count || 0;
+                    ++this.count;
+                    this.innerHTML = `You've clicked 'Ok' ${this.count} times!`; 
+                }
+                else {
+                    if (handleButtons.saved) {
+                        this.innerHTML = handleButtons.saved;
+                        delete handleButtons.saved;
+                    }
+                }
+            }
         </script>
         <script type="module" src="/node_modules/jsapplib/index.mjs" onload="getApp()"></script>
     </head>
@@ -135,7 +152,8 @@
                 </js-translator>
             </js-datatranslator>
             <js-dialogmanager>
-                <js-dialog id="msgDialog" title="Example" buttons="Ok, Cancel">
+                <js-dialog id="msgDialog" title="Example" buttons="Ok, Cancel"
+                    onbuttonclick="handleButtons.call(this, event)">
                     Really easily implemented custom dialog box!
                 </js-dialog>
             </js-dialogmanager>
@@ -193,6 +211,9 @@
                 <js-toolbutton action="edit_cut"></js-toolbutton>
                 <js-toolbutton action="edit_copy"></js-toolbutton>
                 <js-toolbutton action="edit_paste"></js-toolbutton>
+            </js-toolbar>
+            <js-toolbar edge="top" displaymode="iconOnly">
+                <js-toolbutton displaymode="textOnly" caption="Show Dialog" onaction="msgDialog.show()"></js-toolbutton>
             </js-toolbar>
             <js-toolbar slot="toolbarLeft">
                 <js-toolbutton>5</js-toolbutton>

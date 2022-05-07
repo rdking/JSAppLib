@@ -12,6 +12,10 @@ export default class Dialog extends TagBase {
         return TagBase.observedAttributes
             .concat([ "buttons", "title" ]); 
     }
+    static get observedEvents() {
+        return TagBase.observedEvents
+            .concat(["buttonClick"]);
+    }
 
     #hadParent = false;
     #prot = share(this, Dialog, {
@@ -65,12 +69,12 @@ export default class Dialog extends TagBase {
                     value: true
                 }
             });
-            this.fireEvent("buttonClicked", data);
+            this.fireEvent("buttonClick", data);
             if (data.closeDialog) {
-                this.hideDialog();
+                this.hide();
             }
         },
-        onButtonsChanged(e) {
+        onButtonsChange(e) {
             const buttonBar = this.shadowRoot.querySelector("div.buttonbar");
             buttonBar.innerHTML = "";
 
@@ -85,15 +89,15 @@ export default class Dialog extends TagBase {
                 button.addEventListener("click", this.pvt.#prot.onButtonClick);
             }
         },
-        onTitleChanged(e) {
+        onTitleChange(e) {
             this.shadowRoot.querySelector("#title").caption = this.title;
         }
     });
 
     connectedCallback() {
         const prot = this.pvt.#prot;
-        this.addEventListener("buttonsChanged", prot.onButtonsChanged);
-        this.addEventListener("titleChanged", prot.onTitleChanged);
+        this.addEventListener("buttonsChange", prot.onButtonsChange);
+        this.addEventListener("titleChange", prot.onTitleChange);
         super.connectedCallback();
     }
 
@@ -118,8 +122,8 @@ export default class Dialog extends TagBase {
         return !!(overlay && !overlay.hasAttribute("hidden"));
     }
 
-    showDialog() {
-        this.pvt.#hadParent = !!this.parent;
+    show() {
+        this.pvt.#hadParent = !!this.parentElement;
         if (!this.pvt.#hadParent) {
             this.addEventListenerOnce("postRender", () => {
                 let overlay = this.shadowRoot.querySelector("div.overlay");
@@ -134,11 +138,11 @@ export default class Dialog extends TagBase {
         }
     }
 
-    hideDialog() {
+    hide() {
         let overlay = this.shadowRoot.querySelector("div.overlay");
         overlay.setAttribute("hidden", "");
 
-        if (this.pvt.#hadParent) {
+        if (!this.pvt.#hadParent) {
             app.removeChild(this);
             this.pvt.#hadParent = false;
         }

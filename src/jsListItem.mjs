@@ -71,10 +71,10 @@ export default class ListItem extends TagBase {
             e.cancelBubble = !e.detail.allowBubble;
             this.selected = !this.selected;
         },
-        onSelectedChanged(e) {
+        onSelectedChange(e) {
             let state = e.detail.newVal === "";
             let sDiv = this.shadowRoot.querySelector("div.listitem");
-            this.parentElement.fireEvent("selectedChanged", { cause: this, state });
+            this.parentElement.fireEvent("selectedChange", { cause: this, state });
 
             if (state) {
                 sDiv.classList.add("selected");
@@ -95,7 +95,7 @@ export default class ListItem extends TagBase {
     connectedCallback() {
         this.addEventListener("preRender", this.pvt.#prot.onPreRender);
         this.addEventListener("click", this.pvt.#prot.onClick);
-        this.addEventListener("selectedChanged", this.pvt.#prot.onSelectedChanged);
+        this.addEventListener("selectedChange", this.pvt.#prot.onSelectedChange);
         super.connectedCallback();
     }
 

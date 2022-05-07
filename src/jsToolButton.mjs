@@ -62,10 +62,10 @@ export default class ToolButton extends TagBase {
         onUpdate() {
             this.pvt.#update();
         },
-        onCaptionChanged(e) {
+        onCaptionChange(e) {
             this.pvt.#update();
         },
-        onIconSrcChanged(e) {
+        onIconSrcChange(e) {
             this.pvt.#update();
         },
         onMouseEntered(e) {
@@ -91,9 +91,9 @@ export default class ToolButton extends TagBase {
 
     connectedCallback() {
         this.addEventListener("update", this.pvt.#prot.onUpdate);
-        this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
-        this.addEventListener("displaymodeChanged", this.pvt.#prot.onCaptionChanged);
-        this.addEventListener("iconChanged", this.pvt.#prot.onIconSrcChanged);
+        this.addEventListener("captionChange", this.pvt.#prot.onCaptionChange);
+        this.addEventListener("displaymodeChange", this.pvt.#prot.onCaptionChange);
+        this.addEventListener("iconChange", this.pvt.#prot.onIconSrcChange);
         this.addEventListener("mouseenter", this.pvt.#prot.onMouseEntered);
         this.addEventListener("mouseleave", this.pvt.#prot.onMouseLeft);
         this.addEventListener("click", this.pvt.#prot.onClicked);

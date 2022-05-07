@@ -32,7 +32,7 @@ export default class ToolBar extends TagBase {
                 prot.newTag("slot")
             ]);
         },
-        onDisplayModeChanged(e) {
+        onDisplayModeChange(e) {
             let child = this.firstElementChild;
 
             while (child && ("fireEvent" in child)) {
@@ -40,14 +40,14 @@ export default class ToolBar extends TagBase {
                 child = child.nextElementSibling;
             }
         },
-        onEdgeChanged(e) {
+        onEdgeChange(e) {
             this.setAttribute("slot", this.edge.value);
         }
     });
 
     connectedCallback() {
-        this.addEventListener("displaymodeChanged", this.pvt.#prot.onDisplayModeChanged);
-        this.addEventListener("edgeChanged", this.pvt.#prot.onEdgeChanged);
+        this.addEventListener("displaymodeChange", this.pvt.#prot.onDisplayModeChange);
+        this.addEventListener("edgeChange", this.pvt.#prot.onEdgeChange);
         super.connectedCallback();
     }
 

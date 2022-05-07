@@ -27,23 +27,23 @@ export default class Tab extends TagBase {
         onPreRender() {
             this.pvt.#prot.validateParent("js-tabset", "Tabs can only be added to TabSets.");
         },
-        onIconSrcChanged(e) {
+        onIconSrcChange(e) {
             let icon = this.shadowRoot.querySelector("#icon");
             if (icon) {
                 icon.src = e.detail.newVal;
             }
         },
-        onCaptionChanged(e) {
+        onCaptionChange(e) {
             let label = this.shadowRoot.querySelector("#label");
             if (label) {
                 label.setAttribute("caption", e.detail.newVal);
             }
         },
-        onSelectedChanged(e) {
+        onSelectedChange(e) {
             if (this.shadowRoot.innerHTML.length) {
                 let page = this.shadowRoot.querySelector("#page");
                 if (e.detail.newVal !== null) {
-                    this.parentElement.fireEvent("tabChanged", {newVal: this});
+                    this.parentElement.fireEvent("tabChange", {newVal: this});
                     page.classList.remove("hidden");
                 }
                 else {
@@ -54,9 +54,9 @@ export default class Tab extends TagBase {
     });
 
     connectedCallback() {
-        this.addEventListener("iconsrcChanged", this.pvt.#prot.onIconSrcChanged);
-        this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
-        this.addEventListener("selectedChanged", this.pvt.#prot.onSelectedChanged);
+        this.addEventListener("iconsrcChange", this.pvt.#prot.onIconSrcChange);
+        this.addEventListener("captionChange", this.pvt.#prot.onCaptionChange);
+        this.addEventListener("selectedChange", this.pvt.#prot.onSelectedChange);
         this.addEventListener("preRender", this.pvt.#prot.onPreRender);
         super.connectedCallback();
     }

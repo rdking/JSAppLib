@@ -144,7 +144,7 @@ export default class TabSet extends TagBase {
                 }
             }
         },
-        onTabChanged(e) {
+        onTabChange(e) {
             if (this.pvt.#currentTab && (this.pvt.#currentTab !== e.detail.newVal)) {
                 this.pvt.#currentTab.selected = false;
                 this.pvt.#currentTab.tab.classList.remove("selected");
@@ -176,7 +176,7 @@ export default class TabSet extends TagBase {
                 }
             }
         },
-        onCloseableChanged(e) {
+        onCloseableChange(e) {
             let status = this.shadowRoot.querySelector("span.status");
             if (status) {
                 status.innerHTML = e.detail.newVal;
@@ -320,9 +320,9 @@ export default class TabSet extends TagBase {
     });
 
     connectedCallback() {
-        this.addEventListener("closeableChanged", this.pvt.#prot.onCloseableChanged);
+        this.addEventListener("closeableChange", this.pvt.#prot.onCloseableChange);
         this.addEventListener("postRender", this.pvt.#prot.onPostRender);
-        this.addEventListener("tabChanged", this.pvt.#prot.onTabChanged);
+        this.addEventListener("tabChange", this.pvt.#prot.onTabChange);
         this.addEventListener("resized", this.pvt.#prot.onResized);
         super.connectedCallback();
     }

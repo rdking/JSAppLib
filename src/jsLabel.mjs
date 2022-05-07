@@ -28,20 +28,20 @@ export default class Label extends TagBase {
             }));
         },
     
-        onCaptionChanged(vals) {
+        onCaptionChange(vals) {
             this.setAttribute(vals.name, vals.newVal);
             this.innerHTML = this.getAttribute("caption");
         },
     
-        onAlignEndChanged(vals) {
+        onAlignEndChange(vals) {
             this.fireEvent("render");
         }
             
     });
 
     connectedCallback() {
-        this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
-        this.addEventListener("alignEndChanged", this.pvt.#prot.onAlignEndChanged);
+        this.addEventListener("captionChange", this.pvt.#prot.onCaptionChange);
+        this.addEventListener("alignEndChange", this.pvt.#prot.onAlignEndChange);
         super.connectedCallback();
     }
 

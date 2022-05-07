@@ -24,7 +24,7 @@ export default class StatusBar extends TagBase {
                 prot.newTag("slot")
             ]);
         },
-        onStatusChanged(e) {
+        onStatusChange(e) {
             let status = this.shadowRoot.querySelector("span.status");
             if (status) {
                 status.innerHTML = e.detail.newVal;
@@ -40,7 +40,7 @@ export default class StatusBar extends TagBase {
     }
 
     connectedCallback() {
-        this.addEventListener("statusChanged", this.pvt.#prot.onStatusChanged);
+        this.addEventListener("statusChange", this.pvt.#prot.onStatusChange);
         super.connectedCallback();
     }
 

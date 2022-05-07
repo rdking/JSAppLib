@@ -25,7 +25,7 @@ export default class Menu extends TagBase {
                 ]
             }));
         },
-        onCaptionChanged(e) {
+        onCaptionChange(e) {
             let match = e.detail.newVal.match(/_(\w)/);
             if (match.length > 0) {
                 let key = match[1];
@@ -59,7 +59,7 @@ export default class Menu extends TagBase {
     }
 
     connectedCallback() {
-        this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
+        this.addEventListener("captionChange", this.pvt.#prot.onCaptionChange);
         this.addEventListener("popupOpened", this.pvt.#prot.onPopupOpened);
         this.addEventListener("popupClosed", this.pvt.#prot.onPopupClosed);
         this.addEventListener("preRender", this.pvt.#prot.onPreRender);

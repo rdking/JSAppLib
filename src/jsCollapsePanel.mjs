@@ -35,7 +35,7 @@ export default class CollapsePanel extends TagBase {
                 this.collapsed = !this.collapsed;
             }
         },
-        onCollapsedChanged() {
+        onCollapsedChange() {
             let div = this.shadowRoot.querySelector("div.body");
             if (div) {
                 if (this.collapsed) {
@@ -48,7 +48,7 @@ export default class CollapsePanel extends TagBase {
     });
 
     connectedCallback() {
-        this.addEventListener("collapsedChanged", this.pvt.#prot.onCollapsedChanged);
+        this.addEventListener("collapsedChange", this.pvt.#prot.onCollapsedChange);
         super.connectedCallback();
     }
 

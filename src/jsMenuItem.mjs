@@ -137,7 +137,7 @@ export default class MenuItem extends TagBase {
             this.pvt.#prot.validateParent(["js-menu", "js-popupmenu"], "MenuItems can only be placed in a Menu.");
             this.pvt.#prot.validateChildren("js-popupmenu", "Only PopupMenus can be placed in a MenuItem.");
         },
-        onCaptionChanged(e) {
+        onCaptionChange(e) {
             let match = e.detail.newVal.match(/_(\w)/);
             if (match && (match.length > 0)) {
                 let key = match[1];
@@ -151,10 +151,10 @@ export default class MenuItem extends TagBase {
                 label.caption = this.pvt.#htmlCaption;
             }
         },
-        onDisabledChanged(e) {
+        onDisabledChange(e) {
 
         },
-        onIconSrcChanged(e) {
+        onIconSrcChange(e) {
             let icon = this.shadowRoot.querySelector("#icon");
             if (icon) {
                 const src = e.detail.newVal;
@@ -163,7 +163,7 @@ export default class MenuItem extends TagBase {
                 icon.src = src;
             }
         },
-        onHotKeyChanged(e) {
+        onHotKeyChange(e) {
             let hotkey = this.shadowRoot.querySelector("#hotkey");
             if (hotkey) {
                 hotkey.innerHTML = this.hotkey;
@@ -216,10 +216,10 @@ export default class MenuItem extends TagBase {
     });
 
     connectedCallback() {
-        this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
-        this.addEventListener("disabledChanged", this.pvt.#prot.onDisabledChanged);
-        this.addEventListener("iconChanged", this.pvt.#prot.onIconSrcChanged);
-        this.addEventListener("hotkeyChanged", this.pvt.#prot.onHotKeyChanged);
+        this.addEventListener("captionChange", this.pvt.#prot.onCaptionChange);
+        this.addEventListener("disabledChange", this.pvt.#prot.onDisabledChange);
+        this.addEventListener("iconChange", this.pvt.#prot.onIconSrcChange);
+        this.addEventListener("hotkeyChange", this.pvt.#prot.onHotKeyChange);
         this.addEventListener("mouseenter", this.pvt.#prot.onMouseEntered);
         this.addEventListener("mouseleave", this.pvt.#prot.onMouseLeft);
         this.addEventListener("click", this.pvt.#prot.onClicked);

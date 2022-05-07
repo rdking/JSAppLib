@@ -48,7 +48,7 @@ export default class TreeBranch extends ListItem {
             this.pvt.#prot.validateParent(["js-treebranch", "js-treeview"],
             "TreeBranch elements can only be placed in a TreeView or TreeBanch");
         },
-        onSelectedChanged(e) {
+        onSelectedChange(e) {
             let prevItem = this.pvt.#lastItem;
             let items = [...this.children];
 
@@ -58,20 +58,20 @@ export default class TreeBranch extends ListItem {
                         item.selected = (this.selected ? this : item).selected;
                     }
                 }
-                this.pvt.#prot.$uper.onSelectedChanged(e);
+                this.pvt.#prot.$uper.onSelectedChange(e);
             });
             this.pvt.#lastItem = this;
 
-            this.TreeView.fireEvent("selectedChanged", e);
+            this.TreeView.fireEvent("selectedChange", e);
         },
-        onCollapsedChanged(e) {
+        onCollapsedChange(e) {
             let panel = this.shadowRoot.querySelector("js-collapsepanel");
             if (panel) {
                 panel.collapsed = this.collapsed
                 this.pvt.#prot.onUpdateMarker();
             }
         },
-        onCollapsibleChanged(e) {
+        onCollapsibleChange(e) {
             if (!this.collapsible) {
                 this.setBoolAttribute("collapsed", false);
             }
@@ -86,8 +86,8 @@ export default class TreeBranch extends ListItem {
 
     connectedCallback() {
         const prot = this.pvt.#prot;
-        this.addEventListener("collapsedChanged", prot.onCollapsedChanged);
-        this.addEventListener("collapsibleChanged", prot.onCollapsibleChanged);
+        this.addEventListener("collapsedChange", prot.onCollapsedChange);
+        this.addEventListener("collapsibleChange", prot.onCollapsibleChange);
         this.addEventListener("updateMarker", prot.onUpdateMarker);
         super.connectedCallback();
     }

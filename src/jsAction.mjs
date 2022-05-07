@@ -33,38 +33,38 @@ export default class Action extends TagBase {
             this.pvt.#prot.validateParent("js-actionmanager",
                 "Action elements can only contained by an ActionManager element");
         },
-        onCaptionChanged() {
+        onCaptionChange() {
             this.parentElement.updateClients(this, "caption");
         },
-        onDescriptionChanged() {
+        onDescriptionChange() {
             this.parentElement.updateClients(this, "description");
         },
-        onDisabledChanged() {
+        onDisabledChange() {
             this.parentElement.updateClients(this, "disabled");
         },
-        onHotkeyChanged() {
+        onHotkeyChange() {
             this.parentElement.updateClients(this, "hotkey");
         },
-        onIconChanged() {
+        onIconChange() {
             this.parentElement.updateClients(this, "icon");
         },
-        onNameChanged() {
+        onNameChange() {
             this.parentElement.updateClients(this, "name");
         },
-        onOnTriggeredChanged() {
+        onOnTriggeredChange() {
             this.parentElement.updateClients(this, "ontriggered");
         },
     });
 
     connectedCallback() {
         const prot = this.pvt.#prot;
-        this.addEventListener("captionChanged", prot.onCaptionChanged);
-        this.addEventListener("descriptionChanged", prot.onDescriptionChanged);
-        this.addEventListener("disabledChanged", prot.onDisabledChanged);
-        this.addEventListener("hotkeyChanged", prot.onHotkeyChanged);
-        this.addEventListener("iconChanged", prot.onIconChanged);
-        this.addEventListener("nameChanged", prot.onNameChanged);
-        this.addEventListener("onOnTriggeredChanged", prot.onOnTriggeredChanged);
+        this.addEventListener("captionChange", prot.onCaptionChange);
+        this.addEventListener("descriptionChange", prot.onDescriptionChange);
+        this.addEventListener("disabledChange", prot.onDisabledChange);
+        this.addEventListener("hotkeyChange", prot.onHotkeyChange);
+        this.addEventListener("iconChange", prot.onIconChange);
+        this.addEventListener("nameChange", prot.onNameChange);
+        this.addEventListener("onOnTriggeredChange", prot.onOnTriggeredChange);
         super.connectedCallback();
     }
 

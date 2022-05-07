@@ -20,7 +20,7 @@ export default class ThemeManager extends TagBase {
     #ready = false;
     
     #sendChangeNotice() {
-        let evnt = new Event("themeChanged");
+        let evnt = new Event("themeChange");
         this.fireEvent(evnt);
     }
 

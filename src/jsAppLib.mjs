@@ -23,7 +23,7 @@ export default class App extends TagBase {
 
     #loadDataBindings(newDataBindBase) {
         this.setAttribute(dataBindBase, newDataBindBase);
-        this.fireEvent("dataBindChanged");
+        this.fireEvent("dataBindChange");
     }
 
     #launch(mainFn) {
@@ -106,7 +106,7 @@ export default class App extends TagBase {
     attributeChangedCallback(name, oldVal, newVal) {
         switch (name) {
             case "data_bind_base":
-                this.fireEvent("dataBindChanged");
+                this.fireEvent("dataBindChange");
                 break;
             default:
                 super.attributeChangedCallback(name, oldVal, newVal);
@@ -116,7 +116,7 @@ export default class App extends TagBase {
     get themeBase() { return this.getAttribute("theme_base"); }
     set themeBase(val) {
         this.setAttribute("theme_base", val);
-        this.fireEvent("themeChanged");
+        this.fireEvent("themeChange");
     }
 
     get dataBindBase() { return this.getAttribute("data_bind_base"); }

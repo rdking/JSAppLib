@@ -112,7 +112,7 @@ export default class ListView extends FocusableTag {
                 throw new TypeError("ListView requires exactly 1 template definition.");
             }
         },
-        onSelectedChanged(e) {
+        onSelectedChange(e) {
             let {cause, state} = e.detail;
             let prevItem = this.pvt.#lastItem;
             let items = this.items;
@@ -126,7 +126,7 @@ export default class ListView extends FocusableTag {
         this.addEventListener("preRender", this.pvt.#prot.onPreRender);
         this.addEventListener("keydown", this.pvt.#prot.onKeyDown);
         this.addEventListener("keyup", this.pvt.#prot.onKeyUp);
-        this.addEventListener("selectedChanged", this.pvt.#prot.onSelectedChanged);
+        this.addEventListener("selectedChange", this.pvt.#prot.onSelectedChange);
         super.connectedCallback();
     }
 

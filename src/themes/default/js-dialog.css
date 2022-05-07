@@ -32,6 +32,7 @@
 .title {
     padding: 4px;
     background-color: var(--brush-disabled);
+    color: var(--pen-disabled);
     font-weight: bold;
     font-size: larger;
 }

@@ -28,7 +28,7 @@ export default class PopupMenu extends Menu {
                 ]
             }));
         },
-        onCaptionChanged(e) {
+        onCaptionChange(e) {
             let match = e.detail.newVal.match(/_(\w)/);
             if (match.length > 0) {
                 let key = match[1];
@@ -59,7 +59,7 @@ export default class PopupMenu extends Menu {
     
     connectedCallback() {
         //this.addEventListener("mousedown", this.pvt.#prot.onMouseDown);
-        this.addEventListener("captionChanged", this.pvt.#prot.onCaptionChanged);
+        this.addEventListener("captionChange", this.pvt.#prot.onCaptionChange);
         super.connectedCallback();
     }
 

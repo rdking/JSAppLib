@@ -17,7 +17,8 @@ const TagBase = abstract(class TagBase extends HTMLElement {
          */
         registerTag: (tag, now) => {
             saveSelf(tag, "pvt");  //Convenience for the derived classes
-            console.log(`registerTag: defining element '${tag.tagName}' using class '${tag.name}'`);
+            this.pvt.#registerEvents(tag);
+            console.debug(`registerTag: defining element '${tag.tagName}' using class '${tag.name}'`);
             if (!!now) {
                 customElements.define(tag.tagName, tag);
             }
@@ -66,6 +67,33 @@ const TagBase = abstract(class TagBase extends HTMLElement {
 
         actionFieldMap: accessor({ get: ()=> {} })
     });
+
+    static #eventGetter(name) {
+        return function getter() { return this.getAttribute(name); }
+    }
+    
+    static #eventSetter(name) {
+        return function setter(v) { return this.setAttribute(name, v); }
+    }
+
+    /**
+     * Generates "on<event name>" boilerplate properties for the tag.
+     * @param {Function} tag Constructor of the class defining the tag
+     * owning the events
+     * @param {Array[string]} events Array of event names to be registered.
+     */
+    static #registerEvents(tag) {
+        const events = tag.observedEvents;
+        for (let name of events) {
+            let handler = `on${name.toLowerCase()}`;
+            Object.defineProperty(tag.prototype, handler, {
+                enumerable: true,
+                configurable: true,
+                get: this.pvt.#eventGetter(handler),
+                set: this.pvt.#eventSetter(handler)
+            });
+        }
+    }
     
     static setActionMappedField(client, field, val) {
         const map = TagBase.pvt.#sprot.actionFieldMap;
@@ -76,7 +104,12 @@ const TagBase = abstract(class TagBase extends HTMLElement {
         }
     }
 
-    static get observedAttributes() { return [ "action", "theme", "style", "classList" ]; }
+    static get observedAttributes() { return [
+        "action", "theme", "style", "classList"
+    ]; }
+    static get observedEvents() { return [
+        "preRender", "render", "postRender", "resized", "parentResized"
+    ]; }
 
     static { saveSelf(this, "pvt"); }
 
@@ -92,7 +125,7 @@ const TagBase = abstract(class TagBase extends HTMLElement {
             {innerHTML: "ERROR!"}));
     }
     
-    #sizeChanged(szInfo) {
+    #sizeChange(szInfo) {
         let sInfo = this.pvt.#sizeInfo;
         return !(sInfo && szInfo &&
             (szInfo.clientWidth === sInfo.clientWidth) &&
@@ -266,13 +299,13 @@ const TagBase = abstract(class TagBase extends HTMLElement {
                 offsetHeight: this.offsetHeight
             }
 
-            if (this.pvt.#sizeChanged(szInfo)) {
+            if (this.pvt.#sizeChange(szInfo)) {
                 this.pvt.#sizeInfo = szInfo;
                 this.fireEvent("resized");
                 this.pvt.#prot.childrenResized();
             }
         },
-        onActionChanged(e) {
+        onActionChange(e) {
             const am = document.querySelector("js-actionmanager");
             const {oldVal, newVal} = e.detail;
             if ((typeof(oldVal) == "string") && oldVal.trim().length) {
@@ -317,7 +350,7 @@ const TagBase = abstract(class TagBase extends HTMLElement {
 
     attributeChangedCallback(name, oldVal, newVal) {
         if (this.pvt.#areEventsReady) {
-            this.fireEvent(`${this.pvt.#prot.toCamelCase(name)}Changed`, { oldVal, newVal });
+            this.fireEvent(`${this.pvt.#prot.toCamelCase(name)}Change`, { oldVal, newVal });
         }
         else {
             this.pvt.#deferredEvents.push({name, oldVal, newVal});
@@ -328,7 +361,7 @@ const TagBase = abstract(class TagBase extends HTMLElement {
         const prot = this.pvt.#prot;
         this.addEventListener("render", prot.render); 
         this.addEventListener("parentResized", prot.onParentResized); 
-        this.addEventListener("actionChanged", prot.onActionChanged);
+        this.addEventListener("actionChange", prot.onActionChange);
         this.fireEvent("render");
         this.pvt.#eventsReady();
     }
@@ -346,6 +379,14 @@ const TagBase = abstract(class TagBase extends HTMLElement {
         if (now || TagBase.pvt.#ready) {
             let event = new CustomEvent(evtName, { detail: data });
             this.dispatchEvent(event);
+
+            //Check for an "observed" event...
+            if (this.cla$$.observedEvents.includes(evtName)) {
+                let handler = `on${evtName.toLocaleLowerCase()}`;
+                if ((handler in this) && (typeof(handler) == "string")) {
+                    (new Function("event", this[handler])).call(this, event);
+                }
+            }
         }
         else  {
             TagBase.pvt.#renderQueue.push({obj:this, eventName:evtName, data});
