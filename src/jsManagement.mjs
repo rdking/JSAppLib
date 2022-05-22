@@ -8,6 +8,7 @@ export default class Management extends TagBase {
 
     static { this.#sprot.registerTag(this, true); }
     static get tagName() { return this.pvt.#tagName; }
+    static get isManagement() {return true};
 
     #waitingflags = 0;
     #prot = share(this, Management, {
@@ -18,16 +19,21 @@ export default class Management extends TagBase {
         onPreRender() {
             this.pvt.#prot.validateAncestry("js-app", true,
                 `The <js-management> cannot be placed inside a <js-app>`);
-            
+            this.pvt.#prot.validateChildren(c => c.cla$$.isManagement,
+                `Only management classes can be placed in <js-management>`);
         },
         onManagerReady(id) {
             this.pvt.#waitingflags -= id;
-            console.log(`Ready state: ${this.pvt.#waitingflags}`);
+            console.debug(`Ready state: ${this.pvt.#waitingflags}`);
 
-            if (this.autoinit && !this.pvt.#waitingflags) {
-                //Defer this call so the registrations complete first.
-                App.init();
+            if (!this.pvt.#waitingflags) {
+                if (this.autoinit) {
+                    //Defer this call so the registrations complete first.
+                    App.init();
+                }
+                this.fireEvent("ready");
             }
+
         }
     });
 
@@ -42,7 +48,7 @@ export default class Management extends TagBase {
             id <<= 1;
             child = child.nextElementSibling;
         }
-        console.log(`Initial ready state: ${this.pvt.#waitingflags}`);
+        console.debug(`Initial ready state: ${this.pvt.#waitingflags}`);
     }
     
 

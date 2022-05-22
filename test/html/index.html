@@ -3,9 +3,12 @@
     <head>
         <title>JSAppLib Demo</title>
         <script>
-            async function getApp() {
-                //Remove the splash screen.
-                document.querySelector("div.overlay").style.display = "none";
+            function getApp(e) {
+                console.debug("App ready handler has been set!");
+                e.detail.readyHandler = () => {
+                    //Remove the splash screen.
+                    document.querySelector("div.overlay").style.display = "none";
+                };
             }
             function handleButtons(event) {
                 if (!handleButtons.saved) {
@@ -20,12 +23,33 @@
                 else {
                     if (handleButtons.saved) {
                         this.innerHTML = handleButtons.saved;
+                        this.count = 0;
                         delete handleButtons.saved;
                     }
                 }
             }
+
+            function openFile() {
+                let retval;
+                let chooserBtn = document.createElement("input");
+                chooserBtn.type = "file";
+                chooserBtn.id = "chooser";
+                chooserBtn.style = "display:none";
+                app.appendChild(chooserBtn);
+                new Promise(resolve => {
+                    chooserBtn.addEventListener("change", (e) => {
+                        resolve(e.target.value);
+                    });
+                    chooserBtn.click();
+                }).then(file => {
+                    app.removeChild(chooserBtn);
+                    alert(`File chosen: "${file}"`);
+                });
+            }
+
+            window.addEventListener("ready", getApp);
         </script>
-        <script type="module" src="/node_modules/jsapplib/index.mjs" onload="getApp()"></script>
+        <script type="module" src="/node_modules/jsapplib/index.mjs"></script>
     </head>
     <body>
         <style>
@@ -71,7 +95,9 @@
         </style>
         <div class="overlay"><h1>Loading...</h1></div>
         <js-management autoinit>
-            <js-thememanager></js-thememanager>
+            <js-thememanager>
+                <js-theme name="material" path="/themes/material"></js-theme>
+            </js-thememanager>
             <js-actionmanager>
                 <js-action name="file_new"
                     caption="_New"
@@ -85,7 +111,7 @@
                     description="Open an existing file."
                     hotkey="Ctrl+O"
                     icon="/images/icons/file-open.svg"
-                    ontriggered="alert(`Now we know File->Open works!`);"
+                    ontriggered="openFile();"
                 ></js-action>
                 <js-action name="file_save"
                     caption="_Save"
@@ -273,7 +299,7 @@
                     </js-vpanel>
                 </js-tab>
                 <js-tab caption="Tab 2">
-                    <js-listview multi-select>
+                    <js-listview multiselect>
                         <template>
                             <label>${firstName} ${middle} ${lastName}</label>
                         </template>
@@ -308,30 +334,31 @@
                                 </template>
                                 <js-treeleaf>{"label": "Family Tree"}</js-treeleaf>
                                 <js-treebranch collapsible>
-                                    <js-treeleaf slot="caption">{"label": "King Family"}</js-treeleaf>
+                                    <js-treeleaf iscaption>{"label": "King Family"}</js-treeleaf>
                                     <js-treebranch collapsible>
                                         <js-treebranch collapsible>
-                                            <js-treeleaf slot="caption">{"label": "Parents"}</js-treeleaf>
+                                            <js-treeleaf iscaption>{"label": "Parents"}</js-treeleaf>
                                             <js-treeleaf>{"label": "Dad: Savoil Lester King"}</js-treeleaf>
                                             <js-treeleaf>{"label": "Father: Johnny Ray Washington"}</js-treeleaf>
                                             <js-treeleaf>{"label": "Mother: Dorothy Jean Payno"}</js-treeleaf>
                                         </js-treebranch>
-                                        <js-treeleaf slot="caption">{"label": "Ranando Darnell Washington-King"}</js-treeleaf>
+                                        <js-treeleaf iscaption>{"label": "Ranando Darnell Washington-King"}</js-treeleaf>
                                     </js-treebranch>
                                     <js-treebranch collapsible>
-                                        <js-treeleaf slot="caption">{"label": "Melissa Michellle King"}</js-treeleaf>
+                                        <js-treeleaf iscaption>{"label": "Melissa Michellle King"}</js-treeleaf>
                                         <js-treebranch collapsible>
-                                            <js-treeleaf slot="caption">{"label": "Parents"}</js-treeleaf>
+                                            <js-treeleaf iscaption>{"label": "Parents"}</js-treeleaf>
                                             <js-treeleaf>{"label": "Father: Anthony Scott"}</js-treeleaf>
                                             <js-treeleaf>{"label": "Mother: Doris Scott"}</js-treeleaf>
                                         </js-treebranch>
                                     </js-treebranch>
                                     <js-treebranch collapsible>
-                                        <js-treeleaf slot="caption">{"label": "Children"}</js-treeleaf>
+                                        <js-treeleaf iscaption>{"label": "Children"}</js-treeleaf>
                                         <js-treeleaf>{"label": "Ian Dante King"}</js-treeleaf>
                                         <js-treeleaf>{"label": "Anita Michelle King"}</js-treeleaf>
                                     </js-treebranch>
                                 </js-treebranch>
+                                <js-treeleaf>{"label": "End Family Tree"}</js-treeleaf>
                             </js-treeview>
                             <js-vpanel slotClass="buttonPanel">
                                 <button onclick="document.querySelector('#demotree').expandRecursively()">Expand All</button>
@@ -342,7 +369,9 @@
                         </js-hpanel>
                     </js-vpanel>
                 </js-tab>
-                <js-tab caption="Tab 4"><js-label>Page 4</js-label></js-tab>
+                <js-tab caption="Tab 4">
+                    <js-activityindicator show>Loading...</js-activityindicator>
+                </js-tab>
                 <js-tab caption="Tab 5"><js-label>Page 5</js-label></js-tab>
                 <js-tab caption="Tab 6"><js-label>Page 6</js-label></js-tab>
                 <js-tab caption="Tab 7"><js-label>Page 7</js-label></js-tab>

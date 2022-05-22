@@ -1,4 +1,4 @@
-import { share } from "/node_modules/cfprotected/index.mjs";
+import { share, accessor } from "/node_modules/cfprotected/index.mjs";
 import FocusableTag from "/node_modules/jsapplib/src/jsFocusableTag.mjs";
 import Semaphore from "/node_modules/jsapplib/src/util/Semaphore.mjs";
 
@@ -12,9 +12,14 @@ export default class ListView extends FocusableTag {
         return FocusableTag.observedAttributes.concat(["items"]); 
     }
 
-    #section = new WeakMap();
+    static get observedEvents() {
+        return FocusableTag.observedAttributes.concat([
+            "selectedChange"
+        ]);
+    }
+
+    #section = new Semaphore();
     #lastItem = null;
-    #currentItem = null;
     #shiftDown = false;
     #ctrlDown = false;
 
@@ -22,7 +27,46 @@ export default class ListView extends FocusableTag {
         return Object.assign([], array);
     }
 
+    #getOrderedItems(types) {
+        let stack = [];
+        let queue = [];
+        let item = this.firstElementChild;
+
+        while (item) {
+            if (item.matches("template")) {
+                item = item.nextElementSibling;
+                continue;
+            }
+
+            if (item.matches(types)) {
+                queue[(item.slot == "caption") ? "unshift" : "push"](item);
+                item = item.nextElementSibling;
+                while (!item && stack.length) {
+                    let pqueue = stack.pop();
+                    let parent = pqueue.pop();
+                    pqueue = pqueue.concat(queue);
+                    queue = pqueue;
+                    item = parent.nextElementSibling;
+                }
+            }
+            else {
+                queue.push(item);
+                stack.push(queue);
+                queue = [];
+                item = item.firstElementChild;
+            }
+        }
+
+        return queue;
+    }
+
     #prot = share(this, ListView, {
+        lastItem: accessor({
+            get: () => this.pvt.#lastItem
+        }),
+        validItemTypes: accessor({
+            get: () => [ "js-listitem" ]
+        }),
         render() {
             const prot = this.pvt.#prot;
             prot.renderContent(prot.newTag("div", {
@@ -34,11 +78,7 @@ export default class ListView extends FocusableTag {
             }));
         },
         manageSelections(cause, prevItem, items) {
-            if (!this.#section.has(cause)) {
-                this.#section.set(cause, new Semaphore());
-            }
-            
-            this.#section.get(cause).lock(() => {
+            this.#section.lock(() => {
                 let pIndex = items.indexOf(prevItem);
                 let cIndex = items.indexOf(cause);
                 let lIndex = pIndex <= cIndex ? pIndex : cIndex;
@@ -55,56 +95,81 @@ export default class ListView extends FocusableTag {
                             }
                         }
                     }
-                    else if ((!this.pvt.#ctrlDown) && (i !== cIndex)) {
+                    else if (!this.pvt.#ctrlDown && (i !== cIndex)) {
                         items[i].selected = false;
                     }
                 }
             });
         },
         onKeyDown(e) {
-            if (this.multiSelect) {
-                switch (e.code) {
-                    case "ShiftLeft":
-                    case "ShiftRight":
-                        this.pvt.#shiftDown = true;
+            let items = this.items;
+            let index = items.indexOf(this.pvt.#lastItem);
+            let page = Math.ceil(this.clientHeight / (items[0] 
+                ? items[0] : this).clientHeight);
+            const last = items.length - 1;
+
+            if (page >= items.length) {
+                page = last;
+            }
+
+            if (index >= 0) {
+                switch(e.code) {
+                    case "Home":
+                        index = (index == 0) ? -1 : 0;
                         break;
-                    case "ControlLeft":
-                    case "ControlRight":
-                        this.pvt.#ctrlDown = true;
+                    case "End":
+                        index = (index == last) ? -1 : last;
+                        break;
+                    case "PageUp":
+                        if (index == 0) {
+                            index = -1;
+                        }
+                        else {
+                            index -= page;
+                            if (index < 0) {
+                                index = 0;
+                            }
+                        }
+                        break;
+                    case "PageDown":
+                        if (index == last) {
+                            index = -1
+                        }
+                        else {
+                            index += page;
+                            if (index >= items.length) {
+                                index = last;
+                            }
+                        }
+                        break;
+                    case "ArrowUp":
+                        if (index > 0) {
+                            --index;
+                        }
+                        else {
+                            index = -1
+                        }
+                        break;
+                    case "ArrowDown":
+                        if (index < last) {
+                            ++index;
+                        }
+                        else {
+                            index = -1;
+                        }
                         break;
                     default:
-                        break;
+                        index = -1;
+                }
+
+                if (index >= 0) {
+                    items[index].fireEvent("click", {detail: 1}, MouseEvent);
                 }
             }
         },
-        onKeyUp(e) {
-            switch (e.code) {
-                case "ShiftLeft":
-                case "ShiftRight":
-                    this.pvt.#shiftDown = false;
-                    break;
-                case "ControlLeft":
-                case "ControlRight":
-                    this.pvt.#ctrlDown = false;
-                    break;
-                default:
-                    break;
-            }
-        },
-        onKeyPress(e) {
-            switch(e.code) {
-                case "Home":
-                case "End":
-                case "PageUp":
-                case "PageDown":
-                case "ArrowLeft":
-                case "ArrowRight":
-                case "ArrowUp":
-                case "ArrowDown":
-            }
-        },
         onPreRender() {
-            this.pvt.#prot.validateChildren(["template", "js-listitem"],
+            let validItems = [ "template" ].concat(this.pvt.#prot.validItemTypes);
+            this.pvt.#prot.validateChildren(validItems,
                 "Only ListViews can only contain ListItems and a single html template");
 
             let templates = this.querySelectorAll("template");
@@ -113,27 +178,39 @@ export default class ListView extends FocusableTag {
             }
         },
         onSelectedChange(e) {
-            let {cause, state} = e.detail;
+            let { cause } = e.detail;
             let prevItem = this.pvt.#lastItem;
             let items = this.items;
 
-            this.pvt.#prot.manageSelections(this, prevItem, items);
+            this.pvt.#prot.manageSelections(cause, prevItem, items);
             this.pvt.#lastItem = cause;
+        },
+        onSetModifiers(e) {
+            this.pvt.#ctrlDown = this.multiSelect
+                ? !!e.detail.ctrlDown
+                : false;
+            this.pvt.#shiftDown = this.multiSelect
+                ? !!e.detail.shiftDown
+                : false;
         }
     });
 
     connectedCallback() {
-        this.addEventListener("preRender", this.pvt.#prot.onPreRender);
-        this.addEventListener("keydown", this.pvt.#prot.onKeyDown);
-        this.addEventListener("keyup", this.pvt.#prot.onKeyUp);
-        this.addEventListener("selectedChange", this.pvt.#prot.onSelectedChange);
+        const prot = this.pvt.#prot;
+        this.addEventListener("preRender", prot.onPreRender);
+        this.addEventListener("keydown", prot.onKeyDown);
+        this.addEventListener("selectedChange", prot.onSelectedChange);
+        this.addEventListener("setModifiers", prot.onSetModifiers);
         super.connectedCallback();
     }
 
-    get items() { return [...this.querySelectorAll("js-listitem")]; }
+    get items() { 
+        let types = this.pvt.#prot.validItemTypes.join(",");
+        return this.pvt.#getOrderedItems(types); 
+    }
 
     get selectedItems() { return this.items.filter(v => v.selected); }
 
-    get multiSelect() { return this.hasAttribute("multi-select"); }
-    set multiSelect(v) { this.pvt.#prot.setBoolAttribute("multi-select", v); }
+    get multiSelect() { return this.hasAttribute("multiselect"); }
+    set multiSelect(v) { this.pvt.#prot.setBoolAttribute("multiselect", v); }
 }

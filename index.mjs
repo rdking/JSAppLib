@@ -4,9 +4,11 @@ import Management from "/node_modules/jsapplib/src/jsManagement.mjs";
 import ActionManager from "/node_modules/jsapplib/src/jsActionManager.mjs";
 import Action from "/node_modules/jsapplib/src/jsAction.mjs";
 import ThemeManager from "/node_modules/jsapplib/src/jsThemeManager.mjs";
+import Theme from "/node_modules/jsapplib/src/jsTheme.mjs";
 import DataTranslator from "/node_modules/jsapplib/src/jsDataTranslator.mjs";
 import DialogManager from "/node_modules/jsapplib/src/jsDialogManager.mjs";
 import Dialog from "/node_modules/jsapplib/src/jsDialog.mjs";
+import ActivityIndicator from "/node_modules/jsapplib/src/jsActivityIndicator.mjs";
 import Label from "/node_modules/jsapplib/src/jsLabel.mjs";
 import Editor from "/node_modules/jsapplib/src/jsEditor.mjs";
 import Menu from "/node_modules/jsapplib/src/jsMenu.mjs";
@@ -28,10 +30,12 @@ import TreeBranch from "/node_modules/jsapplib/src/jsTreeBranch.mjs";
 import TreeLeaf from "/node_modules/jsapplib/src/jsTreeLeaf.mjs";
 import App from "/node_modules/jsapplib/src/jsAppLib.mjs";
 
-export default { 
+window.JSAppLib = { 
     CFProtected, TagBase, Management, ActionManager, Action, ThemeManager,
-    DataTranslator, DialogManager, Dialog, Label, Editor, Menu, MenuItem, MenuSeparator,
-    PopupMenu, StatusBar, HorizontalPanel, VerticalPanel, TabSet, Tab, ToolBar,
-    ToolButton, ListView, ListItem, CollapsePanel, TreeView, TreeBranch,
-    TreeLeaf, App
+    Theme, DataTranslator, DialogManager, Dialog, ActivityIndicator, Label,
+    Editor, Menu, MenuItem, MenuSeparator, PopupMenu, StatusBar,
+    HorizontalPanel, VerticalPanel, TabSet, Tab, ToolBar, ToolButton, ListView,
+    ListItem, CollapsePanel, TreeView, TreeBranch, TreeLeaf, App
 };
+
+window.dispatchEvent(new CustomEvent("ready", { detail: App }));

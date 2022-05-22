@@ -8,6 +8,7 @@ export default class DialogManager extends TagBase {
 
     static { this.#sprot.registerTag(this, true); }
     static get tagName() { return this.pvt.#tagName; }
+    static get isManagement() {return true};
 
     #clients = {};
     #prot = share(this, DialogManager, {
@@ -21,11 +22,18 @@ export default class DialogManager extends TagBase {
             }
             this.pvt.#prot.validateChildren("js-action",
                 "DialogManager can only contain Dialog elements");
+        },
+        onManagerReady() {
+            //Force the dialogs to re-render after the themes are ready
+            for (let child of this.children) {
+                child.fireEvent("render");
+            }
         }
     });
 
     connectedCallback() {
+        this.parentElement.addEventListener("ready", this.pvt.#prot.onManagerReady);
         super.connectedCallback();
-        this.fireEvent("ready", void 0, true);
+        this.fireEvent("ready");
     }
 };

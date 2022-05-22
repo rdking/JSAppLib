@@ -1,0 +1,18 @@
+slot {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--brush-shadow);
+}
+.background {
+    background-color: var(--brush-normal);
+    color: var(--pen-normal);
+    position: absolute;
+    box-shadow: 4px 4px 4px 0px #777;
+    z-index: 1000;
+}
+.hidden {
+    display: none;
+}
+.showing {
+    display: block;
+}

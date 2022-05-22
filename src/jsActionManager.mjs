@@ -8,6 +8,7 @@ export default class ActionManager extends TagBase {
 
     static { this.#sprot.registerTag(this, true); }
     static get tagName() { return this.pvt.#tagName; }
+    static get isManagement() {return true};
 
     #clients = {};
     #prot = share(this, ActionManager, {
@@ -32,7 +33,7 @@ export default class ActionManager extends TagBase {
 
     connectedCallback() {
         super.connectedCallback();
-        this.fireEvent("ready", void 0, true);
+        this.fireEvent("ready");
     }
 
     /**

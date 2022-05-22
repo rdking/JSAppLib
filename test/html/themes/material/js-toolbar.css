@@ -1,0 +1,30 @@
+:host {
+    display: flex;
+    flex-direction: inherit;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    border: 1px outset var(--brush-shadow);
+    background-color: var(--brush-normal);
+    color: var(--pen-normal);
+    padding: 0.25em 0.2em;
+    --tx-origin: 0 0;
+    --tx-rotate: rotate(0deg);
+}
+
+:host([slot="toolbarLeft"]), 
+:host([slot="toolbarRight"]) {
+    --tx-origin: 50% 50%;
+    --tx-rotate: rotate(90deg);
+}
+
+::slotted(*) {
+    transform-origin: var(--tx-origin);
+    transform: var(--tx-rotate);
+
+}
+
+.vr {
+    display: inline-block;
+    border: 1px inset var(--brush-shadow);
+    margin: 0.2em 0.25em;
+}

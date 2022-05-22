@@ -68,11 +68,15 @@ export default class ListItem extends TagBase {
             this.pvt.#prot.validateParent("js-listview", "ListItems can only be placed in a ListView");
         },
         onClick(e) {
-            e.cancelBubble = !e.detail.allowBubble;
+            e.cancelBubble = true;
+            this.parentElement.fireEvent("setModifiers", {
+                ctrlDown: e.ctrlKey,
+                shiftDown: e.shiftKey
+            });
             this.selected = !this.selected;
         },
         onSelectedChange(e) {
-            let state = e.detail.newVal === "";
+            let state = e.detail.newVal !== null;
             let sDiv = this.shadowRoot.querySelector("div.listitem");
             this.parentElement.fireEvent("selectedChange", { cause: this, state });
 

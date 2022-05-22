@@ -10,13 +10,11 @@
 
 slot {
     display: flex;
-    flex-direction: column;
     flex: 1 0 auto;
 }
 
 #page {
     display: flex;
-    flex-direction: column;
     flex: 1 0 auto;
 }
 

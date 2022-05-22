@@ -12,14 +12,12 @@ const TagBase = abstract(class TagBase extends HTMLElement {
          * constructing, and rendering the tags.
          * @param {Function} tag Constructor of the class defining the tag to
          * be registered.
-         * @param {boolean} now If true, registration is immediate instead of
-         * deferred.
          */
-        registerTag: (tag, now) => {
+        registerTag: (tag) => {
             saveSelf(tag, "pvt");  //Convenience for the derived classes
             this.pvt.#registerEvents(tag);
             console.debug(`registerTag: defining element '${tag.tagName}' using class '${tag.name}'`);
-            if (!!now) {
+            if (!!tag.isManagement) {
                 customElements.define(tag.tagName, tag);
             }
             else {
@@ -218,13 +216,18 @@ const TagBase = abstract(class TagBase extends HTMLElement {
             }
         },
         validateChildren(type, message) {
-            if (typeof(type) == "string") {
+            if (["function", "string"].includes(typeof(type))) {
                 type = [type];
             }
             for (let child of this.children) {
                 let found = false;
                 for (let t of type) {
-                    found |= TagBase.pvt.#sprot.isTagType(child, t);
+                    if (typeof(t) == "string") {
+                        found |= TagBase.pvt.#sprot.isTagType(child, t);
+                    }
+                    else {
+                        found |= t(child);
+                    }
                 }
 
                 if (!found) {
@@ -370,14 +373,13 @@ const TagBase = abstract(class TagBase extends HTMLElement {
      * Dispatches the specified event with the data attached to the custom event
      * on its detail key.
      * @param {string} evtName Name of the event to be dispatched.
-     * @param {*?} data Optional information about the event.
-     * @param {boolean} now If true, overrides the initial event synchronization
-     * delays required to solve order of operation issues and forces the event
-     * to be dispatched immediately.
+     * @param {*?} data Optional information about the event. Defaults to null.
+     * @param {function?} eventType Optional constructor of the event type to use.
+     * Defaults to CustomEvent. 2nd parameter (data) becomes required.
      */
-    fireEvent(evtName, data, now) {
-        if (now || TagBase.pvt.#ready) {
-            let event = new CustomEvent(evtName, { detail: data });
+    fireEvent(evtName, data = null, eventType = CustomEvent) {
+        if (this.cla$$.isManagement || TagBase.pvt.#ready) {
+            let event = new eventType(evtName, { detail: data });
             this.dispatchEvent(event);
 
             //Check for an "observed" event...

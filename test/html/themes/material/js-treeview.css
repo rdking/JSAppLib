@@ -1,14 +1,6 @@
 :host {
     background-color: var(--brush-input);
     color: var(--pen-input);
-    border: 2px solid transparent;
-    overflow-y: auto;
-    overflow-x: auto;
-}
-
-:host(:focus) {
-    border: 2px solid black;
-    border-radius: 4px;
 }
 
 slot {

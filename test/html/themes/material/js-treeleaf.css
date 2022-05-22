@@ -1,0 +1,35 @@
+:host {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    background-color: transparent;
+    color: var(--pen-input);
+}
+
+.listitem {
+    display: flex;
+    flex-wrap: nowrap;
+    align-content: center;
+    padding: 0.33333em 0.33333em 0.33333em 0;
+}
+
+.listitem:hover {
+    background-color: var(--brush-shadow);
+}
+
+.listitem.selected {
+    background-color: var(--brush-selected);
+}
+
+.leaf {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+}
+
+.marker {
+    width: 1.5em;
+    text-align: center;
+    font-weight: bold;
+    font-family: monospace;
+}

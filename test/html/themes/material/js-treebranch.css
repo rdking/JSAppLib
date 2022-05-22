@@ -5,6 +5,7 @@ slot[name="caption"] {
     align-items: center;
     background-color: transparent;
     color: var(--pen-input);
+    pointer-events-x: none;
 }
 
 .listitem {
@@ -12,6 +13,10 @@ slot[name="caption"] {
     flex-flow: column nowrap;
     align-items: flex-start;
     padding-right: 0.33333em;
+}
+
+.listitem:hover {
+    background-color: var(--brush-shadow);
 }
 
 .listitem.selected > slot[name="caption"] {

@@ -41,6 +41,10 @@ export default class TreeBranch extends ListItem {
         },
         onHeaderClicked(e) {
             e.detail.canToggleCollapse = false;
+            e.cancelbubble = true;
+        },
+        onClick(e) {
+            e.cancelBubble = true;
         },
         onPreRender() {
             this.pvt.#prot.validateChildren(["js-treebranch", "js-treeleaf"],
@@ -49,20 +53,9 @@ export default class TreeBranch extends ListItem {
             "TreeBranch elements can only be placed in a TreeView or TreeBanch");
         },
         onSelectedChange(e) {
-            let prevItem = this.pvt.#lastItem;
-            let items = [...this.children];
-
             this.pvt.#section.lock(() => {
-                for (let item of items) {
-                    if (item.slot != "caption") {
-                        item.selected = (this.selected ? this : item).selected;
-                    }
-                }
-                this.pvt.#prot.$uper.onSelectedChange(e);
+                this.TreeView.fireEvent("selectedChange", e.detail);
             });
-            this.pvt.#lastItem = this;
-
-            this.TreeView.fireEvent("selectedChange", e);
         },
         onCollapsedChange(e) {
             let panel = this.shadowRoot.querySelector("js-collapsepanel");

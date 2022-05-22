@@ -15,7 +15,14 @@ export default class App extends TagBase {
     static get observedAttributes() {
         return TagBase.observedAttributes.concat(["data_bind_base", "main", "debug", "style", "classList"]);
     }
-    static init() { this.pvt.#sprot.initTags(); }
+    static init() {
+        this.pvt.#sprot.initTags(); 
+        //this.fireEvent("ready");
+        if (typeof(this.readyHandler) == "function") {
+            setTimeout(this.readyHandler, 500);
+        }
+    }
+    static readyHandler = null;
 
     #started = false;
     #debug = false;

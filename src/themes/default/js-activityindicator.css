@@ -1,0 +1,80 @@
+:host {
+    display: flex;
+    flex: 1 0 auto;
+    align-self: stretch;  
+    justify-content: center;
+    align-items: center;
+    justify-self: stretch;
+    align-self: stretch;
+    background-color: var(--brush-overlay);
+    backdrop-filter: blur(2px);
+}
+
+.overlay {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    justify-self: stretch;
+    z-index: 10;
+}
+
+.container {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner1 {
+    width: 64px;
+    height: 64px;
+    animation-name: rotate;
+    animation-duration: 2s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
+.spinner2 {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 48px;
+    height: 48px;
+    animation-name: rotate;
+    animation-duration: 1.2s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
+.spinner3 {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 32px;
+    height: 32px;
+    animation-name: rotate;
+    animation-duration: 0.8s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+
+.message {
+    font-size: large;
+    font-weight: bold;
+}
+
+@keyframes rotate {
+    0% {
+        transform: rotate(0);
+    }
+    25% {
+        transform: rotate(90deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

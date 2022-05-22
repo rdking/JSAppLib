@@ -16,8 +16,26 @@ export default class Dialog extends TagBase {
         return TagBase.observedEvents
             .concat(["buttonClick"]);
     }
+    static get isManagement() {return true};
 
     #hadParent = false;
+
+    #renderButtons() {
+        let retval = [];
+        for (let name of this.buttons) {
+            let value = name.replace(/\s/g, "_").toLowerCase();
+            let button = this.pvt.#prot.newTag("button", {
+                value: value
+            }, {
+                innerHTML: name
+            });
+            button.addEventListener("click", this.pvt.#prot.onButtonClick);
+            retval.push(button);
+        }
+
+        return retval;
+    }
+
     #prot = share(this, Dialog, {
         render() {
             const prot = this.pvt.#prot;
@@ -50,6 +68,8 @@ export default class Dialog extends TagBase {
                                 }),
                                 prot.newTag("div", {
                                     class: "buttonbar"
+                                }, {
+                                    children: this.pvt.#renderButtons()
                                 })
                             ]
                         })
@@ -76,18 +96,9 @@ export default class Dialog extends TagBase {
         },
         onButtonsChange(e) {
             const buttonBar = this.shadowRoot.querySelector("div.buttonbar");
+            let buttons = this.pvt.#renderButtons();
             buttonBar.innerHTML = "";
-
-            for (let name of this.buttons) {
-                let value = name.replace(/\s/g, "_").toLowerCase();
-                let button = this.pvt.#prot.newTag("button", {
-                    value: value
-                }, {
-                    innerHTML: name
-                });
-                buttonBar.appendChild(button);
-                button.addEventListener("click", this.pvt.#prot.onButtonClick);
-            }
+            buttons.forEach(b => buttonBar.appendChild(b));
         },
         onTitleChange(e) {
             this.shadowRoot.querySelector("#title").caption = this.title;

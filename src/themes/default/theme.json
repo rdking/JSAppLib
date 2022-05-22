@@ -1,0 +1,34 @@
+{
+    "components": {
+        "global": "default.css",
+        "color": "colors.css",
+        "tags": [
+            "js-activityindicator",
+            "js-actionmanager",
+            "js-action",
+            "js-app",
+            "js-collapsepanel",
+            "js-dialog",
+            "js-dialogmanager",
+            "js-editor",
+            "js-label",
+            "js-listitem",
+            "js-listview",
+            "js-management",
+            "js-menu",
+            "js-menuitem",
+            "js-menuseparator",
+            "js-hpanel",
+            "js-vpanel",
+            "js-popupmenu",
+            "js-statusbar",
+            "js-tab",
+            "js-tabset",
+            "js-toolbar",
+            "js-toolbutton",
+            "js-treebranch",
+            "js-treeleaf",
+            "js-treeview"
+        ]
+    }
+}

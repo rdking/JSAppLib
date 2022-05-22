@@ -1,0 +1,16 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    flex: 1 0 auto;
+    background-color: transparent;
+    color: var(--pen-normal);
+    border-bottom: 1px solid var(--brush-shadow);
+}
+
+.menu {
+    display: flex;
+    flex: 1 0 auto;
+    align-items: center;
+    padding-top: 0.125em;
+    padding-bottom: 0.125em;
+}

@@ -5,11 +5,12 @@ export default class DataTranslator extends TagBase {
     static #tagName = "js-datatranslator";
     static #sprot = share(this, {});
 
-    static { this.#sprot.registerTag(this, true); }
+    static { this.#sprot.registerTag(this); }
     static get tagName() { return this.pvt.#tagName; }
     static get observedAttributes() {
         return TagBase.observedAttributes; 
     }
+    static get isManagement() {return true};
 
     #schema = null;
     #translators = {};
@@ -36,7 +37,7 @@ export default class DataTranslator extends TagBase {
 
     connectedCallback() {
         super.connectedCallback();
-        this.fireEvent("ready", void 0, true);
+        this.fireEvent("ready");
     }
 
     get knownFormats() { return Object.getOwnPropertyNames(this.pvt.#translators); }

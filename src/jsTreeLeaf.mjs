@@ -8,13 +8,15 @@ export default class TreeLeaf extends ListItem {
     static { this.#sprot.registerTag(this); }
     static get tagName() { return this.pvt.#tagName; }
     static get observedAttributes() {
-        return ListItem.observedAttributes; 
+        return ListItem.observedAttributes.concat([
+            "iscaption"
+        ]); 
     }
 
     #value = "";
 
     #getMarker() {
-        return (this.slot == "caption") && this.parentElement.collapsible
+        return this.isCaption && this.parentElement.collapsible
         ? this.parentElement.collapsed
             ? "&#x229e;"
             : "&#x229f;"
@@ -55,20 +57,21 @@ export default class TreeLeaf extends ListItem {
             }
             this.pvt.#prot.onUpdateMarker();
         },
+        onClick(e) {
+            e.cancelBubble = true;
+            this.TreeView.fireEvent("setModifiers", {
+                ctrlDown: e.ctrlKey,
+                shiftDown: e.shiftKey
+            });
+            this.selected = !this.selected;
+        },
+        onIsCaptionChange(e) {
+            this.setAttribute("slot", (this.isCaption) ? "caption" : "");
+        },
         onUpdateMarker(e) {
             if (this.parentElement.nodeName.toLowerCase() == "js-treebranch") {
                 this.shadowRoot.querySelector("span.marker").innerHTML = this.pvt.#getMarker()
             }
-        },
-        onClick(e) {
-            if (typeof(e.detail) == "object") {
-                e.detail.allowBubble = true;
-            }
-            else {
-                e.cancelBubble = false;
-            }
-
-            this.pvt.#prot.$uper.onClick(e);
         }
     });
 
@@ -81,7 +84,12 @@ export default class TreeLeaf extends ListItem {
     }
 
     connectedCallback() {
-        this.addEventListener("updateMarker", this.pvt.#prot.onUpdateMarker);
+        const prot = this.pvt.#prot;
+        this.addEventListener("iscaptionChange", prot.onIsCaptionChange);
+        this.addEventListener("updateMarker", prot.onUpdateMarker);
         super.connectedCallback();
     }
+
+    get isCaption() { return this.hasAttribute("iscaption"); }
+    set isCaption(v) { this.pvt.#prot.setBoolAttribute("iscaption", !!v); }
 }

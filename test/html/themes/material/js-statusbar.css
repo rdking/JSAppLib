@@ -1,0 +1,24 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    min-height: 16px;
+    flex: 1 0 auto;
+    margin: 0px 0.5em;
+}
+.status {
+    display: flex;
+    justify-content: flex-start;
+    flex: 1 0 auto;
+}
+slot {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-content: space-between;
+}
+
+::slotted(*) {
+    margin-left: 0.5em;
+}
