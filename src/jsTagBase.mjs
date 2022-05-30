@@ -469,6 +469,25 @@ const TagBase = abstract(class TagBase extends HTMLElement {
         }
         return retval;
     }
+    
+    get browserType() {
+        let userAgent = navigator.userAgent;
+        let retval = "unknown";
+
+        if(userAgent.match(/chrome|chromium|crios/i)) {
+            retval = "chrome";
+        } else if(userAgent.match(/firefox|fxios/i)) {
+            retval = "firefox";
+        } else if(userAgent.match(/safari/i)) {
+            retval = "safari";
+        } else if(userAgent.match(/opr\//i)) {
+            retval = "opera";
+        } else if(userAgent.match(/edg/i)) {
+            retval = "edge";
+        }
+
+        return retval;
+    }
 
     get theme() { return this.getAttribute("theme"); }
     set theme(val) { this.setAttribute("theme", val); }

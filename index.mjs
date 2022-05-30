@@ -18,6 +18,11 @@ import PopupMenu from "/node_modules/jsapplib/src/jsPopupMenu.mjs";
 import StatusBar from "/node_modules/jsapplib/src/jsStatusBar.mjs";
 import HorizontalPanel from "/node_modules/jsapplib/src/jsHorizontalPanel.mjs";
 import VerticalPanel from "/node_modules/jsapplib/src/jsVerticalPanel.mjs";
+import SplitPanel from "/node_modules/jsapplib/src/jsSplitPanel.mjs";
+import HorizontalSplitPanel from "/node_modules/jsapplib/src/jsHorizontalSplitPanel.mjs";
+import VerticalSplitPanel from "/node_modules/jsapplib/src/jsVerticalSplitPanel.mjs";
+import MDIPanel from "/node_modules/jsapplib/src/jsMDIPanel.mjs";
+import MDIWindow from "/node_modules/jsapplib/src/jsMDIWindow.mjs";
 import TabSet from "/node_modules/jsapplib/src/jsTabSet.mjs";
 import Tab from "/node_modules/jsapplib/src/jsTab.mjs";
 import ToolBar from "/node_modules/jsapplib/src/jsToolBar.mjs";
@@ -34,8 +39,9 @@ window.JSAppLib = {
     CFProtected, TagBase, Management, ActionManager, Action, ThemeManager,
     Theme, DataTranslator, DialogManager, Dialog, ActivityIndicator, Label,
     Editor, Menu, MenuItem, MenuSeparator, PopupMenu, StatusBar,
-    HorizontalPanel, VerticalPanel, TabSet, Tab, ToolBar, ToolButton, ListView,
-    ListItem, CollapsePanel, TreeView, TreeBranch, TreeLeaf, App
+    HorizontalPanel, VerticalPanel, SplitPanel, HorizontalSplitPanel,
+    VerticalSplitPanel, MDIPanel, MDIWindow, TabSet, Tab, ToolBar, ToolButton,
+    ListView, ListItem, CollapsePanel, TreeView, TreeBranch, TreeLeaf, App
 };
 
 window.dispatchEvent(new CustomEvent("ready", { detail: App }));

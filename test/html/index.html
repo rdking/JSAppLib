@@ -299,33 +299,66 @@
                     </js-vpanel>
                 </js-tab>
                 <js-tab caption="Tab 2">
-                    <js-listview multiselect>
-                        <template>
-                            <label>${firstName} ${middle} ${lastName}</label>
-                        </template>
-                        <js-listitem>
-                            {"firstName": "Ranando",
-                            "middle": "D.",
-                            "lastName": "Washington-King"}
-                        </js-listitem>
-                        <js-listitem>
-                            {"firstName": "Jasmine",
-                            "middle": "N.",
-                            "lastName": "King"}
-                        </js-listitem>
-                        <js-listitem>
-                            {"firstName": "Ian",
-                            "middle": "D.",
-                            "lastName": "King"}
-                        </js-listitem>
-                        <js-listitem>
-                            {"firstName": "Anita",
-                            "middle": "M.",
-                            "lastName": "King"}
-                        </js-listitem>
-                    </js-listview>
+                    <js-hpanel>
+                        <js-hsplitpanel style="flex: auto">
+                            <js-hpanel slot="first">
+                                <js-listview multiselect>
+                                    <template>
+                                        <label>${firstName} ${middle} ${lastName}</label>
+                                    </template>
+                                    <js-listitem>
+                                        {"firstName": "Ranando",
+                                        "middle": "D.",
+                                        "lastName": "Washington-King"}
+                                    </js-listitem>
+                                    <js-listitem>
+                                        {"firstName": "Jasmine",
+                                        "middle": "N.",
+                                        "lastName": "King"}
+                                    </js-listitem>
+                                    <js-listitem>
+                                        {"firstName": "Ian",
+                                        "middle": "D.",
+                                        "lastName": "King"}
+                                    </js-listitem>
+                                    <js-listitem>
+                                        {"firstName": "Anita",
+                                        "middle": "M.",
+                                        "lastName": "King"}
+                                    </js-listitem>
+                                </js-listview>
+                                <js-listview multiselect>
+                                    <template>
+                                        <label>${firstName} ${middle} ${lastName}</label>
+                                    </template>
+                                    <js-listitem>
+                                        {"firstName": "Ranando",
+                                        "middle": "D.",
+                                        "lastName": "Washington-King"}
+                                    </js-listitem>
+                                    <js-listitem>
+                                        {"firstName": "Jasmine",
+                                        "middle": "N.",
+                                        "lastName": "King"}
+                                    </js-listitem>
+                                    <js-listitem>
+                                        {"firstName": "Ian",
+                                        "middle": "D.",
+                                        "lastName": "King"}
+                                    </js-listitem>
+                                    <js-listitem>
+                                        {"firstName": "Anita",
+                                        "middle": "M.",
+                                        "lastName": "King"}
+                                    </js-listitem>
+                                </js-listview>
+                            </js-hpanel>
+                            <js-hpanel slot="second">
+                            </js-hpanel>
+                        </js-hsplitpanel>
+                    </js-hpanel>
                 </js-tab>
-                <js-tab caption="Tab 3" selected>
+                <js-tab caption="Tab 3">
                     <js-vpanel>
                         <js-hpanel class="halfheight">
                             <js-treeview id="demotree" class="familytree">
@@ -372,7 +405,12 @@
                 <js-tab caption="Tab 4">
                     <js-activityindicator show>Loading...</js-activityindicator>
                 </js-tab>
-                <js-tab caption="Tab 5"><js-label>Page 5</js-label></js-tab>
+                <js-tab caption="Tab 5" selected>
+                    <js-mdipanel>
+                        <js-mdiwindow title="Test 1"></js-mdiwindow>
+                        <js-mdiwindow title="Test 2"></js-mdiwindow>
+                    </js-mdipanel>
+                </js-tab>
                 <js-tab caption="Tab 6"><js-label>Page 6</js-label></js-tab>
                 <js-tab caption="Tab 7"><js-label>Page 7</js-label></js-tab>
                 <js-tab caption="Tab 8"><js-label>Page 8</js-label></js-tab>

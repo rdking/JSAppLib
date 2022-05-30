@@ -1,0 +1,26 @@
+:host {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    justify-self: stretch;
+    align-self: stretch;
+}
+
+slot {
+    display: flex;
+    flex: 10000000 0 auto;
+    position: relative;
+    background-color: var(--brush-shadow);
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+#minArea {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: row;
+    justify-self: flex-end;
+    height: fit-content;
+    overflow-x: clip;
+    overflow-y: clip;
+}

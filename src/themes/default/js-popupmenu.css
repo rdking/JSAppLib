@@ -7,7 +7,7 @@ slot {
     background-color: var(--brush-normal);
     color: var(--pen-normal);
     position: absolute;
-    box-shadow: 4px 4px 4px 0px #777;
+    box-shadow: 4px 4px 4px 0px var(--brush-shadow);
     z-index: 1000;
 }
 .hidden {

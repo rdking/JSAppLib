@@ -1,0 +1,20 @@
+slot {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-content: stretch;
+    overflow-x: auto;
+    overflow-y: auto;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+slot.dragging {
+    cursor: col-resize !important;
+}
+
+.splitter, .splitter.dragging {
+    border: 2px inset var(--brush-shadow);
+    margin: 7px;
+    cursor: col-resize !important;
+}

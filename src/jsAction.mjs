@@ -14,7 +14,6 @@ export default class Action extends TagBase {
     static get observedAttributes() {
         return TagBase.observedAttributes.concat(this.keyAttributes);
     }
-    //static get isManagement() {return true};
 
     #prot = share(this, Action, {
         render() {

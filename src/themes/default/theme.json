@@ -3,24 +3,27 @@
         "global": "default.css",
         "color": "colors.css",
         "tags": [
-            "js-activityindicator",
-            "js-actionmanager",
             "js-action",
+            "js-actionmanager",
+            "js-activityindicator",
             "js-app",
             "js-collapsepanel",
             "js-dialog",
             "js-dialogmanager",
             "js-editor",
+            "js-hpanel",
+            "js-hsplitpanel",
             "js-label",
             "js-listitem",
             "js-listview",
             "js-management",
+            "js-mdipanel",
+            "js-mdiwindow",
             "js-menu",
             "js-menuitem",
             "js-menuseparator",
-            "js-hpanel",
-            "js-vpanel",
             "js-popupmenu",
+            "js-resizepanel",
             "js-statusbar",
             "js-tab",
             "js-tabset",
@@ -28,7 +31,9 @@
             "js-toolbutton",
             "js-treebranch",
             "js-treeleaf",
-            "js-treeview"
+            "js-treeview",
+            "js-vpanel",
+            "js-vsplitpanel"
         ]
     }
 }

@@ -99,7 +99,8 @@ export default class TabSet extends TagBase {
             ]);
         }, 
         onPostRender() {
-            this.pvt.#prot.validateChildren("js-tab", "Only Tabs can be added to TabSets.");
+            const prot = this.pvt.#prot;
+            prot.validateChildren("js-tab", "Only Tabs can be added to TabSets.");
             let tabDiv = this.shadowRoot.querySelector("#tabs");
             tabDiv.innerHTML = "";
 
@@ -107,16 +108,16 @@ export default class TabSet extends TagBase {
             let tabScroll = this.shadowRoot.querySelector("#tabscroll");
             let next = this.shadowRoot.querySelector("#next");
             let list = this.shadowRoot.querySelector("#list");
-            prev.addEventListener("click", this.pvt.#prot.onPrevClicked.bind(this));
-            tabScroll.addEventListener("wheel", this.pvt.#prot.onMouseWheelScrolled.bind(this));
-            next.addEventListener("click", this.pvt.#prot.onNextClicked.bind(this));
-            list.addEventListener("click", this.pvt.#prot.onListClicked.bind(this));
+            prev.addEventListener("click", prot.onPrevClicked.bind(this));
+            tabScroll.addEventListener("wheel", prot.onMouseWheelScrolled.bind(this));
+            next.addEventListener("click", prot.onNextClicked.bind(this));
+            list.addEventListener("click", prot.onListClicked.bind(this));
 
             for (let node of this.children) {
-                let div = this.pvt.#prot.newTag("div", {class: "tab"}, {page: node});
-                let image = this.pvt.#prot.newTag("img");
-                let label = this.pvt.#prot.newTag("span", {}, {innerText: node.getAttribute("caption")});
-                let button = this.pvt.#prot.newTag("button", {class: "roundButton"}, {innerText: "×"});
+                let div = prot.newTag("div", {class: "tab"}, {page: node});
+                let image = prot.newTag("img");
+                let label = prot.newTag("span", {}, {innerText: node.getAttribute("caption")});
+                let button = prot.newTag("button", {class: "roundButton"}, {innerText: "×"});
                 
                 node.tab = div;
                 tabDiv.appendChild(div);
@@ -124,8 +125,8 @@ export default class TabSet extends TagBase {
                 div.appendChild(label);
                 div.appendChild(button);
                 
-                div.addEventListener("click", this.pvt.#prot.onTabClicked.bind(this));
-                button.addEventListener("click", this.pvt.#prot.onButtonClicked.bind(this));
+                div.addEventListener("click", prot.onTabClicked.bind(this));
+                button.addEventListener("click", prot.onButtonClicked.bind(this));
 
                 if (node.hasAttribute("selected")) {
                     this.pvt.#currentTab = node;
@@ -143,6 +144,8 @@ export default class TabSet extends TagBase {
                     button.classList.add("hidden");
                 }
             }
+
+            prot.onResize();
         },
         onTabChange(e) {
             if (this.pvt.#currentTab && (this.pvt.#currentTab !== e.detail.newVal)) {
@@ -152,7 +155,7 @@ export default class TabSet extends TagBase {
             this.pvt.#currentTab = e.detail.newVal;
             this.pvt.#currentTab.tab.classList.add("selected");
         },
-        onResized() {
+        onResize() {
             let shadow = this.shadowRoot;
             if (shadow.innerHTML.length !== 0) {
                 let tabDiv = shadow.querySelector("#tabs");
@@ -160,18 +163,20 @@ export default class TabSet extends TagBase {
                 let prev = shadow.querySelector("#prev");
                 let next = shadow.querySelector("#next");
                 let list = shadow.querySelector("#list");
+                let tabDelta = tabScroll.clientWidth - tabDiv.clientWidth;
 
-                let width = tabScroll.clientWidth - prev.outerWidth -
-                    next.outerWidth - list.outerWidth;
-                
-                if (tabDiv.outerWidth <= width) {
+                if (tabDelta >= 0) {
                     prev.setAttribute("disabled", "");
                     next.setAttribute("disabled", "");
                     list.setAttribute("disabled", "");
                 }
                 else {
-                    prev.removeAttribute("disabled");
-                    next.removeAttribute("disabled");
+                    if (tabDiv.offsetLeft > tabDelta) {
+                        next.removeAttribute("disabled");
+                    }
+                    if (tabDiv.offsetLeft < 0) {
+                        prev.removeAttribute("disabled");
+                    }
                     list.removeAttribute("disabled");
                 }
             }
@@ -323,7 +328,7 @@ export default class TabSet extends TagBase {
         this.addEventListener("closeableChange", this.pvt.#prot.onCloseableChange);
         this.addEventListener("postRender", this.pvt.#prot.onPostRender);
         this.addEventListener("tabChange", this.pvt.#prot.onTabChange);
-        this.addEventListener("resized", this.pvt.#prot.onResized);
+        window.addEventListener("resize", this.pvt.#prot.onResize);
         super.connectedCallback();
     }
 
