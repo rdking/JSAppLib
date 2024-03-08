@@ -2,8 +2,8 @@
     display: flex;
     flex-direction: row;
     flex: 1 0 auto;
-    background-color: transparent;
-    color: var(--pen-normal);
+    background-color: var(--brush-container-normal);
+    color: var(--pen-container-normal);
     border-bottom: 1px solid var(--brush-shadow);
 }
 
@@ -13,4 +13,5 @@
     align-items: center;
     padding-top: 0.125em;
     padding-bottom: 0.125em;
+    min-height: 24px;
 }

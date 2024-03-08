@@ -7,7 +7,7 @@ export default class ListView extends FocusableTag {
     static #sprot = share(this, {});
 
     static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
+    static get tagName() { return this.$.#tagName; }
     static get observedAttributes() {
         return FocusableTag.observedAttributes.concat(["items"]); 
     }
@@ -62,13 +62,13 @@ export default class ListView extends FocusableTag {
 
     #prot = share(this, ListView, {
         lastItem: accessor({
-            get: () => this.pvt.#lastItem
+            get: () => this.$.#lastItem
         }),
         validItemTypes: accessor({
             get: () => [ "js-listitem" ]
         }),
         render() {
-            const prot = this.pvt.#prot;
+            const prot = this.$.#prot;
             prot.renderContent(prot.newTag("div", {
                 class: "listview"
             }, {
@@ -85,17 +85,17 @@ export default class ListView extends FocusableTag {
                 let hIndex = pIndex >= cIndex ? pIndex : cIndex;
 
                 for (let i=0; i<items.length; ++i) {
-                    if (this.pvt.#shiftDown) {
+                    if (this.$.#shiftDown) {
                         if ((i > lIndex) && (i < hIndex)) {
                             items[i].selected = !items[i].selected;
                         }
                         else if (![pIndex, cIndex].includes(i)) {
-                            if (!this.pvt.#ctrlDown) {
+                            if (!this.$.#ctrlDown) {
                                 items[i].selected = false;
                             }
                         }
                     }
-                    else if (!this.pvt.#ctrlDown && (i !== cIndex)) {
+                    else if (!this.$.#ctrlDown && (i !== cIndex)) {
                         items[i].selected = false;
                     }
                 }
@@ -103,7 +103,7 @@ export default class ListView extends FocusableTag {
         },
         onKeyDown(e) {
             let items = this.items;
-            let index = items.indexOf(this.pvt.#lastItem);
+            let index = items.indexOf(this.$.#lastItem);
             let page = Math.ceil(this.clientHeight / (items[0] 
                 ? items[0] : this).clientHeight);
             const last = items.length - 1;
@@ -168,8 +168,8 @@ export default class ListView extends FocusableTag {
             }
         },
         onPreRender() {
-            let validItems = [ "template" ].concat(this.pvt.#prot.validItemTypes);
-            this.pvt.#prot.validateChildren(validItems,
+            let validItems = [ "template" ].concat(this.$.#prot.validItemTypes);
+            this.$.#prot.validateChildren(validItems,
                 "Only ListViews can only contain ListItems and a single html template");
 
             let templates = this.querySelectorAll("template");
@@ -179,24 +179,24 @@ export default class ListView extends FocusableTag {
         },
         onSelectedChange(e) {
             let { cause } = e.detail;
-            let prevItem = this.pvt.#lastItem;
+            let prevItem = this.$.#lastItem;
             let items = this.items;
 
-            this.pvt.#prot.manageSelections(cause, prevItem, items);
-            this.pvt.#lastItem = cause;
+            this.$.#prot.manageSelections(cause, prevItem, items);
+            this.$.#lastItem = cause;
         },
         onSetModifiers(e) {
-            this.pvt.#ctrlDown = this.multiSelect
+            this.$.#ctrlDown = this.multiSelect
                 ? !!e.detail.ctrlDown
                 : false;
-            this.pvt.#shiftDown = this.multiSelect
+            this.$.#shiftDown = this.multiSelect
                 ? !!e.detail.shiftDown
                 : false;
         }
     });
 
     connectedCallback() {
-        const prot = this.pvt.#prot;
+        const prot = this.$.#prot;
         this.addEventListener("preRender", prot.onPreRender);
         this.addEventListener("keydown", prot.onKeyDown);
         this.addEventListener("selectedChange", prot.onSelectedChange);
@@ -205,12 +205,12 @@ export default class ListView extends FocusableTag {
     }
 
     get items() { 
-        let types = this.pvt.#prot.validItemTypes.join(",");
-        return this.pvt.#getOrderedItems(types); 
+        let types = this.$.#prot.validItemTypes.join(",");
+        return this.$.#getOrderedItems(types); 
     }
 
     get selectedItems() { return this.items.filter(v => v.selected); }
 
     get multiSelect() { return this.hasAttribute("multiselect"); }
-    set multiSelect(v) { this.pvt.#prot.setBoolAttribute("multiselect", v); }
+    set multiSelect(v) { this.$.#prot.setBoolAttribute("multiselect", v); }
 }

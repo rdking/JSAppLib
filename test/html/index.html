@@ -93,10 +93,10 @@
                 width: 25em;
             }
         </style>
-        <div class="overlay"><h1>Loading...</h1></div>
+        <!-- div class="overlay"><h1>Loading...</h1></div -->
         <js-management autoinit>
-            <js-thememanager>
-                <js-theme name="material" path="/themes/material"></js-theme>
+            <js-thememanager liblocation="node_modules/jsapplib">
+                <js-theme themename="material" themepath="./themes/material"></js-theme>
             </js-thememanager>
             <js-actionmanager>
                 <js-action name="file_new"
@@ -104,6 +104,7 @@
                     description="Create a new file."
                     hotkey="Ctrl+N"
                     icon="/images/icons/file-new.svg"
+                    toggle="true"
                     ontriggered="alert(`Now we know File->New works!`);"
                 ></js-action>
                 <js-action name="file_open"
@@ -171,9 +172,16 @@
                     icon="/images/icons/edit-paste.svg"
                     ontriggered="alert(`Now we know Edit->Paste works!`);"
                 ></js-action>
+                <js-action name="edit_select_all"
+                    caption="Select _All"
+                    description="Select the entire contents of the document."
+                    hotkey="Ctrl+A"
+                    icon=""
+                    ontriggered="alert(`Now we know Edit->Select All works!`);"
+                ></js-action>
             </js-actionmanager>
-            <js-datatranslator>
-                <js-translator>
+            <!-- js-datatranslator>
+                <js-translator format="xml" type="module" src="">
     
                 </js-translator>
             </js-datatranslator>
@@ -182,246 +190,248 @@
                     onbuttonclick="handleButtons.call(this, event)">
                     Really easily implemented custom dialog box!
                 </js-dialog>
-            </js-dialogmanager>
+            </js-dialogmanager -->
         </js-management>
-        <js-app >
-            <js-menu>
-                <js-menuitem caption="_File">
-                    <js-popupmenu>
-                        <js-menuitem action="file_new"></js-menuitem>
-                        <js-menuitem action="file_open"></js-menuitem>
-                        <js-menuitem caption="Open Recent">
-                            <js-popupmenu>
-                                <js-menuitem caption="file1.txt"></js-menuitem>
-                                <js-menuitem caption="file2.txt"></js-menuitem>
-                                <js-menuitem caption="file3.txt"></js-menuitem>                                
-                            </js-popupmenu>
-                        </js-menuitem>
-                        <js-menuitem action="file_save"></js-menuitem>
-                        <js-menuitem action="file_saveas"></js-menuitem>
-                        <js-menuseparator></js-menuseparator>
-                        <js-menuitem action="file_exit"></js-menuitem>
-                    </js-popupmenu>
-                </js-menuitem>
-                <js-menuitem caption="_Edit">
-                    <js-popupmenu>
-                        <js-menuitem action="edit_undo"></js-menuitem>
-                        <js-menuitem action="edit_redo"></js-menuitem>
-                        <js-menuseparator></js-menuseparator>
-                        <js-menuitem action="edit_cut"></js-menuitem>
-                        <js-menuitem action="edit_copy"></js-menuitem>
-                        <js-menuitem action="edit_paste"></js-menuitem>
-                        <js-menuseparator></js-menuseparator>
-                        <js-menuitem caption="Select _All" hotkey="Ctrl+A"></js-menuitem>
-                    </js-popupmenu>
-                </js-menuitem>
-                <js-menuitem caption="_Help">
-                    <js-popupmenu>
-                        <js-menuitem caption="Documentation"></js-menuitem>
-                        <js-menuseparator></js-menuseparator>
-                        <js-menuitem caption="About"></js-menuitem>
-                    </js-popupmenu>
-                </js-menuitem>
-            </js-menu>
-            <js-statusbar status="Just some text to see in the status bar.">
-                <js-label>16px</js-label>
-                <js-label>solid</js-label>
-                <js-label>black</js-label>
-            </js-statusbar>
-            <js-toolbar edge="top" displaymode="iconOnly">
-                <js-toolbutton action="file_new"></js-toolbutton>
-                <js-toolbutton action="file_open"></js-toolbutton>
-                <js-toolbutton action="file_save"></js-toolbutton>
-            </js-toolbar>
-            <js-toolbar edge="top">
-                <js-toolbutton action="edit_cut"></js-toolbutton>
-                <js-toolbutton action="edit_copy"></js-toolbutton>
-                <js-toolbutton action="edit_paste"></js-toolbutton>
-            </js-toolbar>
-            <js-toolbar edge="top" displaymode="iconOnly">
-                <js-toolbutton displaymode="textOnly" caption="Show Dialog" onaction="msgDialog.show()"></js-toolbutton>
-            </js-toolbar>
-            <js-toolbar slot="toolbarLeft">
-                <js-toolbutton>5</js-toolbutton>
-                <js-toolbutton>6</js-toolbutton>
-                <js-toolbutton>7</js-toolbutton>
-                <js-toolbutton>8</js-toolbutton>
-            </js-toolbar>
-            <js-toolbar slot="toolbarLeft">
-                <js-toolbutton>5</js-toolbutton>
-                <js-toolbutton>6</js-toolbutton>
-                <js-toolbutton>7</js-toolbutton>
-                <js-toolbutton>8</js-toolbutton>
-            </js-toolbar>
-            <js-toolbar slot="toolbarRight">
-                <js-toolbutton>9</js-toolbutton>
-                <js-toolbutton>A</js-toolbutton>
-                <js-toolbutton>B</js-toolbutton>
-                <js-toolbutton>C</js-toolbutton>
-            </js-toolbar>
-            <js-toolbar slot="toolbarRight">
-                <js-toolbutton>9</js-toolbutton>
-                <js-toolbutton>A</js-toolbutton>
-                <js-toolbutton>B</js-toolbutton>
-                <js-toolbutton>C</js-toolbutton>
-            </js-toolbar>
-            <js-toolbar slot="toolbarBottom">
-                <js-toolbutton>D</js-toolbutton>
-                <js-toolbutton>E</js-toolbutton>
-                <js-toolbutton>F</js-toolbutton>
-                <js-toolbutton>0</js-toolbutton>
-            </js-toolbar>
-            <js-toolbar slot="toolbarBottom">
-                <js-toolbutton>D</js-toolbutton>
-                <js-toolbutton>E</js-toolbutton>
-                <js-toolbutton>F</js-toolbutton>
-                <js-toolbutton>0</js-toolbutton>
-            </js-toolbar>
-            <js-tabset showpages closeable>
-                <js-tab caption="Tab 1">
-                    <js-vpanel>
-                        <fieldset>
-                            <js-label align-end class="redBg">Field 1:</js-label>
-                            <input type="datetime-local" />
-                        </fieldset>
-                        <fieldset>
-                            <js-label align-end class="yellowBg">Field 2:</js-label>
-                            <js-editor class="field" value="36 ounces in a brick!"></js-editor>
-                        </fieldset>
-                        <fieldset>
-                            <js-label align-end class="blueBg">Field 3:</js-label>
-                            <input type="range" />
-                        </fieldset>
-                        <fieldset>
-                            <js-label align-end class="greenBg">Field 4:</js-label>
-                            <input type="email" />
-                        </fieldset>
-                    </js-vpanel>
-                </js-tab>
-                <js-tab caption="Tab 2">
-                    <js-hpanel>
-                        <js-hsplitpanel style="flex: auto">
-                            <js-hpanel slot="first">
-                                <js-listview multiselect>
-                                    <template>
-                                        <label>${firstName} ${middle} ${lastName}</label>
-                                    </template>
-                                    <js-listitem>
-                                        {"firstName": "Ranando",
-                                        "middle": "D.",
-                                        "lastName": "Washington-King"}
-                                    </js-listitem>
-                                    <js-listitem>
-                                        {"firstName": "Jasmine",
-                                        "middle": "N.",
-                                        "lastName": "King"}
-                                    </js-listitem>
-                                    <js-listitem>
-                                        {"firstName": "Ian",
-                                        "middle": "D.",
-                                        "lastName": "King"}
-                                    </js-listitem>
-                                    <js-listitem>
-                                        {"firstName": "Anita",
-                                        "middle": "M.",
-                                        "lastName": "King"}
-                                    </js-listitem>
-                                </js-listview>
-                                <js-listview multiselect>
-                                    <template>
-                                        <label>${firstName} ${middle} ${lastName}</label>
-                                    </template>
-                                    <js-listitem>
-                                        {"firstName": "Ranando",
-                                        "middle": "D.",
-                                        "lastName": "Washington-King"}
-                                    </js-listitem>
-                                    <js-listitem>
-                                        {"firstName": "Jasmine",
-                                        "middle": "N.",
-                                        "lastName": "King"}
-                                    </js-listitem>
-                                    <js-listitem>
-                                        {"firstName": "Ian",
-                                        "middle": "D.",
-                                        "lastName": "King"}
-                                    </js-listitem>
-                                    <js-listitem>
-                                        {"firstName": "Anita",
-                                        "middle": "M.",
-                                        "lastName": "King"}
-                                    </js-listitem>
-                                </js-listview>
-                            </js-hpanel>
-                            <js-hpanel slot="second">
-                            </js-hpanel>
-                        </js-hsplitpanel>
-                    </js-hpanel>
-                </js-tab>
-                <js-tab caption="Tab 3">
-                    <js-vpanel>
-                        <js-hpanel class="halfheight">
-                            <js-treeview id="demotree" class="familytree">
-                                <template>
-                                    <div>${label}</div>
-                                </template>
-                                <js-treeleaf>{"label": "Family Tree"}</js-treeleaf>
-                                <js-treebranch collapsible>
-                                    <js-treeleaf iscaption>{"label": "King Family"}</js-treeleaf>
-                                    <js-treebranch collapsible>
+        <js-app>
+            <js-scspanel>
+                <js-menu>
+                    <js-menuitem caption="_File">
+                        <js-popupmenu>
+                            <js-menuitem action="file_new"></js-menuitem>
+                            <js-menuitem action="file_open"></js-menuitem>
+                            <js-menuitem caption="Open Recent">
+                                <js-popupmenu>
+                                    <js-menuitem caption="file1.txt"></js-menuitem>
+                                    <js-menuitem caption="file2.txt"></js-menuitem>
+                                    <js-menuitem caption="file3.txt"></js-menuitem>                                
+                                </js-popupmenu>
+                            </js-menuitem>
+                            <js-menuitem action="file_save"></js-menuitem>
+                            <js-menuitem action="file_saveas"></js-menuitem>
+                            <js-menuitem separator></js-menuitem>
+                            <js-menuitem action="file_exit"></js-menuitem>
+                        </js-popupmenu>
+                    </js-menuitem>
+                    <js-menuitem caption="_Edit">
+                        <js-popupmenu>
+                            <js-menuitem action="edit_undo"></js-menuitem>
+                            <js-menuitem action="edit_redo"></js-menuitem>
+                            <js-menuitem separator></js-menuitem>
+                            <js-menuitem action="edit_cut"></js-menuitem>
+                            <js-menuitem action="edit_copy"></js-menuitem>
+                            <js-menuitem action="edit_paste"></js-menuitem>
+                            <js-menuitem separator></js-menuitem>
+                            <js-menuitem action="edit_select_all"></js-menuitem>
+                        </js-popupmenu>
+                    </js-menuitem>
+                    <js-menuitem caption="_Help">
+                        <js-popupmenu>
+                            <js-menuitem caption="Documentation"></js-menuitem>
+                            <js-menuitem separator></js-menuitem>
+                            <js-menuitem caption="About"></js-menuitem>
+                        </js-popupmenu>
+                    </js-menuitem>
+                </js-menu>
+                <js-scspanel>
+                    <js-toolbar edge="top" displaymode="iconOnly">
+                        <js-actionbutton action="file_new" buttonmode="iconOnly" toggle></js-actionbutton>
+                        <js-actionbutton action="file_open" buttonmode="iconOnly"></js-actionbutton>
+                        <js-actionbutton action="file_save" buttonmode="iconOnly"></js-actionbutton>
+                    </js-toolbar>
+                    <js-toolbar edge="top">
+                        <js-actionbutton action="edit_cut" buttonmode="iconOnly"></js-actionbutton>
+                        <js-actionbutton action="edit_copy" buttonmode="iconOnly"></js-actionbutton>
+                        <js-actionbutton action="edit_paste" buttonmode="iconOnly"></js-actionbutton>
+                    </js-toolbar>
+                    <js-toolbar edge="top" displaymode="iconOnly">
+                        <js-actionbutton displaymode="textOnly" caption="Show Dialog" onaction="msgDialog.show()"></js-actionbutton>
+                    </js-toolbar>
+                    <js-statusbar slot="bottom" status="Just some text to see in the status bar.">
+                        <label>16px</label>
+                        <label>solid</label>
+                        <label>black</label>
+                    </js-statusbar>
+                    <!--js-toolbar slot="toolbarLeft">
+                        <js-toolbutton>5</js-toolbutton>
+                        <js-toolbutton>6</js-toolbutton>
+                        <js-toolbutton>7</js-toolbutton>
+                        <js-toolbutton>8</js-toolbutton>
+                    </js-toolbar>
+                    <js-toolbar slot="toolbarLeft">
+                        <js-toolbutton>5</js-toolbutton>
+                        <js-toolbutton>6</js-toolbutton>
+                        <js-toolbutton>7</js-toolbutton>
+                        <js-toolbutton>8</js-toolbutton>
+                    </js-toolbar>
+                    <js-toolbar slot="toolbarRight">
+                        <js-toolbutton>9</js-toolbutton>
+                        <js-toolbutton>A</js-toolbutton>
+                        <js-toolbutton>B</js-toolbutton>
+                        <js-toolbutton>C</js-toolbutton>
+                    </js-toolbar>
+                    <js-toolbar slot="toolbarRight">
+                        <js-toolbutton>9</js-toolbutton>
+                        <js-toolbutton>A</js-toolbutton>
+                        <js-toolbutton>B</js-toolbutton>
+                        <js-toolbutton>C</js-toolbutton>
+                    </js-toolbar>
+                    <js-toolbar slot="toolbarBottom">
+                        <js-toolbutton>D</js-toolbutton>
+                        <js-toolbutton>E</js-toolbutton>
+                        <js-toolbutton>F</js-toolbutton>
+                        <js-toolbutton>0</js-toolbutton>
+                    </js-toolbar>
+                    <js-toolbar slot="toolbarBottom">
+                        <js-toolbutton>D</js-toolbutton>
+                        <js-toolbutton>E</js-toolbutton>
+                        <js-toolbutton>F</js-toolbutton>
+                        <js-toolbutton>0</js-toolbutton>
+                    </js-toolbar -->
+                    <js-scspanel horizontal>
+                        <js-tabbook>
+                        <js-tabpage caption="Tab 1" tabname="tab1">
+                            <fieldset>
+                                <label align-end class="redBg">Field 1:</label>
+                                <input type="datetime-local" />
+                            </fieldset>
+                            <fieldset>
+                                <label align-end class="yellowBg">Field 2:</label>
+                                <textarea class="field">36 ounces in a brick!</textarea>
+                            </fieldset>
+                            <fieldset>
+                                <label align-end class="blueBg">Field 3:</label>
+                                <input type="range" />
+                            </fieldset>
+                            <fieldset>
+                                <label align-end class="greenBg">Field 4:</label>
+                                <input type="email" />
+                            </fieldset>
+                        </js-tabpage>
+                        <js-tabpage caption="Tab 2" tabname="tab2">
+                            <js-hsplitpanel style="flex: auto">
+                                <!-- js-hpanel slot="first">
+                                    <js-listview multiselect>
+                                        <template>
+                                            <label>${firstName} ${middle} ${lastName}</label>
+                                        </template>
+                                        <js-listitem>
+                                            {"firstName": "Ranando",
+                                            "middle": "D.",
+                                            "lastName": "Washington-King"}
+                                        </js-listitem>
+                                        <js-listitem>
+                                            {"firstName": "Jasmine",
+                                            "middle": "N.",
+                                            "lastName": "King"}
+                                        </js-listitem>
+                                        <js-listitem>
+                                            {"firstName": "Ian",
+                                            "middle": "D.",
+                                            "lastName": "King"}
+                                        </js-listitem>
+                                        <js-listitem>
+                                            {"firstName": "Anita",
+                                            "middle": "M.",
+                                            "lastName": "King"}
+                                        </js-listitem>
+                                    </js-listview>
+                                    <js-listview multiselect>
+                                        <template>
+                                            <label>${firstName} ${middle} ${lastName}</label>
+                                        </template>
+                                        <js-listitem>
+                                            {"firstName": "Ranando",
+                                            "middle": "D.",
+                                            "lastName": "Washington-King"}
+                                        </js-listitem>
+                                        <js-listitem>
+                                            {"firstName": "Jasmine",
+                                            "middle": "N.",
+                                            "lastName": "King"}
+                                        </js-listitem>
+                                        <js-listitem>
+                                            {"firstName": "Ian",
+                                            "middle": "D.",
+                                            "lastName": "King"}
+                                        </js-listitem>
+                                        <js-listitem>
+                                            {"firstName": "Anita",
+                                            "middle": "M.",
+                                            "lastName": "King"}
+                                        </js-listitem>
+                                    </js-listview>
+                                </js-hpanel>
+                                <js-hpanel slot="second">
+                                </js-hpanel -->
+                            </js-hsplitpanel>
+                        </js-tabpage>
+                        <js-tabpage caption="Tab 3" tabname="tab3">
+                            <!-- js-vpanel>
+                                <js-hpanel class="halfheight">
+                                    <js-treeview id="demotree" class="familytree">
+                                        <template>
+                                            <div>${label}</div>
+                                        </template>
+                                        <js-treeleaf>{"label": "Family Tree"}</js-treeleaf>
                                         <js-treebranch collapsible>
-                                            <js-treeleaf iscaption>{"label": "Parents"}</js-treeleaf>
-                                            <js-treeleaf>{"label": "Dad: Savoil Lester King"}</js-treeleaf>
-                                            <js-treeleaf>{"label": "Father: Johnny Ray Washington"}</js-treeleaf>
-                                            <js-treeleaf>{"label": "Mother: Dorothy Jean Payno"}</js-treeleaf>
+                                            <js-treeleaf iscaption>{"label": "King Family"}</js-treeleaf>
+                                            <js-treebranch collapsible>
+                                                <js-treebranch collapsible>
+                                                    <js-treeleaf iscaption>{"label": "Parents"}</js-treeleaf>
+                                                    <js-treeleaf>{"label": "Dad: Savoil Lester King"}</js-treeleaf>
+                                                    <js-treeleaf>{"label": "Father: Johnny Ray Washington"}</js-treeleaf>
+                                                    <js-treeleaf>{"label": "Mother: Dorothy Jean Payno"}</js-treeleaf>
+                                                </js-treebranch>
+                                                <js-treeleaf iscaption>{"label": "Ranando Darnell Washington-King"}</js-treeleaf>
+                                            </js-treebranch>
+                                            <js-treebranch collapsible>
+                                                <js-treeleaf iscaption>{"label": "Melissa Michellle King"}</js-treeleaf>
+                                                <js-treebranch collapsible>
+                                                    <js-treeleaf iscaption>{"label": "Parents"}</js-treeleaf>
+                                                    <js-treeleaf>{"label": "Father: Anthony Scott"}</js-treeleaf>
+                                                    <js-treeleaf>{"label": "Mother: Doris Scott"}</js-treeleaf>
+                                                </js-treebranch>
+                                            </js-treebranch>
+                                            <js-treebranch collapsible>
+                                                <js-treeleaf iscaption>{"label": "Children"}</js-treeleaf>
+                                                <js-treeleaf>{"label": "Ian Dante King"}</js-treeleaf>
+                                                <js-treeleaf>{"label": "Anita Michelle King"}</js-treeleaf>
+                                            </js-treebranch>
                                         </js-treebranch>
-                                        <js-treeleaf iscaption>{"label": "Ranando Darnell Washington-King"}</js-treeleaf>
-                                    </js-treebranch>
-                                    <js-treebranch collapsible>
-                                        <js-treeleaf iscaption>{"label": "Melissa Michellle King"}</js-treeleaf>
-                                        <js-treebranch collapsible>
-                                            <js-treeleaf iscaption>{"label": "Parents"}</js-treeleaf>
-                                            <js-treeleaf>{"label": "Father: Anthony Scott"}</js-treeleaf>
-                                            <js-treeleaf>{"label": "Mother: Doris Scott"}</js-treeleaf>
-                                        </js-treebranch>
-                                    </js-treebranch>
-                                    <js-treebranch collapsible>
-                                        <js-treeleaf iscaption>{"label": "Children"}</js-treeleaf>
-                                        <js-treeleaf>{"label": "Ian Dante King"}</js-treeleaf>
-                                        <js-treeleaf>{"label": "Anita Michelle King"}</js-treeleaf>
-                                    </js-treebranch>
-                                </js-treebranch>
-                                <js-treeleaf>{"label": "End Family Tree"}</js-treeleaf>
-                            </js-treeview>
-                            <js-vpanel slotClass="buttonPanel">
-                                <button onclick="document.querySelector('#demotree').expandRecursively()">Expand All</button>
-                                <button onclick="document.querySelector('#demotree').collapseRecursively()">Collapse All</button>
-                            </js-vpanel>
-                        </js-hpanel>
-                        <js-hpanel class="halfheight">
-                        </js-hpanel>
-                    </js-vpanel>
-                </js-tab>
-                <js-tab caption="Tab 4">
-                    <js-activityindicator show>Loading...</js-activityindicator>
-                </js-tab>
-                <js-tab caption="Tab 5" selected>
-                    <js-mdipanel>
-                        <js-mdiwindow title="Test 1"></js-mdiwindow>
-                        <js-mdiwindow title="Test 2"></js-mdiwindow>
-                    </js-mdipanel>
-                </js-tab>
-                <js-tab caption="Tab 6"><js-label>Page 6</js-label></js-tab>
-                <js-tab caption="Tab 7"><js-label>Page 7</js-label></js-tab>
-                <js-tab caption="Tab 8"><js-label>Page 8</js-label></js-tab>
-                <js-tab caption="Tab 9"><js-label>Page 9</js-label></js-tab>
-                <js-tab caption="Tab 10"><js-label>Page 10</js-label></js-tab>
-                <js-tab caption="Tab 11"><js-label>Page 11</js-label></js-tab>
-                <js-tab caption="Tab 12"><js-label>Page 12</js-label></js-tab>
-                <js-tab caption="Tab 13"><js-label>Page 13</js-label></js-tab>
-                <js-tab caption="Tab 14"><js-label>Page 14</js-label></js-tab>
-                <js-tab caption="Tab 15"><js-label>Page 15</js-label></js-tab>
-            </js-tabset>
+                                        <js-treeleaf>{"label": "End Family Tree"}</js-treeleaf>
+                                    </js-treeview>
+                                    <js-vpanel slotClass="buttonPanel">
+                                        <button onclick="document.querySelector('#demotree').expandRecursively()">Expand All</button>
+                                        <button onclick="document.querySelector('#demotree').collapseRecursively()">Collapse All</button>
+                                    </js-vpanel>
+                                </js-hpanel>
+                                <js-hpanel class="halfheight">
+                                </js-hpanel>
+                            </js-vpanel -->
+                        </js-tabpage>
+                        <js-tabpage caption="Tab 4" tabname="tab4">
+                            <!-- js-activityindicator show>Loading...</js-activityindicator -->
+                        </js-tabpage>
+                        <js-tabpage caption="Tab 5" tabname="tab5">
+                            <!--js-mdipanel>
+                                <js-mdiwindow title="Test 1"></js-mdiwindow>
+                                <js-mdiwindow title="Test 2"></js-mdiwindow>
+                            </js-mdipanel-->
+                        </js-tabpage>
+                        <js-tabpage caption="Tab 6" tabname="tab6"><label>Page 6</label></js-tabpage>
+                        <js-tabpage caption="Tab 7" tabname="tab7"><label>Page 7</label></js-tabpage>
+                        <js-tabpage caption="Tab 8" tabname="tab8"><label>Page 8</label></js-tabpage>
+                        <js-tabpage caption="Tab 9" tabname="tab9"><label>Page 9</label></js-tabpage>
+                        <js-tabpage caption="Tab 10" tabname="tab10"><label>Page 10</label></js-tabpage>
+                        <js-tabpage caption="Tab 11" tabname="tab11"><label>Page 11</label></js-tabpage>
+                        <js-tabpage caption="Tab 12" tabname="tab12"><label>Page 12</label></js-tabpage>
+                        <js-tabpage caption="Tab 13" tabname="tab13"><label>Page 13</label></js-tabpage>
+                        <js-tabpage caption="Tab 14" tabname="tab14"><label>Page 14</label></js-tabpage>
+                        <js-tabpage caption="Tab 15" tabname="tab15"><label>Page 15</label></js-tabpage>
+                        </js-tabbook>
+                    </js-scspanel>
+                </js-scspanel>
+            </js-scspanel>
         </js-app>
     </body>
 </html>

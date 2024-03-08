@@ -1,13 +1,29 @@
-import { share, abstract, accessor } from "/node_modules/cfprotected/index.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
+import { share, abstract, accessor } from "../../cfprotected/index.mjs";
+import Base from "./jsBase.mjs";
 
-const SplitPanel = abstract(class SplitPanel extends TagBase {
-    #dragStart = null;
-    #oldWidth = null;
-    #minWidth = 32;
+const SplitPanel = abstract(class SplitPanel extends Base {
+    static #spvt = share(this, {});
+
+    static get observedAttributes() {
+        return Base.observedAttributes.concat([
+            "minfirstwidth", "minsecondwidth", "splitpos"
+        ]);
+    }
+
+    static {
+        this.#spvt.initAttributeProperties(this, {
+            minfirstwidth: {},
+            minsecondwidth: {},
+            splitpos: {}
+        });
+    }
+
+    #observer;
+    #resizing = false;
+    #size;
 
     #getSize(target, axis, all) {
-        const widthProp = axis || this.pvt.#prot.widthProp;
+        const widthProp = axis || this.$.#pvt.widthProp;
         const style = window.getComputedStyle(target);
         let retval = target[`offset${widthProp}`];
 
@@ -20,134 +36,180 @@ const SplitPanel = abstract(class SplitPanel extends TagBase {
     }
 
     #isInside(target, axis, value) {
-        const tSize = this.pvt.#getSize(target, axis, true);
+        const tSize = this.$.#getSize(target, axis, true);
         return (value > -tSize.front) && (value < tSize.body + tSize.back);
     }
 
-    #resizeFirst(delta) {
-        const widthProp = this.pvt.#prot.widthProp;
-        const clientProp = `client${widthProp}`;
+    #resizeSlots() {
+        const widthProp = this.$.#pvt.widthProp;
+        const size = this.$.#size;
         let first = this.shadowRoot.querySelector("slot[name=first]");
-        let splitter = first.nextElementSibling;
-        let newWidth = first[clientProp] + delta;
+        let pos = ~~this.splitpos;
         
-        if (newWidth <= 0) {
-            newWidth = this.pvt.#oldWidth;
+        //Ignore certain things when resizing
+        this.$.#resizing = true;
+
+        //Make sure we don't cross the limit....
+        if (pos < this.minfirstwidth) {
+            pos = this.minfirstwidth;
+        } else if (pos > size - this.minsecondwidth) {
+            pos = size - this.minsecondwidth;
         }
-        else {
-            const minWidth = this.pvt.#minWidth;
-            const limit = this[clientProp] - (this.pvt.#getSize(splitter) + minWidth);
-            const end = this.pvt.#getSize(this) - (this.pvt.#getSize(splitter) + minWidth);
+        
+        if (pos !== ~~this.splitpos) {
+            this.splitpos = pos;
+        }
+        
+        if (first) {
+            let splitter = first.nextElementSibling;
+            let second = splitter.nextElementSibling;
+            let firstDelta = pos;
+            let secondDelta = size - pos;
             
-            if (newWidth > end) {
-                newWidth = this.pvt.#oldWidth;
-            }
-            else if (newWidth < minWidth) {
-                newWidth = minWidth;
-            }
-            else if (newWidth > limit) {
-                newWidth = limit;
-            }
+            first.style["flex-basis"] = `${firstDelta}px`;
+            second.style["flex-basis"] = `${secondDelta}px`;
         }
-        first.style[widthProp.toLowerCase()] = newWidth + "px";
+        this.$.#resizing = false;
     }
-
-    #setDragState(state) {
-        let first = this.shadowRoot.querySelector("slot[name=first]");
-        let fn = (!!state) ? "add": "remove";
-        first.classList[fn]("draggable");
-        first.nextElementSibling.nextElementSibling.classList[fn]("draggable");
-        first.parentElement.classList[fn]("draggable");
-        this.classList[fn]("draggable");
-    }
-
-    #prot = share(this, SplitPanel, {
+    
+    #pvt = share(this, SplitPanel, {
         widthProp: accessor({
             get: () => { throw new TypeError("Must override widthProp"); }
         }),
         render() {
-            const prot = this.pvt.#prot;
-            prot.renderContent(prot.newTag("div", {
+            const pvt = this.$.#pvt;
+            pvt.renderContent(pvt.make("div", {
                 class: "container",
             }, {
                 children: [
-                    prot.newTag("slot", {
+                    pvt.make("slot", {
                         name: "first"
                     }),
-                    prot.newTag("div", {
-                        draggable: true,
+                    pvt.make("div", {
+                        draggable: "true",
                         class: "splitter"
+                    },{
+                        children: [
+                            pvt.make("img", {
+                                id: "dragimg",
+                                src: "node_modules/jsapplib/src/images/noimg.png"
+                            })
+                        ]
                     }),
-                    prot.newTag("slot", {
+                    pvt.make("slot", {
                         name: "second"
                     })
                 ]
             }));
         },
         onPostRender() {
-            const prot = this.pvt.#prot;
+            const pvt = this.$.#pvt;
             let splitter = this.shadowRoot.querySelector("div.splitter");
             let container = splitter.parentElement;
-            splitter.addEventListener("dragstart", prot.onStartDragSplitter);
-            splitter.addEventListener("dragend", prot.onEndDragSplitter);
-            container.addEventListener("dragover", prot.onDragOver);
-            splitter.previousElementSibling.addEventListener("dragover", prot.onDragOver);
-            splitter.nextElementSibling.addEventListener("dragover", prot.onDragOver);
+            splitter.addEventListener("dragstart", pvt.onStartDragSplitter);
+            splitter.addEventListener("drag", pvt.onDragSplitter);
+            splitter.addEventListener("dragend", pvt.onEndDragSplitter);
+            container.addEventListener("dragover", pvt.onDragOver);
+            splitter.previousElementSibling.addEventListener("dragover", pvt.onDragOver);
+            splitter.nextElementSibling.addEventListener("dragover", pvt.onDragOver);
         },
         onStartDragSplitter(e) {
-            const prot = this.pvt.#prot;
-            let first = this.shadowRoot.querySelector("slot[name=first]");
-            this.pvt.#dragStart = e[`offset${({Width: "X", Height: "Y"}[prot.widthProp])}`];
-            this.pvt.#setDragState(true);
-            this.pvt.#oldWidth = parseFloat(first.style[prot.widthProp.toLowerCase()] || first[`client${prot.widthProp}`]);
+            const pvt = this.$.#pvt;
+            const splitter = this.shadowRoot.querySelector("div.splitter");
+            const bounds = pvt.getBounds(splitter);
+            const dimg = this.shadowRoot.querySelector("#dragimg");
+
+            if ((this.$.#size === void 0) || (this.$.#size < 0)) {
+                this.$.#pvt.onResized();
+            }
+            
             e.dataTransfer.setData("text/plain", e.target.id);
+            e.dataTransfer.setDragImage(dimg, 0, 0);
         },
         onDragSplitter(e) {
-            const widthProp = this.pvt.#prot.widthProp;
+            const widthProp = this.$.#pvt.widthProp;
             const lengthProp = widthProp == "Width" ? "Height" : "Width";
             const widthAxis = {Width: "X", Height: "Y"}[widthProp];
             const heightAxis = widthAxis == "X" ? "Y" : "X";
+            const offsetSide = {Width: "Left", Height: "Top"}[widthProp];
             const offsetLength = e[`offset${heightAxis}`];
-            let delta = e[`offset${widthAxis}`] - this.pvt.#dragStart;
-            let first = this.shadowRoot.querySelector("slot[name=first]");
+            let splitter = this.shadowRoot.querySelector("div.splitter");
 
-            if (!this.pvt.#isInside(first.nextElementSibling, lengthProp, offsetLength)) {
-                delta = Number.MIN_SAFE_INTEGER;
+            if (this.$.#isInside(splitter, lengthProp, offsetLength)) {
+                this.splitpos = e[`client${widthAxis}`] - this[`offset${offsetSide}`];
             }
-            this.pvt.#resizeFirst(delta);
         },
-        onEndDragSplitter(e) {
-            const widthProp = this.pvt.#prot.widthProp;
+        onEndDragSplitter(e) {            
+            const widthProp = this.$.#pvt.widthProp;
             const lengthProp = widthProp == "Width" ? "Height" : "Width";
             const widthAxis = {Width: "X", Height: "Y"}[widthProp];
             const heightAxis = widthAxis == "X" ? "Y" : "X";
+            const offsetSide = {Width: "Left", Height: "Top"}[widthProp];
             const offsetLength = e[`offset${heightAxis}`];
-            let delta = e[`offset${widthAxis}`] - this.pvt.#dragStart;
-            let first = this.shadowRoot.querySelector("slot[name=first]");
+            let splitter = this.shadowRoot.querySelector("div.splitter");
 
-            if (!this.pvt.#isInside(first.nextElementSibling, lengthProp, offsetLength)) {
-                delta = Number.MIN_SAFE_INTEGER;
+            if (this.$.#isInside(splitter, lengthProp, offsetLength)) {
+                this.splitpos = e[`client${widthAxis}`] - this[`offset${offsetSide}`];
             }
-            this.pvt.#resizeFirst(delta);
-            this.pvt.#setDragState(false);
-
         },
         onDragOver(e) {
             e.preventDefault();
+        },
+        onResized(e) {
+            if (e && (e[0].target == this)) {
+                const pvt = this.$.#pvt;
+                const widthProp = pvt.widthProp;
+                const widthAxis = {Width: "inlineSize", Height: "blockSize"}[widthProp];
+                const splitter = this.shadowRoot.querySelector("div.splitter");
+                if (splitter) {
+                    let bounds = pvt.getBounds(splitter, true);
+                    this.$.#size = e[0].devicePixelContentBoxSize[0][widthAxis] - bounds[widthProp.toLowerCase()];
+                    this.$.#resizeSlots();
+                }
+            }
+        },
+        onMinFirstWidthChanged() {
+            if ((this.$.#size === void 0) || (this.$.#size < 0)) {
+                this.$.#pvt.onResized();
+            } else {
+                this.$.#resizeSlots();
+            }
+        },
+        onMinSecondWidthChanged() {
+            if ((this.$.#size === void 0) || (this.$.#size < 0)) {
+                this.$.#pvt.onResized();
+            } else {
+                this.$.#resizeSlots();
+            }
+        },
+        onSplitPosChanged() {
+            if (!this.$.#resizing) {
+                if ((this.$.#size === void 0) || (this.$.#size < 0)) {
+                    this.$.#pvt.onResized();
+                } else {
+                    this.$.#resizeSlots();
+                }
+            }
         }
     });
 
-    connectedCallback() {
-        const prot = this.pvt.#prot;
-        this.addEventListener("postRender", prot.onPostRender);
-        this.addEventListener("dragover", prot.onDragOver);
-        super.connectedCallback();
-    }
+    constructor() {
+        super();
 
-    get panelMin() { return this.getAttribute("panelmin"); }
-    set panelMin(v) { 
-        if (v < 16) v = 16;
-        this.setAttribute("panelmin", v); 
+        const pvt = this.$.#pvt;
+        this.$.#observer = new ResizeObserver(pvt.onResized);
+        this.$.#observer.observe(this);
+
+        this.addEventListener("render", pvt.render);
+        this.addEventListener("postRender", pvt.onPostRender);
+        this.addEventListener("dragover", pvt.onDragOver);
+        this.addEventListener("minfirstwidthChanged", pvt.onMinFirstWidthChanged);
+        this.addEventListener("minsecondwidthChanged", pvt.onMinSecondWidthChanged);
+        this.addEventListener("splitposChanged", pvt.onSplitPosChanged);
+        //window.addEventListener("resize", pvt.onResized);
+
+        this.minfirstwidth = (!this.minfirstwidth && (this.minfirstwidth !== 0)) ? 32 : this.minfirstwidth;
+        this.minsecondwidth = (!this.minsecondwidth && (this.minsecondwidth !== 0)) ? 32 : this.minsecondwidth;
     }
 });
 

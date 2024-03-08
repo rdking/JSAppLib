@@ -1,73 +1,56 @@
-import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
+import { share, saveSelf } from "../../cfprotected/index.mjs";
+import Base from "./jsBase.mjs";
 
-export default class Menu extends TagBase {
-    static #tagName = "js-menu";
-    static #sprot = share(Menu, {});
+export default class Menu extends Base {
+    static #spvt = share(Menu, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
-    static get observedAttributes() {
-        return TagBase.observedAttributes.concat([ "caption" ]); 
-    }
-
+    static {
+        this.#spvt.initAttributeProperties(this, {
+        });
+        this.#spvt.register(this);
+    }    
+    
     #htmlCaption = null;
     #currentMenuItem = null;
 
-    #prot = share(this, Menu, {
+    #pvt = share(this, Menu, {
         render() {
-            const prot = this.pvt.#prot;
-            prot.renderContent(prot.newTag("div", {
+            const pvt = this.$.#pvt;
+            pvt.renderContent(pvt.make("div", {
                 class: "menu"
             }, {
                 children: [
-                    prot.newTag("slot")
+                    pvt.make("slot")
                 ]
             }));
         },
-        onCaptionChange(e) {
-            let match = e.detail.newVal.match(/_(\w)/);
-            if (match.length > 0) {
-                let key = match[1];
-                this.pvt.#htmlCaption = e.detail.newVal.replace(`_${key}`, `<u>${key}</u>`);
-            }
-            else {
-                this.pvt.#htmlCaption = e.detail.newVal;
-            }
-            let label = this.shadowRoot.querySelector("js-label");
-            if (label) {
-                label.caption = this.pvt.#htmlCaption;
-            }
-        },
         onPopupOpened(e) {
-            this.pvt.#currentMenuItem = e.detail.menuItem;
+            this.$.#currentMenuItem = e.detail.menuItem;
         },
         onPopupClosed(e) {
-            this.pvt.#currentMenuItem = null;
+            this.$.#currentMenuItem = null;
         },
         onPreRender() {
-            this.pvt.#prot.validateChildren("js-menuitem", "Only MenuItems can be placed in a Menu.");
+            const pvt = this.$.#pvt;
+            pvt.validateChildren(pvt.tagType("menuitem"), "Only MenuItems can be placed in a Menu.");
         },
 
     });
 
     constructor() {
         super();
-        if (this.cla$$.tagName === "js-menu") {
-            this.slot = "header";
+        if (this.cla$$.tagName === this.$.#pvt.tagType("menu")) {
+            this.slot = "top";
         }
     }
 
     connectedCallback() {
-        this.addEventListener("captionChange", this.pvt.#prot.onCaptionChange);
-        this.addEventListener("popupOpened", this.pvt.#prot.onPopupOpened);
-        this.addEventListener("popupClosed", this.pvt.#prot.onPopupClosed);
-        this.addEventListener("preRender", this.pvt.#prot.onPreRender);
+        this.addEventListener("popupOpened", this.$.#pvt.onPopupOpened);
+        this.addEventListener("popupClosed", this.$.#pvt.onPopupClosed);
+        this.addEventListener("preRender", this.$.#pvt.onPreRender);
+        this.addEventListener("render", this.$.#pvt.render);
         super.connectedCallback();
     }
 
-    get caption() { return this.getAttribute("caption"); }
-    set caption(v) { this.setAttribute("caption", v); }
-
-    get currentMenuItem() { return this.pvt.#currentMenuItem; }
+    get currentMenuItem() { return this.$.#currentMenuItem; }
 }

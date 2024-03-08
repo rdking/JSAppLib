@@ -1,5 +1,11 @@
+:host {
+    display: flex;
+    flex: 1 0 auto;
+}
+
 slot {
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
     justify-content: flex-start;
     align-content: stretch;
@@ -9,12 +15,20 @@ slot {
     min-height: 16px;
 }
 
-slot.dragging {
-    cursor: col-resize !important;
+div[draggable] {
+    cursor: row-resize !important;
+    border: 2px inset var(--brush-shadow);
+    margin: 7px;
+    max-height: 1px;
 }
 
 .splitter, .splitter.dragging {
-    border: 2px inset var(--brush-shadow);
-    margin: 7px;
-    cursor: col-resize !important;
+    cursor: row-resize !important;
+}
+
+.container {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    justify-content: stretch;
 }

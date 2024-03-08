@@ -1,23 +1,44 @@
-:host {
-    display: none;
-}
-
-:host([selected]) {
-    display: flex;
-    flex: 1 0 auto;
-    flex-direction: column;
-}
-
-slot {
+.tab {
     display: flex;
     flex-direction: column;
-    flex: 1 0 auto;
+    background-color: var(--brush-normal);
+    color: var(--pen-normal);
 }
 
-#page {
+.tabTrim {
     display: flex;
-    flex-direction: column;
-    flex: 1 0 auto;
+    height: 0.75em;
+    width: calc(100% + 4px);
+    padding: 0;
+    margin: 2px -2px -0.75em;
+    border-top: 1px solid black;
+}
+
+.tabLabel {
+    display: flex;
+    flex-direction: row;
+    height: 2em;
+    margin: 0px -2px -0.75em;
+    padding: 4px 0.75em 0px !important;
+    border-left: 1px solid black;
+    border-top: 1px solid black;
+    border-right: 1px solid black;
+    border-radius: 8px;
+    background-color: var(--brush-shadow);
+}
+
+:host([selected]) .tabLabel {
+    background-color: var(--brush-container-normal);
+    color: var(--pen-container-normal);
+    z-index: 1;
+}
+
+.tabLabel .closeBtn {
+    width: 1em;
+    margin-top: -4px;
+    margin-right: -8px;
+    padding-left: 8px;
+    font-size: large;
 }
 
 .hidden {

@@ -1,35 +1,31 @@
-import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
-import Enum from "/node_modules/jsapplib/src/util/Enum.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
-import ToolButton from "/node_modules/jsapplib/src/jsToolButton.mjs";
+import { share, saveSelf } from "../../cfprotected/index.mjs";
+import Enum from "./util/Enum.mjs";
+import Base from "./jsBase.mjs";
+//import ToolButton from "/node_modules/jsapplib/src/jsToolButton.mjs";
 
-export default class ToolBar extends TagBase {
-    static #tagName = "js-toolbar";
-    static #sprot = share(this, {});
-
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
+export default class ToolBar extends Base {
+    static #spvt = share(this, {});
+    
     static get observedAttributes() {
-        return TagBase.observedAttributes.concat(["displaymode", "edge"]);
+        return Base.observedAttributes.concat(["displaymode", "edge"]);
     }
-
-    static #BarEdges = new Enum("BarEdges", {
-        "top": "toolbarTop",
-        "left": "toolbarLeft",
-        "bottom": "toolbarBottom",
-        "right": "toolbarRight"
-    });
-
-    static get BarEdges() { return this.pvt.#BarEdges; }
-
-    #prot = share(this, ToolBar, {
+    
+    static #BarEdges = new Enum("BarEdges", [
+        "top", "left", "bottom", "right"
+    ]);
+    
+    static get BarEdges() { return this.$.#BarEdges; }
+    
+    static { this.#spvt.register(this); }
+    
+    #pvt = share(this, ToolBar, {
         render() {
-            const prot = this.pvt.#prot;
-            prot.renderContent([
-                prot.newTag("div", {
+            const pvt = this.$.#pvt;
+            pvt.renderContent([
+                pvt.make("div", {
                     class: "vr"
                 }),
-                prot.newTag("slot")
+                pvt.make("slot")
             ]);
         },
         onDisplayModeChange(e) {
@@ -41,14 +37,17 @@ export default class ToolBar extends TagBase {
             }
         },
         onEdgeChange(e) {
-            this.setAttribute("slot", this.edge.value);
+            this.setAttribute("slot", this.edge.name);
         }
     });
 
-    connectedCallback() {
-        this.addEventListener("displaymodeChange", this.pvt.#prot.onDisplayModeChange);
-        this.addEventListener("edgeChange", this.pvt.#prot.onEdgeChange);
-        super.connectedCallback();
+    constructor() {
+        super();
+
+        const pvt = this.$.#pvt
+        this.addEventListener("displaymodeChanged", pvt.onDisplayModeChange);
+        this.addEventListener("edgeChanged", pvt.onEdgeChange);
+        this.addEventListener("render", pvt.render);
     }
 
     get displayMode() { 

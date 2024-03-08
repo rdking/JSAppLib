@@ -7,7 +7,7 @@ export default class TreeView extends ListView {
     static #sprot = share(this, {});
 
     static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
+    static get tagName() { return this.$.#tagName; }
     static get observedAttributes() {
         return ListView.observedAttributes.concat(["collapsible"]); 
     }
@@ -18,8 +18,8 @@ export default class TreeView extends ListView {
             get: () => [ /*"js-treebranch",*/ "js-treeleaf" ]
         }),
         onPreRender() {
-            let validItems = [ "js-treebranch", "template" ].concat(this.pvt.#prot.validItemTypes);
-            this.pvt.#prot.validateChildren(validItems,
+            let validItems = [ "js-treebranch", "template" ].concat(this.$.#prot.validItemTypes);
+            this.$.#prot.validateChildren(validItems,
                 "Only HTML <template>, TreeBranch, and TreeLeaf elements can be placed in a TreeView");
             
             let templates = this.querySelectorAll("template");
@@ -29,7 +29,7 @@ export default class TreeView extends ListView {
         },
         onKeyDown(e) {
             let items = this.items;
-            let index = items.indexOf(this.pvt.#prot.lastItem);
+            let index = items.indexOf(this.$.#prot.lastItem);
 
             if (index >= 0) {
                 let item = items[index];
@@ -45,7 +45,7 @@ export default class TreeView extends ListView {
                         }
                         break;
                     default:
-                        this.pvt.#prot.$uper.onKeyDown(e);
+                        this.$.#prot.$uper.onKeyDown(e);
                 }
             }
         }

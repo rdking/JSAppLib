@@ -10,8 +10,17 @@ button {
     justify-content: space-evenly;
 }
 
+.hidden {
+    display: none;
+}
+
 :host(:not([disabled])) button:hover {
     background-color: var(--brush-shadow);
+    color: var(--pen-selected);
+}
+
+:host(:not([disabled])[selected]) {
+    background-color: var(--brush-selected);
     color: var(--pen-selected);
 }
 
@@ -21,8 +30,8 @@ button {
 }
 
 img {
-    width: 24px;
-    height: 24px;
+    width: 18px;
+    height: 18px;
 }
 
 :host([disabled]) {

@@ -1,91 +1,129 @@
-import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
-import Menu from "/node_modules/jsapplib/src/jsMenu.mjs";
-import MenuItem from "/node_modules/jsapplib/src/jsMenuItem.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
+import { share, saveSelf } from "../../cfprotected/index.mjs";
+import Menu from "./jsMenu.mjs";
+import MenuItem from "./jsMenuItem.mjs";
+import Base from "./jsBase.mjs";
 
 export default class PopupMenu extends Menu {
-    static #tagName = "js-popupmenu";
-    static #sprot = share(this, {});
+    static #spvt= share(this, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
-    static get observedAttributes() {                
-        return TagBase.observedAttributes.concat([ "caption" ]); 
+    static {
+        this.#spvt.register(this);
     }
 
     #htmlCaption = null;
     #showing = false;
 
-    #prot = share(this, PopupMenu, {
+    #pvt = share(this, PopupMenu, {
         render() {
-            const prot = this.pvt.#prot;
-            prot.renderContent(prot.newTag("div", {
+            const pvt = this.$.#pvt;
+            pvt.renderContent(pvt.make("div", {
                 id: "menubody",
                 class: "hidden background"
             }, {
                 children: [
-                    prot.newTag("slot")
+                    pvt.make("slot")
                 ]
             }));
         },
-        onCaptionChange(e) {
-            let match = e.detail.newVal.match(/_(\w)/);
-            if (match.length > 0) {
-                let key = match[1];
-                this.pvt.#prot.htmlCaption = e.detail.newVal.replace(`_${key}`, `<u>${key}</u>`);
-            }
-            else {
-                this.pvt.#prot.htmlCaption = e.detail.newVal;
-            }
-            let label = this.shadowRoot.querySelector("js-label");
-            if (label) {
-                label.caption = this.pvt.#prot.htmlCaption;
-            }
-        },
         onPreRender() {
-            this.pvt.#prot.validateChildren(["js-menuitem", "js-menuseparator"], "Only MenuItems can be placed in a Menu.");
+            const pvt = this.$.#pvt;
+            pvt.validateChildren(
+                pvt.tagTypes("menuitem", "menuseparator"),
+                "Only MenuItems can be placed in a Menu."
+            );
         },
         onMouseDown(e) {
             if (e.target instanceof MenuItem) {
-                if (this.pvt.#showing) {
+                if (this.$.#showing) {
                     this.parentElement.fireEvent("click");
                 }
             }
             else {
                 this.hide();
             }
+        },
+        onExternalClick(e) {
+            if (this.$.#showing) {
+                const pvt = this.$.#pvt;
+                const parent = pvt.isTagType(this.parentElement, pvt.tagType("menuitem"))
+                    ? this.parentElement : null;
+
+                if (![this, parent].includes(e.target)) {
+                    try {
+                        //See if we're a child element of the target.
+                        this.$.#pvt.validateAncestry(e.target.nodeName.toLowerCase(), void 0, void 0, true);
+                    }
+                    catch(ex) {
+                        //Since the click wasn't in this popup, hide it.
+                        if (parent && parent.selected) {
+                            parent.click();
+                        }
+                        else {
+                            this.hide();
+                        }
+                    }
+                }
+            }
+        },
+        onBlur(e) {
+            if (this.$.#showing) {
+                const pvt = this.$.#pvt;
+                const parent = pvt.isTagType(this.parentElement, pvt.tagType("menuitem"))
+                    ? this.parentElement : null;
+
+                if (![this, parent].includes(e.target)) {
+                    try {
+                        //See if we're a child element of the target.
+                        this.$.#pvt.validateAncestry(e.target.nodeName.toLowerCase(), void 0, void 0, true);
+                    }
+                    catch(ex) {
+                        //Since the click wasn't in this popup, hide it.
+                        if (parent && parent.selected) {
+                            parent.click();
+                        }
+                        else {
+                            this.hide();
+                        }
+                    }
+                }
+            }
         }
     });
     
-    connectedCallback() {
-        //this.addEventListener("mousedown", this.pvt.#prot.onMouseDown);
-        this.addEventListener("captionChange", this.pvt.#prot.onCaptionChange);
+    constructor() {
+        super();
+
+        const pvt = this.$.#pvt;
+        //this.addEventListener("mousedown", pvt.onMouseDown);
+        this.addEventListener("render", pvt.render);
+        window.addEventListener("blur", pvt.onBlur);
+        window.addEventListener("click", pvt.onExternalClick);
         super.connectedCallback();
     }
 
     get caption() { return this.getAttribute("caption"); }
     set caption(v) { this.setAttribute("caption", v); }
 
-    get isShowing() { return this.pvt.#showing; }
+    get isShowing() { return this.$.#showing; }
 
     show(left, top) {
-        if (!this.pvt.#showing) {
+        if (!this.$.#showing) {
             let div = this.shadowRoot.querySelector("#menubody.hidden");
             div.classList.replace("hidden", "showing");
             div.style.top = top;
             div.style.left = left;
-            this.pvt.#showing = true;
+            this.$.#showing = true;
         }
     }
 
     hide() {
-        if (this.pvt.#showing) {
+        if (this.$.#showing) {
             let div = this.shadowRoot.querySelector("#menubody.showing");
             if (this.currentMenuItem) {
                 this.currentMenuItem.fireEvent("click");
             }
             div.classList.replace("showing", "hidden");
-            this.pvt.#showing = false;
+            this.$.#showing = false;
         }
     }
 }

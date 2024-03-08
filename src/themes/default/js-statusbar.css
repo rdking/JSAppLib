@@ -1,11 +1,14 @@
 :host {
     display: flex;
+    flex: 1 0 24px;
     flex-direction: row;
     justify-content: flex-start;
     align-items: center;
-    min-height: 16px;
-    flex: 1 0 auto;
-    margin: 0px 0.5em;
+    margin: 0px;
+    padding: 0.5em;
+    background-color: var(--brush-container-normal);
+    color: (--pen-container-normal);
+    border-top: 1px solid var(--brush-shadow);
 }
 .status {
     display: flex;
@@ -20,5 +23,5 @@ slot {
 }
 
 ::slotted(*) {
-    margin-left: 0.5em;
+    margin-left: 1em;
 }

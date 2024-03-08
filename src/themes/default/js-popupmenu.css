@@ -1,18 +1,21 @@
 slot {
     display: flex;
     flex-direction: column;
-    background-color: var(--brush-shadow);
+    background-color: var(--brush-container-normal);
+    color: var(--pen-container-normal);
 }
+
 .background {
-    background-color: var(--brush-normal);
-    color: var(--pen-normal);
     position: absolute;
+    border: 1px solid var(--brush-shadow);
     box-shadow: 4px 4px 4px 0px var(--brush-shadow);
     z-index: 1000;
 }
+
 .hidden {
     display: none;
 }
+
 .showing {
     display: block;
 }

@@ -1,0 +1,21 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 0px;
+    margin: 0px;
+}
+
+slot {
+    display: flex;
+    flex: 1;
+    position: relative;
+    margin: 0px;
+    padding: 0px;
+}
+
+#tabs {
+    display: flex;
+    margin-bottom: 0px;
+    min-height: 24px;
+}

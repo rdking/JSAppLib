@@ -7,7 +7,7 @@ export default class TreeBranch extends ListItem {
     static #sprot = share(this, {});
 
     static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
+    static get tagName() { return this.$.#tagName; }
     static get observedAttributes() {
         return ListItem.observedAttributes.concat(["collapsible", "collapsed"]); 
     }
@@ -21,7 +21,7 @@ export default class TreeBranch extends ListItem {
 
     #prot = share(this, TreeBranch, {
         getTemplate() {
-            let prot = this.pvt.#prot;
+            let prot = this.$.#prot;
             let content = prot.newTag("js-collapsepanel", null, {
                 children: [
                     prot.newTag("slot", {
@@ -36,7 +36,7 @@ export default class TreeBranch extends ListItem {
                 ]
             });
 
-            content.addEventListener("headerClicked", this.pvt.#prot.onHeaderClicked);
+            content.addEventListener("headerClicked", this.$.#prot.onHeaderClicked);
             return content;
         },
         onHeaderClicked(e) {
@@ -47,13 +47,13 @@ export default class TreeBranch extends ListItem {
             e.cancelBubble = true;
         },
         onPreRender() {
-            this.pvt.#prot.validateChildren(["js-treebranch", "js-treeleaf"],
+            this.$.#prot.validateChildren(["js-treebranch", "js-treeleaf"],
                 "Only TreeBranch and TreeLeaf elements can be placed in a TreeView");
-            this.pvt.#prot.validateParent(["js-treebranch", "js-treeview"],
+            this.$.#prot.validateParent(["js-treebranch", "js-treeview"],
             "TreeBranch elements can only be placed in a TreeView or TreeBanch");
         },
         onSelectedChange(e) {
-            this.pvt.#section.lock(() => {
+            this.$.#section.lock(() => {
                 this.TreeView.fireEvent("selectedChange", e.detail);
             });
         },
@@ -61,7 +61,7 @@ export default class TreeBranch extends ListItem {
             let panel = this.shadowRoot.querySelector("js-collapsepanel");
             if (panel) {
                 panel.collapsed = this.collapsed
-                this.pvt.#prot.onUpdateMarker();
+                this.$.#prot.onUpdateMarker();
             }
         },
         onCollapsibleChange(e) {
@@ -78,7 +78,7 @@ export default class TreeBranch extends ListItem {
     });
 
     connectedCallback() {
-        const prot = this.pvt.#prot;
+        const prot = this.$.#prot;
         this.addEventListener("collapsedChange", prot.onCollapsedChange);
         this.addEventListener("collapsibleChange", prot.onCollapsibleChange);
         this.addEventListener("updateMarker", prot.onUpdateMarker);
@@ -94,10 +94,10 @@ export default class TreeBranch extends ListItem {
     }
 
     get collapsed() { return this.hasAttribute("collapsed"); }
-    set collapsed(v) { this.pvt.#prot.setBoolAttribute("collapsed", this.collapsible && v); }
+    set collapsed(v) { this.$.#prot.setBoolAttribute("collapsed", this.collapsible && v); }
 
     get collapsible() { return this.hasAttribute("collapsible"); }
-    set collapsible(v) { this.pvt.#prot.setBoolAttribute("collapsible", v); }
+    set collapsible(v) { this.$.#prot.setBoolAttribute("collapsible", v); }
 
     collapseRecursively() {
         if (this.collapsible) {

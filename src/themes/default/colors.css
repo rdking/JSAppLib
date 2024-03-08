@@ -1,18 +1,53 @@
-:root {
-    --pen-normal: #4F483E;
-    --pen-selected: #f9f9f9;
-    --pen-disabled: #A0C4B4;
-    --pen-input: black;
-    --brush-normal: #F8C8A0;
-    --brush-selected: #D6703D;
-    --brush-disabled: #884F62;
-    --brush-input: white;
+/* Format of all color names
+ * (pen|brush)(?:-(input|container))?-(normal|selected|disabled)
+ *
+ * pen          => foreground color
+ * brush        => background color
+ * -normal      => active state
+ * -selected    => selected state
+ * -disabled    => disabled state
+ * -error       => error state
+ * -input       => applied to all input components
+ * -container   => applied to all container components
+ * -default     => applied to a default action component
+ *
+ * Special cases
+ */
+ :host {
+    --pen-normal: black;
+    --pen-selected: black;
+    --pen-disabled: gray;
+    --pen-error: gold;
+    --pen-input-normal: black;
+    --pen-input-selected: black;
+    --pen-input-disabled: gray;
+    --pen-input-error: gold;
+    --pen-container-normal: black;
+    --pen-container-selected: black;
+    --pen-container-disabled: gray;
+    --pen-container-error: gold;
+
+    --brush-normal: #eee0ca;
+    --brush-selected: #cea86c;
+    --brush-disabled: #80786d;
+    --brush-error: red;
+    --brush-input-normal: #eee0ca;
+    --brush-input-selected: #cea86c;
+    --brush-input-disabled: #80786d;
+    --brush-input-error: red;
+    --brush-container-normal: #eee0ca;
+    --brush-container-selected: #cea86c;
+    --brush-container-disabled: #80786d;
+    --brush-container-error: red;
+
     --brush-shadow: rgba(64, 64, 64, 0.25);
     --brush-highlight: rgba(255, 255, 255, 0.25);
     --brush-overlay: rgba(96, 96, 96, 0.5);
+    --border-shallow: gray;
+    --border-deep: black;
 }
 
-:root.light {
+:host.light {
     --pen-normal: #3f4963;
     --pen-selected: #f9f9f9;
     --pen-disabled: #9191a1;
@@ -21,7 +56,7 @@
     --brush-disabled: #e0a068;
 }
 
-:root.dark {
+:host.dark {
     --pen-normal: #f9f9f9;
     --pen-selected: #f9f9f9;
     --pen-disabled: #e0a068;

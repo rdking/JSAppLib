@@ -1,91 +1,73 @@
-import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
+import { share, saveSelf, accessor, abstract, final } from "../../cfprotected/index.mjs";
+import Base from "./jsBase.mjs";
 
-export default class Tab extends TagBase {
-    static #tagName = "js-tab";
-    static #sprot = share(this, {});
+export default class Tab extends Base {
+    static observedAttributes = ["caption", "closeable", "disabled", "selected"];
+    static #spvt= share(this, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
-    static get observedAttributes() {
-        return TagBase.observedAttributes.concat(["icon", "caption", "selected"]);
+    static {
+        this.#spvt.initAttributeProperties(this, {
+            caption: {},
+            selected: { isBool: true },
+            disabled: { isBool: true },
+            closeable: { isBool: true }
+        });
+        this.#spvt.register(this);
     }
 
-    #page = null;
-    #prot = share(this, Tab, {
+    #pvt= share(this, Tab, {
         render() {
-            const prot = this.pvt.#prot;
-            prot.renderContent(prot.newTag("div", {
-                class: this.selected ? "" : "hidden",
-                id: "page",
-            }, {
-                children: [
-                    prot.newTag("slot")
-                ]
-            }));
-        }, 
-        onPreRender() {
-            this.pvt.#prot.validateParent("js-tabset", "Tabs can only be added to TabSets.");
+            const pvt = this.$.#pvt;
+            pvt.renderContent([
+                pvt.make("div", {
+                    class: "tab"
+                }, {
+                    children: [
+                        pvt.make("label", {
+                            class: "tabLabel"
+                        }, {
+                            innerHTML: this.caption || null
+                        }),
+                        pvt.make("slot", {
+                            name: "closeButton",
+                            class: "hidden"
+                        })
+                    ]
+                }),
+                pvt.make("div", {
+                    class: "tabTrim"
+                })
+            ]);
         },
-        onIconSrcChange(e) {
-            let icon = this.shadowRoot.querySelector("#icon");
-            if (icon) {
-                icon.src = e.detail.newVal;
+        onSelectedChanged(e) {
+        },
+        onDisabledChanged(e) {
+            let { newValue: newVal } = e.detail;
+            let container = this.shadowRoot.getElementById("container");
+            container.classList[!!newVal ? "add" : "remove"]("disabled");
+        },
+        onCloseableChanged(e) {
+            let closeButton = this.shadowRoot.querySelector("slot");
+            if (closeButton) {
+                closeButton.classList[this.closeable?"remove":"add"]("hidden");
             }
         },
-        onCaptionChange(e) {
-            let label = this.shadowRoot.querySelector("#label");
+        onCaptionChanged(e) {
+            let label = this.shadowRoot.querySelector("label");
             if (label) {
-                label.setAttribute("caption", e.detail.newVal);
-            }
-        },
-        onSelectedChange(e) {
-            if (this.shadowRoot.innerHTML.length) {
-                let page = this.shadowRoot.querySelector("#page");
-                if (e.detail.newVal !== null) {
-                    this.parentElement.fireEvent("tabChange", {newVal: this});
-                    page.classList.remove("hidden");
-                }
-                else {
-                    page.classList.add("hidden");
-                }
+                label.innerHTML = this.caption;
             }
         }
     });
 
-    connectedCallback() {
-        this.addEventListener("iconsrcChange", this.pvt.#prot.onIconSrcChange);
-        this.addEventListener("captionChange", this.pvt.#prot.onCaptionChange);
-        this.addEventListener("selectedChange", this.pvt.#prot.onSelectedChange);
-        this.addEventListener("preRender", this.pvt.#prot.onPreRender);
-        super.connectedCallback();
-    }
+    constructor() {
+        super();
 
-    close() {
-        let e = { cancelClose: false };
-        this.fireEvent("tabclosing", e);
-        if (!e.cancelClose) {
-            if (this.selected) {
-                let other = this.nextElementSibling;
-                if (other) {
-                    other.selected = true;
-                }
-                else {
-                    other = this.previousElementSibling;
-                    if (other) {
-                        other.selected = true;
-                    }
-                }
-            }
-            this.parentElement.removeChild(this);
-        }
-        return !e.cancelClose;
+        const pvt = this.$.#pvt;
+        this.addEventListener("render", pvt.render());
+        this.addEventListener("selectedChanged", pvt.onSelectedChanged);
+        this.addEventListener("disabledChanged", pvt.onDisabledChanged);
+        this.addEventListener("closeableChanged", pvt.onCloseableChanged);
+        this.addEventListener("captionChanged", pvt.onCaptionChanged);
     }
-
-    get iconSrc() { return this.getAttribute("icon"); }
-    set iconSrc(v) { this.setAttribute("icon", v); }
-    get caption() { return this.getAttribute("caption"); }
-    set caption(v) { this.setAttribute("caption", v); }
-    get selected() { return this.hasAttribute("selected"); }
-    set selected(v) { this.pvt.#prot.setBoolAttribute("selected", v); }
 }

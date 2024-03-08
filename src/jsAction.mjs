@@ -1,24 +1,87 @@
-import { share } from "/node_modules/cfprotected/index.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
+import { share } from "../../cfprotected/index.mjs";
+import AppLibError from "./errors/AppLibError.mjs";
+import Base from "./jsBase.mjs";
 
-export default class Action extends TagBase {
-    static #tagName = "js-action";
-    static #sprot = share(this, {});
+export default class Action extends Base {
+    static #spvt = share(this, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
-    static get keyAttributes() {
-        return ["caption", "description", "disabled", "hotkey", "icon", "name",
-            "ontriggered"]; 
-    }
     static get observedAttributes() {
-        return TagBase.observedAttributes.concat(this.keyAttributes);
+        return Base.observedAttributes.concat([
+            "caption", "description", "disabled", "hotkey", "icon", "name",
+            "toggle", "selected", "ontriggered"
+        ]);
     }
 
-    #prot = share(this, Action, {
+    static {
+        const spvt = this.#spvt;
+        spvt.initAttributeProperties(this, {
+            caption: { readonly: true },
+            description: { readonly: true },
+            disabled: { readonly: true, isBool: true, caption: "disabled" },
+            hotkey: { readonly: true },
+            icon: { readonly: true },
+            name: { readonly: true },
+            toggle: { readonly: true, isBool: true, caption: "toggle" },
+            selected: { isBool: true, caption: "selected" },
+            ontriggered: { readonly: true }
+        });
+        spvt.register(this);
+    }
+    
+    static validateHotKey(hotkey) {
+        const presses = hotkey.split(",");
+        let retval = "";
+
+        for (let press of presses) {
+            let i = 0, keys = press.toLowerCase().split("+");
+            let c = 0;
+            let rPress = "";
+
+            if (retval && keys.length) {
+                retval += ",";
+            }
+            if (keys.includes("ctrl")) {
+                rPress += "Ctrl";
+            }
+            if (keys.includes("alt")) {
+                rPress += (rPress.length ? "+" : "") + "Alt";
+            }
+            if (keys.includes("shift")) {
+                rPress += (rPress.length ? "+" : "") + "Shift";
+            }
+            if (keys.includes("meta")) {
+                if (keys.includes("win")) {
+                    throw new AppLibError(`Invalid hotkey sequence. "Meta" === "Win": ${press}`);
+                }
+                rPress += (rPress.length ? "+" : "") + "Meta";
+            }
+            else if (keys.includes("win")) {
+                rPress += (rPress.length ? "+" : "") + "Win";
+            }
+
+            while (keys[i]) {
+                let key = keys[i].toLowerCase();
+                if (!["alt", "ctrl", "shift", "meta", "win"].includes(key)) {
+                    if (++c > 1) {
+                        throw new AppLibError(`Invalid hotkey sequence: ${press}`);
+                    }
+                    rPress += (rPress.length ? "+" : "") + key.toUpperCase();
+                }
+                ++i;
+            }
+
+            retval += rPress;
+        }
+
+        return retval;
+    }
+    
+    #registered = [];
+
+    #pvt = share(this, Action, {
         render() {
-            const prot = this.pvt.#prot;
-            prot.renderContent(prot.newTag("slot"));
+            const pvt = this.$.#pvt;
+            pvt.renderContent(pvt.make("slot"));
         },
         onPreRender() {
             if (!this.hasAttribute("name") || !this.getAttribute("name").trim().length) {
@@ -27,100 +90,42 @@ export default class Action extends TagBase {
             if (!this.hasAttribute("caption") || !this.getAttribute("caption").trim().length) {
                 throw new TypeError("Action elements must have a caption attribute");
             }
-            if (!this.hasAttribute("ontriggered") || !this.getAttribute("ontriggered").trim().length) {
-                throw new TypeError("Action elements must have an ontriggered attribute");
-            }
-            this.pvt.#prot.validateParent("js-actionmanager",
+            this.$.#pvt.validateParent(this.$.#pvt.tagType("actionmanager"),
                 "Action elements can only contained by an ActionManager element");
         },
-        onCaptionChange() {
-            this.parentElement.updateClients(this, "caption");
+        onHotkeyChanged(e) {
+            let { oldValue, newValue } = e.detail;
+            let hotkey = Action.validateHotKey(newValue);
+            if (newValue != hotkey) {
+                this.setAttribute("hotkey", hotkey);
+            } else {
+                const am = app.actionManager;
+                if (am) {
+                    am.unregisterHotKey(this.hotkey, this);
+                    am.registerHotKey(this.hotkey, this);
+                }
+            }
         },
-        onDescriptionChange() {
-            this.parentElement.updateClients(this, "description");
-        },
-        onDisabledChange() {
-            this.parentElement.updateClients(this, "disabled");
-        },
-        onHotkeyChange() {
-            this.parentElement.updateClients(this, "hotkey");
-        },
-        onIconChange() {
-            this.parentElement.updateClients(this, "icon");
-        },
-        onNameChange() {
-            this.parentElement.updateClients(this, "name");
-        },
-        onOnTriggeredChange() {
-            this.parentElement.updateClients(this, "ontriggered");
-        },
+        onSelectedChanged() {
+            for (let item of this.$.#registered) {
+                if ("selected" in item) {
+                    item.selected = this.selected;
+                }
+            }
+        }
     });
 
-    connectedCallback() {
-        const prot = this.pvt.#prot;
-        this.addEventListener("captionChange", prot.onCaptionChange);
-        this.addEventListener("descriptionChange", prot.onDescriptionChange);
-        this.addEventListener("disabledChange", prot.onDisabledChange);
-        this.addEventListener("hotkeyChange", prot.onHotkeyChange);
-        this.addEventListener("iconChange", prot.onIconChange);
-        this.addEventListener("nameChange", prot.onNameChange);
-        this.addEventListener("onOnTriggeredChange", prot.onOnTriggeredChange);
-        super.connectedCallback();
+    constructor() {
+        super();
+
+        const pvt = this.$.#pvt;
+        this.addEventListener("render", pvt.render);
+        this.addEventListener("preRender", pvt.onPreRender);
+        this.addEventListener("hotkeyChanged", pvt.onHotkeyChanged);
+        this.addEventListener("selectedChanged", pvt.onSelectedChanged);
     }
 
-    get caption() {
-        return this.getAttribute("caption");
-    }
-
-    set caption(v) {
-        this.setAttribute("caption", v);
-    }
-    
-    get description() {
-        return this.getAttribute("description");
-    }
-
-    set description(v) {
-        this.setAttribute("description", v);
-    }
-    
-    get disabled() {
-        return this.hasAttribute("disabled");
-    }
-
-    set disabled(v) {
-        this.pvt.#prot.setBoolAttribute("disabled", v);
-    }
-    
-    get hotkey() {
-        return this.getAttribute("hotkey");
-    }
-
-    set hotkey(v) {
-        this.setAttribute("hotkey", v);
-    }
-    
-    get icon() {
-        return this.getAttribute("icon");
-    }
-
-    set icon(v) {
-        this.setAttribute("icon", v);
-    }
-    
-    get name() {
-        return this.getAttribute("name");
-    }
-
-    set name(v) {
-        this.setAttribute("name", v);
-    }
-    
-    get ontriggered() {
-        return this.getAttribute("ontriggered");
-    }
-
-    set ontriggered(v) {
-        this.setAttribute("ontriggered", v);
+    register(item) {
+        this.$.#registered.push(item);
     }
 };

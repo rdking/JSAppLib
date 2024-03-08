@@ -1,77 +1,86 @@
-import { share, final } from "/node_modules/cfprotected/index.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
+import { share, final } from "../../cfprotected/index.mjs";
+import Base from "./jsBase.mjs";
 
-const Theme = final(class Theme extends TagBase {
-    static #tagName = "js-theme";
+const Theme = final(class Theme extends Base {
     
-    static #sprot = share(this, {});
+    static #spvt= share(this, {});
     
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
     static get observedAttributes() {
-        return TagBase.observedAttributes.concat(["name", "path"]);
+        return ["themename", "themepath"];
     }
-    static get isManagement() {return true};
+
+    static {
+        this.#spvt.initAttributeProperties(this, {
+            themeName: {},
+            themePath: {}
+        });
+        this.#spvt.register(this);
+    }
+
+    static get isManagement() { return true; }
 
     #globalStyleSheet = null;
     #componentColors = null;
     #componentSheets = null;
     #attributeError = false;
     #loaded = false;
+    #loading = false;
 
     #createLink(name, file) {
         let retval = "";
         if (file) {
-            retval = `<link id="${name}" rel="stylesheet" href="${file}"/>`;
+            retval = `<style id="${name}">@import url("${file}")</style>`;
         }
         return retval;
     }
 
     async #loadTheme() {
         try {
-            let prefix = this.path + ((this.path[this.path.length-1] == "/") ? "" : "/");
-            let themeFile = await fetch(prefix + "theme.json");
-            let info = JSON.parse(await themeFile.text());
-            let components = info.components;
-            this.pvt.#globalStyleSheet = prefix + components.global;
-            this.pvt.#componentColors = prefix + components.color;
-    
-            if (Array.isArray(components.tags)) {
-                this.pvt.#componentSheets = {};
-    
-                for (let name of components.tags) {
-                    this.pvt.#componentSheets[name] = prefix + name + ".css";
+            console.log(`Loading ${this.themeName} theme...`);
+            if (!this.$.#loading) {
+                this.$.#loading = true;
+                let prefix = this.themePath + ((this.themePath[this.themePath.length-1] == "/") ? "" : "/");
+                let themeFile = await fetch(prefix + "theme.json");
+                let info = JSON.parse(await themeFile.text());
+                let components = info.components;
+                this.$.#globalStyleSheet = prefix + components.global;
+                this.$.#componentColors = prefix + components.color;
+        
+                if (Array.isArray(components.tags)) {
+                    this.$.#componentSheets = {};
+        
+                    for (let name of components.tags) {
+                        this.$.#componentSheets[name] = prefix + name + ".css";
+                    }
                 }
-            }
 
-            this.pvt.#loaded = true;
-            this.fireEvent("loaded");
+                this.$.#loaded = true;
+                console.log(`Loaded ${this.themeName} theme...`);
+                this.fireEvent("loaded");
+            }
         }
         catch(e) {
-            console.error(`Failed to load themes from "${path}"`, e);
+            console.error(`Failed to load themes from "${this.  path}"`, e);
         }
     }
 
-    #prot = share(this, Theme, {
-        render() {
-
-        },
+    #pvt= share(this, Theme, {
         onNameChange(e) {
-            if (!this.pvt.#attributeError) {
-                let {oldVal, newVal} = e.detail;
+            if (!this.$.#attributeError) {
+                let {oldValue: oldVal, newValue: newVal} = e.detail;
 
                 if ((oldVal === null) && (typeof(newVal) == "string")) {
-                    if (this.path.length) {
-                        this.pvt.#loadTheme();
+                    if ((typeof(this.themePath) == "string") && this.themePath.length) {
+                        this.$.#loadTheme();
                     }
                 }
                 else {
-                    this.pvt.#attributeError = true;
+                    this.$.#attributeError = true;
                     try {
-                        this.setAttribute("name", oldVal);
+                        this.themeName = oldVal;
                     }
                     finally {
-                        this.pvt.#attributeError = false;
+                        this.$.#attributeError = false;
                     }
                     throw new TypeError((oldVal != "") 
                         ? "Theme name cannot be altered."
@@ -81,21 +90,21 @@ const Theme = final(class Theme extends TagBase {
             }
         },
         onPathChange(e) {
-            if (!this.pvt.#attributeError) {
-                let {oldVal, newVal} = e.detail;
+            if (!this.$.#attributeError) {
+                let {oldValue: oldVal, newValue: newVal} = e.detail;
 
                 if ((oldVal === null) && (typeof(newVal) == "string")) {
-                    if (this.name.length) {
-                        this.pvt.#loadTheme();
+                    if ((typeof(this.themeName) == "string") && this.themeName.length) {
+                        this.$.#loadTheme();
                     }
                 }
                 else {
-                    this.pvt.#attributeError = true;
+                    this.$.#attributeError = true;
                     try {
-                        this.setAttribute("path", oldVal);
+                        this.themePath = oldVal;
                     }
                     finally {
-                        this.pvt.#attributeError = false;
+                        this.$.#attributeError = false;
                     }
                     throw new TypeError((oldVal != "") 
                         ? "Theme path cannot be altered."
@@ -107,22 +116,23 @@ const Theme = final(class Theme extends TagBase {
     });
 
     constructor() {
-        super();
-        
-        let prot = this.pvt.#prot;
-        this.addEventListener("nameChange", prot.onNameChange);
-        this.addEventListener("pathChange", prot.onPathChange);
-    }
+        super();   
 
-    connectedCallback() {
-        super.connectedCallback();
+        const pvt = this.$.#pvt;
+        this.addEventListener("themenameChanged", pvt.onNameChange);
+        this.addEventListener("themepathChanged", pvt.onPathChange);
+
+        if (this.themeName === "default") {
+            pvt.onNameChange({ detail: { oldValue: null, newValue: this.themeName } });
+        }
     }
 
     componentLink(tagName) {
+        const sheets = this.$.#componentSheets;
         let retval = "";
-        if (tagName in this.pvt.#componentSheets) {
-            retval = this.pvt.#createLink("colors", this.pvt.#componentColors)
-                + this.pvt.#createLink("componentTheme", this.pvt.#componentSheets[tagName]);
+        if (sheets && (tagName in sheets)) {
+            retval = this.$.#createLink("colors", this.$.#componentColors)
+                + this.$.#createLink("componentTheme", sheets[tagName]);
         }
         else {
             console.warn(`Could not find style for ${tagName}...`);
@@ -130,14 +140,12 @@ const Theme = final(class Theme extends TagBase {
         return retval;
     }
 
-    get name() { return this.getAttribute("name"); }
-
-    get path() { return this.getAttribute("path"); }
-
     get globalLink() {
-        return this.pvt.#createLink("colors", this.pvt.#componentColors)
-            + this.pvt.#createLink("theme", this.pvt.#globalStyleSheet);
+        return this.$.#createLink("colors", this.$.#componentColors)
+            + this.$.#createLink("theme", this.$.#globalStyleSheet);
     }
+
+    get ready() { return this.$.#loaded; }
 });
 
 export default Theme;

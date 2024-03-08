@@ -1,14 +1,18 @@
-import { share } from "/node_modules/cfprotected/index.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
+import { share } from "../../cfprotected/index.mjs";
+import Base from "./jsBase.mjs";
 
-export default class ListItem extends TagBase {
-    static #tagName = "js-listitem";
-    static #sprot = share(this, {});
+export default class ListItem extends Base {
+    static #spvt = share(this, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
     static get observedAttributes() {
-        return TagBase.observedAttributes.concat(["items", "selected", "type"]); 
+        return Base.observedAttributes.concat(["items", "selected", "type"]); 
+    }
+    static { 
+        this.#spvt.initAttributeProperties({
+            selected: { isBool: true },
+            type: { }
+        });
+        this.#spvt.register(this);
     }
 
     #observer = null;
@@ -34,26 +38,26 @@ export default class ListItem extends TagBase {
         else {
             if (retval.hasChildNodes()) {
                 for (let child of retval.childNodes) {
-                    this.pvt.#populate(child);
+                    this.$.#populate(child);
                 }
             } else {
-                retval.textContent = this.pvt.#populate(retval.textContent);
+                retval.textContent = this.$.#populate(retval.textContent);
             }
         }
 
         return retval;
     }
 
-    #prot = share(this, ListItem, {
+    #pvt = share(this, ListItem, {
         getTemplate() {
             return this.parentElement.querySelector("template").innerHTML;
         },
         render() {
-            let prot = this.pvt.#prot;
-            let template = prot.getTemplate() || "";
-            let pTemplate = this.pvt.#populate(template);
+            let pvt = this.$.#pvt;
+            let template = pvt.getTemplate() || "";
+            let pTemplate = this.$.#populate(template);
             let isString = typeof(template) == "string";
-            let content = prot.newTag("div", {
+            let content = pvt.newTag("div", {
                 class: "listitem"
             }, {
                 innerHTML: isString ? pTemplate : ""
@@ -61,11 +65,11 @@ export default class ListItem extends TagBase {
             if (!isString) {
                 content.appendChild(pTemplate);
             }
-            prot.renderContent(content);
+            pvt.renderContent(content);
 
         },
         onPreRender() {
-            this.pvt.#prot.validateParent("js-listview", "ListItems can only be placed in a ListView");
+            this.$.#pvt.validateParent("js-listview", "ListItems can only be placed in a ListView");
         },
         onClick(e) {
             e.cancelBubble = true;
@@ -86,20 +90,30 @@ export default class ListItem extends TagBase {
             else {
                 sDiv.classList.remove("selected");
             }
+        },
+        onTypeChanged(e) {
+            let {newValue, oldValue} = e.detail;
+
+            const translator = document.querySelector("js-datatranslator");
+            if (translator && !translator.isRegistered(newValue)) {
+                this.setAttribute("type", oldValue);
+            }
         }
     });
 
     constructor() {
         super();
         this.type = this.type || "json";
-        this.pvt.#observer = new MutationObserver(this.pvt.#prot.render);
-        this.pvt.#observer.observe(this, { attributes: false, childList: true, subtree: true});
+        this.$.#observer = new MutationObserver(this.$.#pvt.render);
+        this.$.#observer.observe(this, { attributes: false, childList: true, subtree: true});
     }
 
     connectedCallback() {
-        this.addEventListener("preRender", this.pvt.#prot.onPreRender);
-        this.addEventListener("click", this.pvt.#prot.onClick);
-        this.addEventListener("selectedChange", this.pvt.#prot.onSelectedChange);
+        const pvt = this.$.#pvt;
+        this.addEventListener("preRender", pvt.onPreRender);
+        this.addEventListener("click", pvt.onClick);
+        this.addEventListener("selectedChanged", pvt.onSelectedChange);
+        this.addEventListener("typeChanged", pvt.onTypeChanged);
         super.connectedCallback();
     }
 
@@ -122,16 +136,4 @@ export default class ListItem extends TagBase {
             this.innerHTML = v;
         }
     }
-    
-    get type() { return this.getAttribute("type"); }
-    set type(v) {
-        const translator = document.querySelector("js-datatranslator");
-        if (translator && !translator.isRegistered(v)) {
-            throw new TypeError(`Unknown data format "${v}"`);
-        }
-        this.setAttribute("type", v);
-    }
-
-    get selected() { return this.hasAttribute("selected"); }
-    set selected(v) { this.pvt.#prot.setBoolAttribute("selected", v); }
 }

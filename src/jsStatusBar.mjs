@@ -1,49 +1,48 @@
-import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
+import { share } from "../../cfprotected/index.mjs";
+import Base from "./jsBase.mjs";
 
-export default class StatusBar extends TagBase {
-    static #tagName = "js-statusbar";
-    static #sprot = share(this, {});
+export default class StatusBar extends Base {
+    static #spvt = share(this, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
     static get observedAttributes() {
-        return TagBase.observedAttributes.concat(["status"]);
+        return Base.observedAttributes.concat(["status"]);
     }
 
+    static {
+        this.#spvt.initAttributeProperties(this, {
+            status: { }
+        });    
+        this.#spvt.register(this);
+    }    
     
-    #prot = share(this, StatusBar, {
+    #pvt = share(this, StatusBar, {
         render() {
-            const prot = this.pvt.#prot;
-            prot.renderContent([
-                prot.newTag("span", {
+            const pvt = this.$.#pvt;
+            pvt.renderContent([
+                pvt.make("span", {
                     class: "status"
                 }, {
-                    innerHTML: this.status
+                    innerHTML: this.status 
                 }),
-                prot.newTag("slot")
+                pvt.make("slot")
             ]);
         },
         onStatusChange(e) {
             let status = this.shadowRoot.querySelector("span.status");
             if (status) {
-                status.innerHTML = e.detail.newVal;
+                status.innerHTML = e.detail.newValue;
             }
         }
     });
 
     constructor() {
         super();
-        if (this.cla$$.prototype === Object.getPrototypeOf(this)) {
-            this.slot = "footer";
-        }
     }
 
     connectedCallback() {
-        this.addEventListener("statusChange", this.pvt.#prot.onStatusChange);
+        const pvt = this.$.#pvt;
+        this.addEventListener("render", pvt.render);
+        this.addEventListener("statusChanged", pvt.onStatusChange);
         super.connectedCallback();
     }
-
-    get status() { return this.getAttribute("status"); }
-    set status(v) { this.setAttribute("status", v); }
 }

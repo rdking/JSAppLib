@@ -6,7 +6,7 @@ export default class TreeLeaf extends ListItem {
     static #sprot = share(this, {});
 
     static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.pvt.#tagName; }
+    static get tagName() { return this.$.#tagName; }
     static get observedAttributes() {
         return ListItem.observedAttributes.concat([
             "iscaption"
@@ -25,7 +25,7 @@ export default class TreeLeaf extends ListItem {
 
     #prot = share(this, TreeLeaf, {
         getTemplate() {
-            const prot = this.pvt.#prot;
+            const prot = this.$.#prot;
             let template = this.TreeView.querySelector("template").cloneNode(true);
             let children = Array.from(template.content.children);
             template.innerHTML = "";
@@ -37,17 +37,17 @@ export default class TreeLeaf extends ListItem {
                     prot.newTag("span", {
                         class: "marker"
                     }, {
-                        innerHTML: this.pvt.#getMarker()
+                        innerHTML: this.$.#getMarker()
                     })
                 ].concat(children)
             });
 
-            content.querySelector("span.marker").addEventListener("click", this.pvt.#prot.onMarkerClicked);
+            content.querySelector("span.marker").addEventListener("click", this.$.#prot.onMarkerClicked);
             
             return content;
         },
         onPreRender() {
-            this.pvt.#prot.validateParent(["js-treebranch", "js-treeview"],
+            this.$.#prot.validateParent(["js-treebranch", "js-treeview"],
             "TreeLeaf elements can only be placed in a TreeView or TreeBanch");
         },
         onMarkerClicked(e) {
@@ -55,7 +55,7 @@ export default class TreeLeaf extends ListItem {
                 this.parentElement.collapsed = !this.parentElement.collapsed;
                 e.cancelBubble = true;
             }
-            this.pvt.#prot.onUpdateMarker();
+            this.$.#prot.onUpdateMarker();
         },
         onClick(e) {
             e.cancelBubble = true;
@@ -70,7 +70,7 @@ export default class TreeLeaf extends ListItem {
         },
         onUpdateMarker(e) {
             if (this.parentElement.nodeName.toLowerCase() == "js-treebranch") {
-                this.shadowRoot.querySelector("span.marker").innerHTML = this.pvt.#getMarker()
+                this.shadowRoot.querySelector("span.marker").innerHTML = this.$.#getMarker()
             }
         }
     });
@@ -84,12 +84,12 @@ export default class TreeLeaf extends ListItem {
     }
 
     connectedCallback() {
-        const prot = this.pvt.#prot;
+        const prot = this.$.#prot;
         this.addEventListener("iscaptionChange", prot.onIsCaptionChange);
         this.addEventListener("updateMarker", prot.onUpdateMarker);
         super.connectedCallback();
     }
 
     get isCaption() { return this.hasAttribute("iscaption"); }
-    set isCaption(v) { this.pvt.#prot.setBoolAttribute("iscaption", !!v); }
+    set isCaption(v) { this.$.#prot.setBoolAttribute("iscaption", !!v); }
 }

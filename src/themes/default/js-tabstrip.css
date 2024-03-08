@@ -1,0 +1,25 @@
+:host {
+    display: flex;
+    flex-direction: row;
+    margin: 2px -1px -2px;
+    padding-top: 2px;
+    padding-left: 2px;
+    overflow: hidden;
+    background-color: var(--brush-shadow);
+}
+
+:host(:first-child) {
+    padding-left: 2px;
+}
+
+.tabstrip {
+    display: flex;
+    flex-direction: row;
+}
+
+.notab {
+    display: flex;
+    flex: 1;
+    border: none;
+    border-bottom: 1px solid black;
+}
