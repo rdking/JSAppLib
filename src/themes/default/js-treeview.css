@@ -1,9 +1,16 @@
 :host {
-    background-color: var(--brush-input);
-    color: var(--pen-input);
-    border: 2px solid transparent;
-    overflow-y: auto;
-    overflow-x: auto;
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: row;
+    background-color: var(--brush-input-normal);
+    color: var(--pen-input-normal);
+    margin: 4px;
+    padding: 0px;
+    border: 0px;
+    min-width: 5em;
+    min-height: 1em;
+    overflow: auto;
+    contain: strict;
 }
 
 :host(:focus) {
@@ -13,11 +20,21 @@
 
 slot {
     display: flex;
+    flex: 1 0 auto;
+    display: flex;
     flex-flow: column nowrap;
     justify-content: flex-start;
-    padding: 0.3333em;
 }
 
 div:focus {
     outline: none;
+}
+
+div.focusable {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: inherit;
+    background-color: var(--brush-input-normal);
+    color: var(--pen-input-normal);
+    padding: 2px;
 }

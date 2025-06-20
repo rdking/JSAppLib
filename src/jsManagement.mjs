@@ -1,4 +1,4 @@
-import { share } from "../../cfprotected/index.mjs";
+import { share, saveSelf } from "../../cfprotected/index.mjs";
 import ManagerBase from "./jsManagerBase.mjs";
 import App from "./jsApp.mjs";
 
@@ -6,14 +6,18 @@ export default class Management extends ManagerBase {
     static #spvt= share(this, {});
 
     static {
-        this.#spvt.initAttributeProperties(this, {
+        saveSelf(this, '$');
+        
+        const spvt = this.#spvt;
+        spvt.initAttributeProperties(this, {
+            autoinit: { isBool: true, caption: "autoinit" }
         });
-        this.#spvt.register(this);
+        spvt.register(this);
     }
 
     #waitingflags = 0;
     #pvt= share(this, Management, {
-        render() {
+        doRender() {
             const pvt = this.$.#pvt;
             pvt.renderContent(pvt.make("slot"));
         },
@@ -22,7 +26,7 @@ export default class Management extends ManagerBase {
             const prefix = ManagerBase.prefix;
             pvt.validateAncestry(`${prefix}-app`, true,
                 `The <${prefix}-management> cannot be placed inside a <${prefix}-app>`);
-            pvt.validateChildren(c => c.cla$$.isManagement,
+            pvt.validateChildren(c => c.$.isManagement,
                 `Only management classes can be placed in <${prefix}-management>`);
         },
         onManagerReady(id) {
@@ -39,11 +43,6 @@ export default class Management extends ManagerBase {
 
         }
     });
-
-    connectedCallback() {
-        this.addEventListener("render", this.$.#pvt.render);
-        super.connectedCallback();
-    }
     
     get isManagement() { return this.cla$$.isManagement; }
 

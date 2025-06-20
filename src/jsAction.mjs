@@ -8,7 +8,7 @@ export default class Action extends Base {
     static get observedAttributes() {
         return Base.observedAttributes.concat([
             "caption", "description", "disabled", "hotkey", "icon", "name",
-            "toggle", "selected", "ontriggered"
+            "toggle", "selected", "onaction"
         ]);
     }
 
@@ -23,54 +23,57 @@ export default class Action extends Base {
             name: { readonly: true },
             toggle: { readonly: true, isBool: true, caption: "toggle" },
             selected: { isBool: true, caption: "selected" },
-            ontriggered: { readonly: true }
+            onaction: { readonly: true }
         });
         spvt.register(this);
     }
     
     static validateHotKey(hotkey) {
-        const presses = hotkey.split(",");
         let retval = "";
 
-        for (let press of presses) {
-            let i = 0, keys = press.toLowerCase().split("+");
-            let c = 0;
-            let rPress = "";
+        if (hotkey) {
+            const presses = hotkey.split(",");
 
-            if (retval && keys.length) {
-                retval += ",";
-            }
-            if (keys.includes("ctrl")) {
-                rPress += "Ctrl";
-            }
-            if (keys.includes("alt")) {
-                rPress += (rPress.length ? "+" : "") + "Alt";
-            }
-            if (keys.includes("shift")) {
-                rPress += (rPress.length ? "+" : "") + "Shift";
-            }
-            if (keys.includes("meta")) {
-                if (keys.includes("win")) {
-                    throw new AppLibError(`Invalid hotkey sequence. "Meta" === "Win": ${press}`);
+            for (let press of presses) {
+                let i = 0, keys = press.toLowerCase().split("+");
+                let c = 0;
+                let rPress = "";
+
+                if (retval && keys.length) {
+                    retval += ",";
                 }
-                rPress += (rPress.length ? "+" : "") + "Meta";
-            }
-            else if (keys.includes("win")) {
-                rPress += (rPress.length ? "+" : "") + "Win";
-            }
-
-            while (keys[i]) {
-                let key = keys[i].toLowerCase();
-                if (!["alt", "ctrl", "shift", "meta", "win"].includes(key)) {
-                    if (++c > 1) {
-                        throw new AppLibError(`Invalid hotkey sequence: ${press}`);
+                if (keys.includes("ctrl")) {
+                    rPress += "Ctrl";
+                }
+                if (keys.includes("alt")) {
+                    rPress += (rPress.length ? "+" : "") + "Alt";
+                }
+                if (keys.includes("shift")) {
+                    rPress += (rPress.length ? "+" : "") + "Shift";
+                }
+                if (keys.includes("meta")) {
+                    if (keys.includes("win")) {
+                        throw new AppLibError(`Invalid hotkey sequence. "Meta" === "Win": ${press}`);
                     }
-                    rPress += (rPress.length ? "+" : "") + key.toUpperCase();
+                    rPress += (rPress.length ? "+" : "") + "Meta";
                 }
-                ++i;
-            }
+                else if (keys.includes("win")) {
+                    rPress += (rPress.length ? "+" : "") + "Win";
+                }
 
-            retval += rPress;
+                while (keys[i]) {
+                    let key = keys[i].toLowerCase();
+                    if (!["alt", "ctrl", "shift", "meta", "win"].includes(key)) {
+                        if (++c > 1) {
+                            throw new AppLibError(`Invalid hotkey sequence: ${press}`);
+                        }
+                        rPress += (rPress.length ? "+" : "") + key.toUpperCase();
+                    }
+                    ++i;
+                }
+
+                retval += rPress;
+            }
         }
 
         return retval;
@@ -119,10 +122,10 @@ export default class Action extends Base {
         super();
 
         const pvt = this.$.#pvt;
-        this.addEventListener("render", pvt.render);
-        this.addEventListener("preRender", pvt.onPreRender);
-        this.addEventListener("hotkeyChanged", pvt.onHotkeyChanged);
-        this.addEventListener("selectedChanged", pvt.onSelectedChanged);
+        pvt.registerEvents({
+            hotkeyChanged: pvt.onHotkeyChanged,
+            selectedChanged: pvt.onSelectedChanged
+        });
     }
 
     register(item) {

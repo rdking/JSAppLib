@@ -1,21 +1,21 @@
-import { share, accessor } from "/node_modules/cfprotected/index.mjs";
-import FocusableTag from "/node_modules/jsapplib/src/jsFocusableTag.mjs";
-import Semaphore from "/node_modules/jsapplib/src/util/Semaphore.mjs";
+import { share, accessor } from "../../cfprotected/index.mjs";
+import FocusableTag from "./jsFocusableTag.mjs";
+import Semaphore from "./util/Semaphore.mjs";
 
 export default class ListView extends FocusableTag {
-    static #tagName = "js-listview";
-    static #sprot = share(this, {});
+    static #spvt = share(this, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.$.#tagName; }
     static get observedAttributes() {
-        return FocusableTag.observedAttributes.concat(["items"]); 
-    }
-
-    static get observedEvents() {
         return FocusableTag.observedAttributes.concat([
-            "selectedChange"
-        ]);
+            "items"
+        ]); 
+    }
+    
+    static { 
+        this.#spvt.initAttributeProperties(this, {
+
+        });
+        this.#spvt.register(this);
     }
 
     #section = new Semaphore();
@@ -60,22 +60,16 @@ export default class ListView extends FocusableTag {
         return queue;
     }
 
-    #prot = share(this, ListView, {
+    #pvt = share(this, ListView, {
         lastItem: accessor({
             get: () => this.$.#lastItem
         }),
         validItemTypes: accessor({
-            get: () => [ "js-listitem" ]
+            get: () => [ this.$.#pvt.tagType("listitem") ]
         }),
         render() {
-            const prot = this.$.#prot;
-            prot.renderContent(prot.newTag("div", {
-                class: "listview"
-            }, {
-                children: [
-                    prot.newTag("slot")
-                ]
-            }));
+            const pvt = this.$.#pvt;
+            pvt.renderContent(pvt.make("slot"));
         },
         manageSelections(cause, prevItem, items) {
             this.#section.lock(() => {
@@ -168,22 +162,23 @@ export default class ListView extends FocusableTag {
             }
         },
         onPreRender() {
-            let validItems = [ "template" ].concat(this.$.#prot.validItemTypes);
-            this.$.#prot.validateChildren(validItems,
-                "Only ListViews can only contain ListItems and a single html template");
+            const pvt = this.$.#pvt;
+            let validItems = [ "template" ].concat(pvt.validItemTypes);
+            pvt.validateChildren(validItems,
+                "ListViews can only contain ListItems and a single html template");
 
             let templates = this.querySelectorAll("template");
-            if (templates.length !== 1) {
-                throw new TypeError("ListView requires exactly 1 template definition.");
+            if (templates.length > 1) {
+                throw new TypeError("ListView can only have 1 template definition.");
             }
         },
-        onSelectedChange(e) {
-            let { cause } = e.detail;
+        onSelectedChanged(e) {
             let prevItem = this.$.#lastItem;
             let items = this.items;
 
-            this.$.#prot.manageSelections(cause, prevItem, items);
-            this.$.#lastItem = cause;
+            this.$.#pvt.manageSelections(e.target, prevItem, items);
+            this.$.#lastItem = e.target;
+            this.focus();
         },
         onSetModifiers(e) {
             this.$.#ctrlDown = this.multiSelect
@@ -192,25 +187,48 @@ export default class ListView extends FocusableTag {
             this.$.#shiftDown = this.multiSelect
                 ? !!e.detail.shiftDown
                 : false;
+        },
+        onItemAdded(e) {
+            let item = e.detail;
+            item.addEventListener("selectedChanged", this.$.#pvt.onSelectedChanged);
+        },
+        onItemRemoved(e) {
+            let item = e.detail;
+            item.removeEventListener("selectedChanged", this.$.#pvt.onSelectedChanged);
+        },
+        onFocused(e) {
+            console.log(`${this.cla$$.tagName} focused`);
+        },
+        onBlur(e) {
+            console.log(`${this.cla$$.tagName} lost focus`);
         }
     });
 
-    connectedCallback() {
-        const prot = this.$.#prot;
-        this.addEventListener("preRender", prot.onPreRender);
-        this.addEventListener("keydown", prot.onKeyDown);
-        this.addEventListener("selectedChange", prot.onSelectedChange);
-        this.addEventListener("setModifiers", prot.onSetModifiers);
-        super.connectedCallback();
+    constructor() {
+        super();
+
+        const pvt = this.$.#pvt;
+
+
+        pvt.registerEvents({
+            "render": pvt.render,
+            "preRender": pvt.onPreRender,
+            "keydown": pvt.onKeyDown,
+            "setModifiers": pvt.onSetModifiers,
+            "itemAdded": pvt.onItemAdded,
+            "itemRemoved": pvt.onItemRemoved,
+            "focus": pvt.onFocused,
+            "blur": pvt.onBlur
+        });
     }
 
     get items() { 
-        let types = this.$.#prot.validItemTypes.join(",");
+        let types = this.$.#pvt.validItemTypes.join(",");
         return this.$.#getOrderedItems(types); 
     }
 
     get selectedItems() { return this.items.filter(v => v.selected); }
 
     get multiSelect() { return this.hasAttribute("multiselect"); }
-    set multiSelect(v) { this.$.#prot.setBoolAttribute("multiselect", v); }
+    set multiSelect(v) { this.$.#pvt.setBoolAttribute("multiselect", v); }
 }

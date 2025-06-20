@@ -8,6 +8,10 @@ export default class App extends Base {
     static {
         this.#spvt.register(this);
     }
+    
+    static ready() {
+        this.$.#spvt.registerElements();
+    }
 
     #pvt= share(this, App, {
         render() {
@@ -16,8 +20,6 @@ export default class App extends Base {
         }
     });
     
-    #isReady = false;
-
     #addProperty(name) {
         if (name != this.id) {
             Object.defineProperty(this, name, {
@@ -34,18 +36,6 @@ export default class App extends Base {
         }
     }
 
-    getManager(mgrName) {
-        const pvt = this.$.#pvt;
-        const mgmt = document.querySelector(pvt.tagType("management"));
-        let retval;
-
-        if (mgmt) {
-            retval = mgmt.querySelector(pvt.tagTypes(mgrName)[0]);
-        }
-
-        return retval;
-    }
-
     constructor() {
         super();
 
@@ -60,15 +50,23 @@ export default class App extends Base {
             value: this
         });
 
-        this.addEventListener("addComponent", this.$.#addProperty);
-        this.addEventListener("removeComponent", this.$.#removeProperty);
-        this.addEventListener("render", this.$.#pvt.render);
+        this.$.#pvt.registerEvents({
+            "addComponent": this.$.#addProperty,
+            "removeComponent": this.$.#removeProperty,
+            "render": this.$.#pvt.render
+        });
     }
+ 
+    getManager(mgrName) {
+        const pvt = this.$.#pvt;
+        const mgmt = document.querySelector(pvt.tagType("management"));
+        let retval;
 
-    checkReadiness() {
-        if (this.$.#isReady) {
-            this.fireEvent("ready");
+        if (mgmt) {
+            retval = mgmt.querySelector(pvt.tagTypes(mgrName)[0]);
         }
+
+        return retval;
     }
 
     get menu() {

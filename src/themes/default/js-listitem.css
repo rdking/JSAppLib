@@ -4,8 +4,11 @@
     flex-wrap: nowrap;
     justify-content: space-between;
     margin: 0.125em;
-    background-color: transparent;
     color: var(--pen-input);
+}
+
+:host([selected]) {
+    background-color: var(--brush-input-selected);
 }
 
 .listitem {
@@ -16,8 +19,4 @@
 
 .listitem:hover {
     background-color: var(--brush-shadow);
-}
-
-.listitem.selected {
-    background-color: var(--brush-selected);
 }

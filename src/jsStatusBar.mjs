@@ -28,7 +28,7 @@ export default class StatusBar extends Base {
             ]);
         },
         onStatusChange(e) {
-            let status = this.shadowRoot.querySelector("span.status");
+            let status = this.$.#pvt.shadowRoot.querySelector("span.status");
             if (status) {
                 status.innerHTML = e.detail.newValue;
             }

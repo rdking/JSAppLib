@@ -1,20 +1,22 @@
 import { share, accessor, abstract, final } from "../../cfprotected/index.mjs";
-import Base from "./jsBase.mjs";
+import Container from "./jsContainer.mjs";
 
-export default class TabPage extends Base {
-    static observedAttributes = ["caption", "closeable", "selected", "tabname"];
-
-    //Pulls in shared private functions
+export default class TabPage extends Container {
     static #spvt= share(this, {});
 
+    static get observedAttributes() {
+        return Container.observedAttributes.concat([ "caption", "closeable", "selected", "tabname" ]);
+    }
+
     static {
-        this.#spvt.initAttributeProperties(this, {
+        const spvt = this.#spvt;
+        spvt.initAttributeProperties(this, {
             caption: {},
             closeable: { isBool: true },
             tabname: {},
             selected: { isBool: true }
         });
-        this.#spvt.register(this);
+        spvt.register(this);
     }
 
     #pvt= share(this, TabPage, {
@@ -24,9 +26,4 @@ export default class TabPage extends Base {
         }
     });
 
-    constructor() {
-        super();
-
-        this.addEventListener("render", this.$.#pvt.render());
-    }
 }

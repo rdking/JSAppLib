@@ -1,32 +1,45 @@
 import { share, saveSelf } from "../../cfprotected/index.mjs";
-import Enum from "./util/Enum.mjs";
-import Base from "./jsBase.mjs";
+import ActionControlBase from "./jsActionControlBase.mjs";
+import Container from "./jsContainer.mjs";
+import SCSPanel from "./jsSCSPanel.mjs";
 //import ToolButton from "/node_modules/jsapplib/src/jsToolButton.mjs";
 
-export default class ToolBar extends Base {
+export default class ToolBar extends Container {
     static #spvt = share(this, {});
     
     static get observedAttributes() {
-        return Base.observedAttributes.concat(["displaymode", "edge"]);
+        return Container.observedAttributes.concat(["displaymode", "edge", "moveable"]);
     }
     
-    static #BarEdges = new Enum("BarEdges", [
-        "top", "left", "bottom", "right"
-    ]);
-    
-    static get BarEdges() { return this.$.#BarEdges; }
-    
-    static { this.#spvt.register(this); }
+    static {
+        const spvt = this.#spvt;
+
+        spvt.initAttributeProperties(this, {
+            displaymode: {
+                enum: ActionControlBase.ButtonModes
+            },
+            edge: {
+                enum: SCSPanel.PanelPos
+            },
+            moveable: {
+                isBool: true,
+                caption: "moveable"
+            }
+        });
+        spvt.register(this);
+    }
     
     #pvt = share(this, ToolBar, {
         render() {
             const pvt = this.$.#pvt;
+            
             pvt.renderContent([
                 pvt.make("div", {
-                    class: "vr"
+                    class: "vr hidden"
                 }),
                 pvt.make("slot")
             ]);
+
         },
         onDisplayModeChange(e) {
             let child = this.firstElementChild;
@@ -36,8 +49,21 @@ export default class ToolBar extends Base {
                 child = child.nextElementSibling;
             }
         },
-        onEdgeChange(e) {
-            this.setAttribute("slot", this.edge.name);
+        onEdgeChanged(e) {
+            const ppos = SCSPanel.PanelPos;
+
+            if (ppos(this.edge) == ppos.content) {
+                this.removeAttribute("slot");
+            } else {
+                this.setAttribute("slot", ppos(this.edge).name);
+            }
+        },
+        onMoveableChanged(e) {
+            let element = this.$.#pvt.shadowRoot.querySelector(".vr");
+            
+            if (element) {
+                element.classList[this.moveable ? "add": "remove"]("hidden");
+            }
         }
     });
 
@@ -45,26 +71,11 @@ export default class ToolBar extends Base {
         super();
 
         const pvt = this.$.#pvt
-        this.addEventListener("displaymodeChanged", pvt.onDisplayModeChange);
-        this.addEventListener("edgeChanged", pvt.onEdgeChange);
-        this.addEventListener("render", pvt.render);
-    }
 
-    get displayMode() { 
-        let dm = this.getAttribute("displaymode");
-        return dm ? ToolButton.ButtonModes(dm) : dm;
-    }
-    set displayMode(v) {
-        v = ToolButton.ButtonModes(v);
-        this.setAttribute("displaymode", v.name);
-    }
-
-    get edge() {
-        let edge = this.getAttribute("edge") || "top";
-        return ToolBar.BarEdges(edge);
-    }
-    set edge(v) {
-        v = ToolBar.BarEdges(v);
-        this.setAttribute("edge", v.name);
+        pvt.registerEvents({
+            "displaymodeChanged": pvt.onDisplayModeChange,
+            "edgeChanged": pvt.onEdgeChanged,
+            "moveableChanged": pvt.onMoveableChanged
+        });
     }
 }

@@ -25,6 +25,10 @@
     margin: 0.2em 0.25em;
 }
 
+.vr.hidden {
+    display: none;
+}
+
 ::slotted(*) {
     display: flex;
     flex: 1 1 auto;

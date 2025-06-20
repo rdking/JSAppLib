@@ -10,6 +10,7 @@ let ManagerBase = abstract(class ManagerBase extends Base {
 
     #ready = false;
     #waitbox = new WaitBox();
+    
     #pvt = share(this, ManagerBase, {
         doRender() {
             throw new AppLibError("ManagerBase - doRender not implemented.");

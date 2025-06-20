@@ -23,6 +23,11 @@
     visibility: hidden; 
 }
 
+.iconcol.hidden {
+    display: none;
+    visibility: inherit;
+}
+
 .itemgrid {
     display: flex;
     flex: 1;

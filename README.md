@@ -50,8 +50,6 @@ With the inclusion of private fields in JavaScript, there is now a simple and st
     * **\<js-menuseparator>** - A single non-selectable item control for use in a menu
     * **\<js-popupMenu>** - A single, positionable, floating, vertical menu control
     * **\<js-statusBar>** - A partitionable horizontal message bar
-    * **\<js-hpanel>** - A blank container that organizes children horizontally
-    * **\<js-vpanel>** - A blank container that organizes children vertically
     * **\<js-tabset>** - A blank container that organizes children into tabs
     * **\<js-tab>** - A blank container representing a single tab in a tabset
     * **\<js-toolbar>** - A horizontally or vertically aligned control bar

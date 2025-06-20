@@ -10,7 +10,7 @@
     min-width: 160px;
     min-height: var(--title-size);
     background-color: var(--brush-normal);
-    border: 1px solid var(--brush-shadow);
+    border: 1px solid var(--brush-container-disabled);
 }
 
 :host(.minimized.ontop),
@@ -25,6 +25,7 @@
 
 :host(.ontop) {
     box-shadow: 0px 0px 8px 4px var(--brush-overlay);
+    border: 1px solid var(--brush-container-selected);
 }
 
 .header {
@@ -88,6 +89,10 @@ button {
     display: none;
 }
 
+.dragging {
+    display: none;
+}
+
 button:hover {
     background-color: var(--brush-highlight);
 }
@@ -107,6 +112,8 @@ button:active {
 }
 
 .body {
-    padding: 0.5em;
+    display: flex;
+    flex: 1 0 auto;
+    margin: 4px;
     min-height: 120px;
 }

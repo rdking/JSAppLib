@@ -1,4 +1,4 @@
-import { share } from "../../cfprotected/index.mjs";
+import { share, saveSelf } from "../../cfprotected/index.mjs";
 import ManagerBase from "./jsManagerBase.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
 
@@ -45,11 +45,11 @@ export default class ActionManager extends ManagerBase {
         super();
 
         const pvt = this.$.#pvt;
-        this.addEventListener("render", pvt.render);
-        this.addEventListener("preRender", pvt.onPreRender);
-        window.addEventListener("keypress", pvt.onKeyPress)
-
-        console.log("***** ActionManager Ready!");
+        pvt.registerEvents({
+            render: pvt.render,
+            preRender: pvt.onPreRender
+        });
+        window.addEventListener("keypress", pvt.onKeyPress);
     }
 
     /**

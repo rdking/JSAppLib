@@ -1,0 +1,60 @@
+:host {
+    overflow: auto;
+}
+
+:host([mode="anchored"][anchor="top"]) {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: unset;
+    contain: strict;
+}
+
+:host([mode="anchored"][anchor="left"]) {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: unset;
+    bottom: 0px;
+    contain: strict;
+}
+
+:host([mode="anchored"][anchor="bottom"]) {
+    position: absolute;
+    left: 0px;
+    top: unset;
+    right: 0px;
+    bottom: 0px;
+    contain: strict;
+}
+
+:host([mode="anchored"][anchor="right"]) {
+    position: absolute;
+    left: unset;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    contain: strict;
+}
+
+:host([mode="anchored"][anchor="fillParent"]) {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    contain: strict;
+}
+
+:host([mode="fixed"]) {
+    position: absolute;
+}
+
+:host([mode="html"]) {
+    position: relative;
+}
+
+slot {
+    position: inherit;
+}

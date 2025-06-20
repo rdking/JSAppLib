@@ -1,9 +1,16 @@
 :host {
-    background-color: var(--brush-input);
-    color: var(--pen-input);
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: row;
+    background-color: var(--brush-container-normal);
+    color: var(--pen-container-normal);
+    margin: 2px;
+    padding: 0px;
     border: 2px solid transparent;
     overflow-y: auto;
     overflow-x: auto;
+    min-width: 5em;
+    min-height: 1em;
 }
 
 :host(:focus) {
@@ -13,13 +20,23 @@
 
 slot {
     display: flex;
-    flex-direction: column;
-}
-
-.listview {
+    flex: 1 0 auto;
+    background-color: var(--brush-input-normal);
+    color: var(--pen-input-normal);
     display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    padding: 0.3333em;
 }
 
 div:focus {
     outline: none;
+}
+
+div.focusable {
+    display: flex;
+    flex: auto;
+    flex-direction: inherit;
+    margin: 2px;
+    padding: 0px;
 }

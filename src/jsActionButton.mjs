@@ -1,11 +1,9 @@
-import { share, accessor, saveSelf } from "../../cfprotected/index.mjs";
+import { share } from "../../cfprotected/index.mjs";
 import ActionControlBase from "./jsActionControlBase.mjs";
 import Enum from "./util/Enum.mjs";
 
 export default class ActionButton extends ActionControlBase {
     static #spvt = share(this, {});
-    static #buttonModes = new Enum("ButtonModes", ["iconOnly", "textOnly"]);
-    static get ButtonModes() { return this.$.#buttonModes; }
 
     static get observedAttributes() {
         return ActionControlBase.observedAttributes.concat([ "buttonmode", "toggle" ]); 
@@ -13,10 +11,17 @@ export default class ActionButton extends ActionControlBase {
     
     static {
         const spvt = this.#spvt;
-        saveSelf(this, "$");
+        const BM = this.ButtonModes;
 
         spvt.initAttributeProperties(this, {
-            buttonmode: { enum_t: this.ButtonModes },
+            buttonmode: { 
+                enumType: BM,
+                getter: function() {
+                    return BM(this.hasAttribute("buttonmode") 
+                        ? this.getAttribute(attr) 
+                        : this.parentElement.getAttribute("displaymode") || BM.both);
+                }
+            },
             toggle: { isBool: true }
         });
         spvt.register(this);
@@ -29,29 +34,31 @@ export default class ActionButton extends ActionControlBase {
             pvt.renderContent(pvt.make("button", {}, {
                 children: [
                     pvt.make("img", {
-                        src: this.icon,
+                        src: this.icon || "",
                         draggable: false,
                         class: (this.buttonmode === BM.textOnly) ? "hidden" : ""
                     }),
                     pvt.make("label", {
                         class: (this.buttonmode === BM.iconOnly) ? "hidden" : ""
                     }, {
-                        innerHTML: this.caption.replace("_", "")
+                        innerHTML: this.caption?.replace("_", "")
                     })
                 ]
             }));
         },
         onCaptionChanged(e) {
-            if (this.shadowRoot.innerHTML) {
-                const label = this.shadowRoot.querySelector("img");
+            const pvt = this.$.#pvt;
+            if (pvt.shadowRoot.innerHTML) {
+                const label = pvt.shadowRoot.querySelector("img");
                 label.innerHTML = this.caption.replace("_", "");
             }
         },
         onButtonModeChanged(e) {
-            if (this.shadowRoot.innerHTML) {
+            const pvt = this.$.#pvt;
+            if (pvt.shadowRoot.innerHTML) {
                 const BM = this.cla$$.ButtonModes;
-                const img = this.shadowRoot.querySelector("img");
-                const label = this.shadowRoot.querySelector("label");
+                const img = pvt.shadowRoot.querySelector("img");
+                const label = pvt.shadowRoot.querySelector("label");
 
                 switch(this.buttonmode) {
                     case BM.iconOnly:
@@ -69,8 +76,9 @@ export default class ActionButton extends ActionControlBase {
             }
         },
         onIconChanged(e) {
-            if (this.shadowRoot.innerHTML) {
-                const img = this.shadowRoot.querySelector("img");
+            const pvt = this.$.#pvt;
+            if (pvt.shadowRoot.innerHTML) {
+                const img = pvt.shadowRoot.querySelector("img");
                 img.src = this.icon;
             }
         }
@@ -80,9 +88,11 @@ export default class ActionButton extends ActionControlBase {
         super();
 
         const pvt = this.$.#pvt;
-        this.addEventListener("buttonmodeChanged", pvt.onButtonModeChanged);
-        this.addEventListener("captionChanged", pvt.onCaptionChanged);
-        this.addEventListener("iconChanged", pvt.onIconChanged);
-        this.addEventListener("render", pvt.render);
+        pvt.registerEvents({
+            update: pvt.onButtonModeChanged,
+            buttonmodeChanged: pvt.onButtonModeChanged,
+            captionChanged: pvt.onCaptionChanged,
+            iconChanged: pvt.onIconChanged,
+        });
     }
 }

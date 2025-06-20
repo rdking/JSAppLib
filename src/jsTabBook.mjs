@@ -1,15 +1,17 @@
 import { share, accessor, abstract, final } from "../../cfprotected/index.mjs";
-import Base from "./jsBase.mjs";
+import Container from "./jsContainer.mjs";
 
-export default class TabBook extends Base {
-    static observedAttributes = [];
-
-    //Pulls in shared private functions
+export default class TabBook extends Container {
     static #spvt= share(this, {});
 
+    static get observedAttributes() {
+        return Container.observedAttributes.concat([]);
+    }
+
     static {
-        this.#spvt.initAttributeProperties(this, {});
-        this.#spvt.register(this);
+        const spvt = this.#spvt;
+        spvt.initAttributeProperties(this, {});
+        spvt.register(this);
     }
 
     #currentPage = null;
@@ -27,7 +29,7 @@ export default class TabBook extends Base {
         },
         onPostRender() {
             const pvt = this.$.#pvt;
-            let tabStrip = this.shadowRoot.querySelector("#tabs");
+            let tabStrip = this.$.#pvt.shadowRoot.querySelector("#tabs");
 
             for (let child of this.children) {
                 if (child.tagName.toLowerCase() == pvt.tagType("tabpage")) {
@@ -60,17 +62,9 @@ export default class TabBook extends Base {
         page.addEventListener("selectedChanged", (event) => {
             let {newValue: newV} = event.detail;
             if (newV != null) {
-                let tabs = this.shadowRoot.getElementById("tabs");
+                let tabs = this.$.#pvt.shadowRoot.getElementById("tabs");
                 tabs.activeTab = tab;
             }
         });
-    }
-
-    constructor() {
-        super();
-
-        const pvt = this.$.#pvt;
-        this.addEventListener("render", pvt.render);
-        this.addEventListener("postRender", pvt.onPostRender);
     }
 }

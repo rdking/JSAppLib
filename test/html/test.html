@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            :root {
+                --tp-black: rgba(0, 0, 0, 0.5);
+                --tp-red: rgba(255, 0, 0, 0.5);
+                --tp-orange: rgba(255, 128, 0, 0.5);
+                --tp-yellow: rgba(255, 255, 0, 0.5);
+                --tp-lime: rgba(128, 255, 0, 0.5);
+                --tp-green: rgba(0, 255, 0, 0.5);
+                --tp-aqua: rgba(0, 255, 128, 0.5);
+                --tp-cyan: rgba(0, 255, 255, 0.5);
+                --tp-sky: rgba(0, 128, 255, 0.5);
+                --tp-blue: rgba(0, 0, 255, 0.5);
+                --tp-purple: rgba(128, 0, 255, 0.5);
+                --tp-magenta: rgba(255, 0, 255, 0.5);
+                --tp-maroon: rgba(255, 0, 128, 0.5);
+            }
+
+            body {
+                background-color: black;
+                display: flex;
+                position: absolute;
+                inset: 0px;
+                margin: 0px;
+                padding: 0px;
+                overflow: auto;
+                contain: strict;
+            }
+
+            .container {
+                background-color: white;
+                border: 1px solid orangered;
+                position: absolute;
+                transform-origin: center;
+            }
+
+            .sizeways,
+            .rotRight {
+                rotate: 90deg;
+            }
+
+            .rotLeft {
+                rotate: -90deg;
+            }
+
+            .rotFlip {
+                rotate: 180deg;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container sideways">
+            <div></div>
+            <div class="rotRight"></div>
+            <div class="rotFlip"></div>
+        </div>
+    </body>
+    <script>
+        const ro = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                for (let child of entry.target.children) {
+                    const style = entry.style.computedStyleMap();
+                    child.style.width = style.clientHeight + "px";
+                    child.style.height = style.clientWidth + "px";
+                }
+            }
+        });
+
+        const boxes = document.body.querySelectorAll(`.container.not(.rotRight).not(.rotLeft)`);
+        boxes.forEach(box => {
+
+        });
+    </script>
+</html>

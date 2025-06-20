@@ -1,95 +1,165 @@
-import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
-import ListItem from "/node_modules/jsapplib/src/jsListItem.mjs";
+import { share, define, accessor } from "../../cfprotected/index.mjs";
+import ListItem from "./jsListItem.mjs"
 
 export default class TreeLeaf extends ListItem {
-    static #tagName = "js-treeleaf";
-    static #sprot = share(this, {});
+    static #spvt = share(this, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.$.#tagName; }
     static get observedAttributes() {
         return ListItem.observedAttributes.concat([
-            "iscaption"
+            "openchar", "closechar", "selected"
         ]); 
+    }
+
+    static {
+        define(this, {
+            TreeView: {
+                get() {
+                    let retval = this.parentElement;
+                    while (retval && (retval.nodeName.toLowerCase() != this.$.#pvt.tagType("treeview"))) {
+                        retval = retval.parentElement;
+                    }
+                    return retval;
+                }
+            }
+        });
+        this.#spvt.initAttributeProperties(this, {
+            openchar: { caption: "openChar" },
+            closechar: { caption: "closeChar" },
+            selected: { isBool: true, caption: "selected" },
+            iscaption: { isBool: true, caption: "isCaption" }
+        });
+        this.#spvt.register(this);
     }
 
     #value = "";
 
-    #getMarker() {
-        return this.isCaption && this.parentElement.collapsible
-        ? this.parentElement.collapsed
-            ? "&#x229e;"
-            : "&#x229f;"
-        : "&#x2501;"
-    }
-
-    #prot = share(this, TreeLeaf, {
+    #pvt = share(this, TreeLeaf, {
         getTemplate() {
-            const prot = this.$.#prot;
-            let template = this.TreeView.querySelector("template").cloneNode(true);
-            let children = Array.from(template.content.children);
-            template.innerHTML = "";
+            const pvt = this.$.#pvt;
+            let template = this.TreeView.querySelector("template");
 
-            let content =  prot.newTag("span", {
+            let content =  pvt.make("span", {
                 class: "leaf"
             }, {
                 children: [
-                    prot.newTag("span", {
+                    pvt.make("div", {
                         class: "marker"
                     }, {
-                        innerHTML: this.$.#getMarker()
+                        //Using a 0-width space to preserve other spaces
+                        innerHTML: this.$.getMarker()
+                    }),
+                    pvt.make("span", {}, {
+                        innerHTML: template?template.innerHTML:this.innerHTML
                     })
-                ].concat(children)
+                ]
             });
 
-            content.querySelector("span.marker").addEventListener("click", this.$.#prot.onMarkerClicked);
+            content.querySelector(".marker").addEventListener("click", pvt.onMarkerClicked);
             
             return content;
         },
-        onPreRender() {
-            this.$.#prot.validateParent(["js-treebranch", "js-treeview"],
-            "TreeLeaf elements can only be placed in a TreeView or TreeBanch");
+        getParentType() {
+            return this.$.#pvt.tagTypes([ "treebranch", "treeview" ]) ;
+        },
+        getParentMessage() {
+            return "TreeLeaf elements can only be placed in a TreeView or TreeBanch";
         },
         onMarkerClicked(e) {
-            if (this.parentElement.nodeName.toLowerCase() == "js-treebranch") {
+            const pvt = this.$.#pvt;
+            if (this.isCaption && pvt.isTagType(this.parentElement, "treebranch")) {
                 this.parentElement.collapsed = !this.parentElement.collapsed;
                 e.cancelBubble = true;
             }
-            this.$.#prot.onUpdateMarker();
-        },
-        onClick(e) {
-            e.cancelBubble = true;
-            this.TreeView.fireEvent("setModifiers", {
-                ctrlDown: e.ctrlKey,
-                shiftDown: e.shiftKey
-            });
-            this.selected = !this.selected;
-        },
-        onIsCaptionChange(e) {
-            this.setAttribute("slot", (this.isCaption) ? "caption" : "");
         },
         onUpdateMarker(e) {
-            if (this.parentElement.nodeName.toLowerCase() == "js-treebranch") {
-                this.shadowRoot.querySelector("span.marker").innerHTML = this.$.#getMarker()
+            const pvt = this.$.#pvt;
+            if (pvt.isTagType(this.parentElement, "treebranch")) {
+                const marker = pvt.getShadowChild("", ".marker");
+                if (marker) {
+                    marker.innerHTML = this.$.getMarker();
+                }
             }
+        },
+        onRefresh(e) {
+            const pvt = this.$.#pvt;
+            const marker = pvt.getShadowChild("", ".marker");
+
+            this.fireEvent(marker? "updateMarker":"render");
         }
     });
 
-    get TreeView() {
-        let retval = this.parentElement;
-        if (retval.nodeName.toLowerCase() != "js-treeview") {
-            retval = retval.TreeView;
-        }
-        return retval;
+    constructor() {
+        super();
+
+        const pvt = this.$.#pvt;
+        pvt.registerEvents({
+            "updateMarker": pvt.onUpdateMarker,
+            "refresh": pvt.onRefresh,
+            "opencharChanged": pvt.onRefresh,
+            "closecharChanged": pvt.onRefresh
+        });
     }
 
     connectedCallback() {
-        const prot = this.$.#prot;
-        this.addEventListener("iscaptionChange", prot.onIsCaptionChange);
-        this.addEventListener("updateMarker", prot.onUpdateMarker);
         super.connectedCallback();
     }
 
-    get isCaption() { return this.hasAttribute("iscaption"); }
-    set isCaption(v) { this.$.#prot.setBoolAttribute("iscaption", !!v); }
+    get isFirst() {
+        let siblings = Array.from(this.parentElement.children)
+            .filter(e => !e.hasAttribute("iscaption"));
+        return siblings[0] === this;
+    }
+
+    get isLast() {
+        let siblings = Array.from(this.parentElement.children)
+            .filter(e => !e.hasAttribute("iscaption"));
+        return siblings[siblings.length -1] === this;
+    }
+
+    get nestLevel() {
+        return this.parentElement.nestLevel + 1;
+    }
+
+    getMarker(src) {
+        const blank = "&#x2002;";
+        const pass = "&#x2502;";
+        const dash = "&#x2500;"
+        const dashMiddle = "&#x251C;"
+        const dashEnd = "&#x2514;"
+        const dashOpen = this.TreeView.getAttribute("openchar") || "&#x229f;";
+        const dashClosed = this.TreeView.getAttribute("closechar") || "&#x229e;";
+        const isLeaf = this.nodeName.toLowerCase() == this.$.#pvt.tagType("treeleaf");
+        let self = this.isCaption ? this.parentElement: this;
+        let parent = self.parentElement;
+        let retval = "";
+
+        if (isLeaf || !!self.$) {            
+            src = (!src  || this.isCaption) ? self: src;
+
+            if (src !== self) {
+                retval += (self.isLast)? blank: pass;
+            }
+            else {
+                if (src.isLast) {
+                    if (src.isFirst && (this.nestLevel == 1)) {
+                        retval += dash;
+                    }
+                    else {
+                        retval += dashEnd;
+                    }
+                }
+                else {
+                    retval += dashMiddle;
+                }
+                
+                if (this.isCaption || (self.nodeName.toLowerCase() == this.$.#pvt.tagType("treebranch"))) {
+                    retval += (self.collapsed ? dashClosed: dashOpen);
+                }
+            }
+
+            retval = ("getMarker" in parent)? parent.getMarker(src) + retval : retval;
+        }
+
+        return retval;
+    }
 }

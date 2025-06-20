@@ -8,11 +8,11 @@ export default class WaitBox {
     }
 
     add(inst, method, params) {
-        if ((inst == null) ||
-            (params == null) ||
+        if ((inst === null) ||
+            (params === null) ||
             (typeof(method) != "function") ||
-            ((inst != void 0) && (typeof(inst) != "object")) ||
-            ((params != void 0) && !Array.isArray(params))) {
+            ((inst !== void 0) && (typeof(inst) != "object")) ||
+            ((params !== void 0) && !Array.isArray(params))) {
             throw new TypeError("Invalid parameters to WaitBox.add");
         }
 

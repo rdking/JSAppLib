@@ -1,4 +1,5 @@
 import { share, final } from "../../cfprotected/index.mjs";
+import AppLibError from "./errors/AppLibError.mjs";
 import Base from "./jsBase.mjs";
 
 const Theme = final(class Theme extends Base {
@@ -6,15 +7,16 @@ const Theme = final(class Theme extends Base {
     static #spvt= share(this, {});
     
     static get observedAttributes() {
-        return ["themename", "themepath"];
+        return Base.observedAttributes.concat([ "themename", "themepath" ]);
     }
 
     static {
-        this.#spvt.initAttributeProperties(this, {
+        const spvt = this.#spvt;
+        spvt.initAttributeProperties(this, {
             themeName: {},
             themePath: {}
         });
-        this.#spvt.register(this);
+        spvt.register(this);
     }
 
     static get isManagement() { return true; }
@@ -60,11 +62,14 @@ const Theme = final(class Theme extends Base {
             }
         }
         catch(e) {
-            console.error(`Failed to load themes from "${this.  path}"`, e);
+            throw new AppLibError(`Failed to load themes from "${this.path}"`, e);
         }
     }
 
     #pvt= share(this, Theme, {
+        render() {
+            //NOP
+        },
         onNameChange(e) {
             if (!this.$.#attributeError) {
                 let {oldValue: oldVal, newValue: newVal} = e.detail;
@@ -119,8 +124,10 @@ const Theme = final(class Theme extends Base {
         super();   
 
         const pvt = this.$.#pvt;
-        this.addEventListener("themenameChanged", pvt.onNameChange);
-        this.addEventListener("themepathChanged", pvt.onPathChange);
+        pvt.registerEvents({
+            themenameChanged: pvt.onNameChange,
+            themepathChanged: pvt.onPathChange
+        });
 
         if (this.themeName === "default") {
             pvt.onNameChange({ detail: { oldValue: null, newValue: this.themeName } });

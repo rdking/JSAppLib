@@ -1,12 +1,15 @@
 import { share, saveSelf, accessor, abstract, final } from "../../cfprotected/index.mjs";
-import Base from "./jsBase.mjs";
+import Container from "./jsContainer.mjs";
 
-export default class TabStrip extends Base {
+export default class TabStrip extends Container {
     static #spvt= share(this, {});
 
+    static get observedAttributes() {
+        return Container.observedAttributes.concat([]);
+    }
+
     static {
-        this.#spvt.initAttributeProperties(this, {
-        });
+        this.#spvt.initAttributeProperties(this, {});
         this.#spvt.register(this);
     }
 
@@ -43,15 +46,8 @@ export default class TabStrip extends Base {
             }
         }
     });
+
     #activeTab = null;
-
-    constructor() {
-        super();
-
-        const pvt = this.$.#pvt;
-        this.addEventListener("render", pvt.render);
-        this.addEventListener("postRender", pvt.onPostRender);
-    }
 
     get activeTab() { return this.$.#activeTab; }
     set activeTab(v) {

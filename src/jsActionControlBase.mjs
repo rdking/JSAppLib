@@ -1,29 +1,45 @@
 import { share, abstract } from "../../cfprotected/index.mjs";
 import Enum from "./util/Enum.mjs";
-import Base from "./jsBase.mjs";
+import ControlBase from "./jsControlBase.mjs";
 
-const ActionControlBase = abstract(class ActionControlBase extends Base {
+const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
     static #spvt = share(this, {});
+    static #buttonModes = new Enum("ButtonModes", ["iconOnly", "textOnly", "both"]);
+    static get ButtonModes() { return ActionControlBase.#buttonModes; }
 
     static get observedAttributes() {
-        return Base.observedAttributes.concat([
+        return ControlBase.observedAttributes.concat([
             "caption", "description", "disabled", "hotkey", "icon", "onaction",
             "toggle", "selected", "action"
         ]);
+    }
+
+    static #ghandler(attr) {
+        return function actionPropGetter() {
+            let value = this.getAttribute(attr);
+            return (this.currentAction) ? this.currentAction[attr] || value : value;
+        }
+    }
+
+    static #bhandler(attr) {
+        return function binaryActionPropGetter() {
+            let value = !!this.getAttribute(attr);
+            return !!((this.currentAction) ? this.currentAction[attr] : value);
+        }
     }
 
     static {
         const spvt = this.#spvt;
         spvt.initAttributeProperties(this, {
             action: { readonly: true },
-            caption: { writeonly: true },
-            description: { writeonly: true },
-            disabled: { writeonly: true, isBool: true, caption: "disabled" },
-            icon: { writeonly: true },
-            hotkey: { writeonly: true },
-            toggle: { writeonly: true, isBool: true, caption: "toggle" },
-            selected: { writeonly: true, isBool: true, caption: "selected" },
-            onaction: { writeonly: true }
+            caption: { getter: this.#ghandler("caption") },
+            description: { getter: this.#ghandler("description") },
+            disabled: { getter: this.#bhandler("disabled"), isBool: true, caption: "disabled" },
+            icon: { getter: this.#ghandler("icon") },
+            hotkey: { getter: this.#ghandler("hotkey") },
+            toggle: { getter: this.#bhandler("toggle"), isBool: true, caption: "toggle" },
+            selected: { getter: this.#bhandler("selected"), isBool: true, caption: "selected" },
+            onaction: { getter: this.#ghandler("onaction") }
         });
     }
 
@@ -76,11 +92,13 @@ const ActionControlBase = abstract(class ActionControlBase extends Base {
         super()
 
         const pvt = this.$.#pvt;
-        this.addEventListener("actionChanged", pvt.onActionChanged);
-        this.addEventListener("selectedChanged", pvt.onSelectedChanged);
-        this.addEventListener("mouseenter", pvt.onMouseEnter);
-        this.addEventListener("mouseleave", pvt.onMouseLeave);
-        this.addEventListener("click", pvt.onClick);
+        pvt.registerEvents({
+            actionChanged: pvt.onActionChanged,
+            selectedChanged: pvt.onSelectedChanged,
+            mouseenter: pvt.onMouseEnter,
+            mouseleave: pvt.onMouseLeave,
+            click: pvt.onClick
+        });
     }
 
     get currentAction() {
@@ -90,46 +108,6 @@ const ActionControlBase = abstract(class ActionControlBase extends Base {
         }
 
         return retval;
-    }
-    
-    get caption() {
-        let caption = this.getAttribute("caption");
-        return (this.currentAction) ? this.currentAction.caption || caption : caption;
-    }
-
-    get description() {
-        let description = this.getAttribute("description") || "";
-        return (this.currentAction) ? this.currentAction.description || description : description;
-    }
-
-    get disabled() {
-        let disabled = !!this.hasAttribute("disabled");
-        return !!((this.currentAction) ? this.currentAction.disabled : disabled);
-    }
-
-    get hotkey() {
-        let hotkey = this.getAttribute("hotkey") || "";
-        return (this.currentAction) ? this.currentAction.hotkey || hotkey : hotkey;
-    }
-
-    get icon() {
-        let icon = this.getAttribute("icon") || "";
-        return (this.currentAction) ? this.currentAction.icon || icon : icon;
-    }
-
-    get onaction() {
-        let onaction = this.getAttribute("onaction") || "";
-        return (this.currentAction) ? this.currentAction.ontriggered || onaction : onaction;
-    }
-
-    get toggle() {
-        let toggle = !!this.hasAttribute("toggle");
-        return !!((this.currentAction) ? this.currentAction.toggle : toggle);
-    }
-
-    get selected() {
-        let selected = !!this.hasAttribute("selected");
-        return !!((this.currentAction) ? this.currentAction.selected : selected);
     }
 });
 

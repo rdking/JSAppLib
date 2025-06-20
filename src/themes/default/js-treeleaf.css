@@ -1,24 +1,22 @@
 :host {
     display: flex;
-    flex-flow: row nowrap;
-    justify-content: flex-start;
-    background-color: transparent;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: space-between;
     color: var(--pen-input);
+}
+
+:host([selected]) {
+    background-color: var(--brush-input-selected);
 }
 
 .listitem {
     display: flex;
     flex-wrap: nowrap;
-    align-content: center;
-    padding: 0.33333em 0.33333em 0.33333em 0;
 }
 
 .listitem:hover {
     background-color: var(--brush-shadow);
-}
-
-.listitem.selected {
-    background-color: var(--brush-selected);
 }
 
 .leaf {
@@ -28,8 +26,11 @@
 }
 
 .marker {
-    width: 1.5em;
-    text-align: center;
+    display: inline-block;
+    margin-right: 4px;
     font-weight: bold;
     font-family: monospace;
+    font-size: 16pt;
+    white-space: pre;
+    color: var(--pen-input-disabled);
 }

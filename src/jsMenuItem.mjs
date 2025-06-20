@@ -17,8 +17,6 @@ export default class MenuItem extends ActionControlBase {
             .concat([ "separator" ]); 
     }
 
-    #action = null;
-
     #hasPopup() {
         let count = this.childElementCount;
         if ((count > 1) || ((count === 1) &&
@@ -107,13 +105,13 @@ export default class MenuItem extends ActionControlBase {
                                 innerHTML: "&check;"
                             }),
                             !isPopupMenu ? null : pvt.make("div", {
-                                class: "iconcol"
+                                class: "iconcol" + (this.parentElement.hasAttribute("showIcons") ? "" : " hidden")
                             }, {
                                 children: [
                                     pvt.make("img", {
                                         id: "icon",
                                         draggable: false,
-                                        class: this.icon ? "icon" : "hidden",
+                                        class: "icon" + (this.icon ? "" : " hidden"),
                                         src: this.icon || ""
                                     })
                                 ]
@@ -163,30 +161,35 @@ export default class MenuItem extends ActionControlBase {
             this.$.#pvt.validateChildren(this.$.#pvt.tagType("popupmenu"), "Only PopupMenus can be placed in a MenuItem.");
         },
         onCaptionChanged() {
-            let caption = this.shadowRoot.querySelector("#caption");
+            let caption = this.$.#pvt.shadowRoot.querySelector("#caption");
             if (caption)
                 caption.innerHTML = this.$.#makeHtmlCaption();
         },
         onIconChanged() {
-            let icon = this.shadowRoot.querySelector("#icon");
+            let icon = this.$.#pvt.shadowRoot.querySelector("#icon");
             if (icon) {
                 icon.src = this.icon;
-                if (this.icon) {
-                    icon.classList.replace("hidden", "icon");
-                } else {
-                    icon.classList.replace("icon", "hidden");
-                }
+                icon.classList[this.icon ? "remove": "add"]("hidden");
             }
         },
         onHotkeyChanged() {
-            let hotkey = this.shadowRoot.querySelector("#hotkey");
+            let hotkey = this.$.#pvt.shadowRoot.querySelector("#hotkey");
             if (hotkey)
                 hotkey.innerHTML = this.hotkey;
         },
         onSelectedChanged() {
-            let check = this.shadowRoot.querySelector("#check");
+            let check = this.$.#pvt.shadowRoot.querySelector("#check");
             if (check && this.toggle)
                 check.classList[this.selected?"remove":"add"]("hidden");
+        },
+        onShowIconsChanged(e) {
+            let iconbox = this.$.#pvt.shadowRoot.querySelector(".iconcol");
+            if (iconbox) {
+                iconbox.classList[this.parentElement.showIcons ? "remove": "add"]("hidden");
+            }
+            if (this.childElementCount > 0) {
+                this.firstElementChild.fireEvent("showiconsChanged");
+            }
         },
         onClicked(e) {
             if (e.target === e.currentTarget) {
@@ -232,16 +235,17 @@ export default class MenuItem extends ActionControlBase {
         super();
 
         const pvt = this.$.#pvt;
-        this.addEventListener("captionChanged", pvt.onCaptionChanged);
-        this.addEventListener("iconChanged", pvt.onIconChanged);
-        this.addEventListener("hotkeyChanged", pvt.onHotkeyChanged);
-        this.addEventListener("separatorChanged", pvt.onSeparatorChanged);
-        this.addEventListener("selectedChanged", pvt.onSelectedChanged);
-        this.addEventListener("mouseenter", pvt.onMouseEntered);
-        this.addEventListener("mouseleave", pvt.onMouseLeft);
-        this.addEventListener("click", pvt.onClicked);
-        this.addEventListener("preRender", pvt.onPreRender);
-        this.addEventListener("render", pvt.render);
+        pvt.registerEvents({
+            captionChanged: pvt.onCaptionChanged,
+            iconChanged: pvt.onIconChanged,
+            hotkeyChanged: pvt.onHotkeyChanged,
+            separatorChanged: pvt.onSeparatorChanged,
+            selectedChanged: pvt.onSelectedChanged,
+            showiconsChanged: pvt.onShowIconsChanged,
+            mouseenter: pvt.onMouseEntered,
+            mouseleave: pvt.onMouseLeft,
+            click: pvt.onClicked
+        });
     }
 
     deselect() {

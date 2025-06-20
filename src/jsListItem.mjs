@@ -1,21 +1,26 @@
 import { share } from "../../cfprotected/index.mjs";
-import Base from "./jsBase.mjs";
+import WaitBox from "./util/WaitBox.mjs";
+import Container from "./jsContainer.mjs";
 
-export default class ListItem extends Base {
+export default class ListItem extends Container {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
-        return Base.observedAttributes.concat(["items", "selected", "type"]); 
+        return Container.observedAttributes.concat([
+            "items", "selected", "type"
+        ]); 
     }
+
     static { 
-        this.#spvt.initAttributeProperties({
-            selected: { isBool: true },
+        this.#spvt.initAttributeProperties(this, {
+            selected: { isBool: true, caption: "selected" },
             type: { }
         });
         this.#spvt.register(this);
     }
 
     #observer = null;
+    #parentWait = new WaitBox();
 
     #clone(array) {
         return Object.assign([], array);
@@ -23,9 +28,13 @@ export default class ListItem extends Base {
 
     #populate(template) {
         let retval = template;
+
+        if (retval.nodeName == "#text") {
+            retval = retval.textContent;
+        }
         
-        if (typeof(template) == "string") {
-            let params = template.match(/\$\{(\w+)}/g);
+        if (typeof(retval) == "string") {
+            let params = retval.match(/\$\{(\w+)}/g);
             retval = retval.trim();
 
             if (params) {
@@ -36,7 +45,7 @@ export default class ListItem extends Base {
             }
         }
         else {
-            if (retval.hasChildNodes()) {
+            if (retval.children.length) {
                 for (let child of retval.childNodes) {
                     this.$.#populate(child);
                 }
@@ -50,26 +59,33 @@ export default class ListItem extends Base {
 
     #pvt = share(this, ListItem, {
         getTemplate() {
-            return this.parentElement.querySelector("template").innerHTML;
+            return this.parentElement.querySelector("template").innerHTML || "";
+        },
+        getParentType() {
+            return this.$.#pvt.tagType("listview");
+        },
+        getParentMessage() {
+            return "ListItems can only be placed in a ListView";
         },
         render() {
             let pvt = this.$.#pvt;
-            let template = pvt.getTemplate() || "";
+            let template = pvt.getTemplate();
             let pTemplate = this.$.#populate(template);
             let isString = typeof(template) == "string";
-            let content = pvt.newTag("div", {
-                class: "listitem"
+            
+            pvt.renderContent(pvt.make("div", {
+                class: "listitem",
+                tabindex: ""
             }, {
-                innerHTML: isString ? pTemplate : ""
-            });
-            if (!isString) {
-                content.appendChild(pTemplate);
-            }
-            pvt.renderContent(content);
-
+                innerHTML: isString ? pTemplate : "",
+                children: [
+                    isString ? null: pTemplate
+                ]
+            }));
         },
         onPreRender() {
-            this.$.#pvt.validateParent("js-listview", "ListItems can only be placed in a ListView");
+            const pvt = this.$.#pvt;
+            pvt.validateParent(pvt.getParentType(), pvt.getParentMessage());
         },
         onClick(e) {
             e.cancelBubble = true;
@@ -79,25 +95,16 @@ export default class ListItem extends Base {
             });
             this.selected = !this.selected;
         },
-        onSelectedChange(e) {
-            let state = e.detail.newVal !== null;
-            let sDiv = this.shadowRoot.querySelector("div.listitem");
-            this.parentElement.fireEvent("selectedChange", { cause: this, state });
-
-            if (state) {
-                sDiv.classList.add("selected");
-            }
-            else {
-                sDiv.classList.remove("selected");
-            }
-        },
         onTypeChanged(e) {
             let {newValue, oldValue} = e.detail;
 
-            const translator = document.querySelector("js-datatranslator");
+            const translator = app.dataFormatManager;
             if (translator && !translator.isRegistered(newValue)) {
                 this.setAttribute("type", oldValue);
             }
+        },
+        onParentReady(e) {
+            this.$.#parentWait.trigger();
         }
     });
 
@@ -106,19 +113,37 @@ export default class ListItem extends Base {
         this.type = this.type || "json";
         this.$.#observer = new MutationObserver(this.$.#pvt.render);
         this.$.#observer.observe(this, { attributes: false, childList: true, subtree: true});
+
+        const pvt = this.$.#pvt;
+        pvt.registerEvents({
+            "render": pvt.render,
+            "preRender": pvt.onPreRender,
+            "click": pvt.onClick,
+            "selectedChanged": pvt.onSelectedChanged,
+            "typeChanged": pvt.onTypeChanged
+        });
     }
 
     connectedCallback() {
-        const pvt = this.$.#pvt;
-        this.addEventListener("preRender", pvt.onPreRender);
-        this.addEventListener("click", pvt.onClick);
-        this.addEventListener("selectedChanged", pvt.onSelectedChange);
-        this.addEventListener("typeChanged", pvt.onTypeChanged);
+        let p = this.parentElement;
+        if (!("fireEvent" in p)) {
+            p.addEventListener("ready", this.$.#pvt.onParentReady);
+            this.$.#parentWait.add(this,() => {
+                this.parentElement.fireEvent("itemAdded", this);
+            }, []);
+        }
+        else {
+            this.parentElement.fireEvent("itemAdded", this);
+        }
         super.connectedCallback();
     }
 
+    disconnectedCallback() {
+        this.parentElement.fireEvent("itemRemoved", this);
+    }
+
     get value() { 
-        const translator = document.querySelector("js-datatranslator");
+        const translator = app.dataFormatManager;
         let retval = this.innerHTML;
 
         if (translator) {
@@ -128,7 +153,7 @@ export default class ListItem extends Base {
         return retval;
     }
     set value(v) {
-        const translator = document.querySelector("js-datatranslator");
+        const translator = app.dataFormatManager;
         if (translator) {
             this.innerHTML = translator.translate("js", this.type, v);
         }

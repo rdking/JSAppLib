@@ -60,8 +60,8 @@ export default class Surface extends Base {
             scratch.width = 320;
             scratch.height = 240;
     
-            this.shadowRoot.innerHTML = scss;
-            this.shadowRoot.append(front);
+            this.$.#pvt.shadowRoot.innerHTML = scss;
+            this.$.#pvt.shadowRoot.append(front);
     
             this.#planes = [{
                 canvas: front,

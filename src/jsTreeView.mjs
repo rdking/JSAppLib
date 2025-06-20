@@ -1,25 +1,29 @@
+import { share, accessor } from "../../cfprotected/index.mjs";
 import ListView from "./jsListView.mjs";
-import { share, accessor } from "/node_modules/cfprotected/index.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
 
 export default class TreeView extends ListView {
-    static #tagName = "js-treeview";
-    static #sprot = share(this, {});
+    static #spvt = share(this, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.$.#tagName; }
     static get observedAttributes() {
         return ListView.observedAttributes.concat(["collapsible"]); 
     }
 
+    static {
+        this.#spvt.initAttributeProperties(this, {
+            collapsible: { isBool: true, caption: "collapsible" }
+        });
+        this.#spvt.register(this); 
+    }
+
     #value = "";
-    #prot = share(this, TreeView, {
+    #pvt = share(this, TreeView, {
         validItemTypes: accessor({
-            get: () => [ /*"js-treebranch",*/ "js-treeleaf" ]
+            get: () => this.$.#pvt.tagTypes(["treebranch", "treeleaf"])
         }),
         onPreRender() {
-            let validItems = [ "js-treebranch", "template" ].concat(this.$.#prot.validItemTypes);
-            this.$.#prot.validateChildren(validItems,
+            const pvt = this.$.#pvt;
+            let validItems = [ pvt.tagType("treebranch"), "template" ].concat(pvt.validItemTypes);
+            pvt.validateChildren(validItems,
                 "Only HTML <template>, TreeBranch, and TreeLeaf elements can be placed in a TreeView");
             
             let templates = this.querySelectorAll("template");
@@ -28,8 +32,9 @@ export default class TreeView extends ListView {
             }
         },
         onKeyDown(e) {
+            const pvt = this.$.#pvt;
             let items = this.items;
-            let index = items.indexOf(this.$.#prot.lastItem);
+            let index = items.indexOf(pvt.lastItem);
 
             if (index >= 0) {
                 let item = items[index];
@@ -45,17 +50,36 @@ export default class TreeView extends ListView {
                         }
                         break;
                     default:
-                        this.$.#prot.$uper.onKeyDown(e);
+                        pvt.$uper.onKeyDown(e);
                 }
             }
         }
     });
 
+    connectedCallback() {
+        super.connectedCallback();
+        console.log("Tree Connected...");
+    }
+
     collapseRecursively() {
-        this.querySelectorAll("js-treebranch").forEach(element => element.collapseRecursively());
+        const pvt = this.$.#pvt;
+        Array.from(this.children)
+            .filter(child => child.nodeName.toLowerCase() == pvt.tagType("treebranch"))
+            .forEach(element => element.collapseRecursively());
     }
 
     expandRecursively() {
-        this.querySelectorAll("js-treebranch").forEach(element => element.expandRecursively());
+        const pvt = this.$.#pvt;
+        Array.from(this.children)
+            .filter(child => child.nodeName.toLowerCase() == pvt.tagType("treebranch"))
+            .forEach(element => element.expandRecursively());
+    }
+
+    get nestLevel() {
+        return 0;
+    }
+
+    getMarker(src) {
+        return "&#x200B;";
     }
 }

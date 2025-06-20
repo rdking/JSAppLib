@@ -1,19 +1,34 @@
 :host {
     display: flex;
     flex: 1 0 auto;
+    flex-direction: row;
+    justify-content: stretch;
+    align-items: stretch;
+    contain: strict;
+}
+
+.container {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: row;
+    justify-content: stretch;
+    contain: strict;
 }
 
 slot {
     display: flex;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     flex-direction: row;
     justify-content: flex-start;
     justify-self: stretch;
     align-content: stretch;
-    overflow-x: auto;
-    overflow-y: auto;
     min-width: 16px;
     min-height: 16px;
+    overflow: hidden;
+}
+
+slot.last {
+    flex: 1 1 auto;
 }
 
 div[draggable] {
@@ -25,11 +40,4 @@ div[draggable] {
 
 .splitter, .splitter.dragging {
     cursor: col-resize !important;
-}
-
-.container {
-    display: flex;
-    flex: 1 0 auto;
-    flex-direction: row;
-    justify-content: stretch;
 }

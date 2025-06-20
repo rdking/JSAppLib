@@ -1,18 +1,22 @@
 import { share, saveSelf, accessor, abstract, final } from "../../cfprotected/index.mjs";
-import Base from "./jsBase.mjs";
+import Container from "./jsContainer.mjs";
 
-export default class Tab extends Base {
-    static observedAttributes = ["caption", "closeable", "disabled", "selected"];
+export default class Tab extends Container {
     static #spvt= share(this, {});
 
+    static get observedAttributes() {
+        return Container.observedAttributes.concat([ "caption", "closeable", "disabled", "selected" ]);
+    }
+
     static {
-        this.#spvt.initAttributeProperties(this, {
+        const spvt = this.#spvt;
+        spvt.initAttributeProperties(this, {
             caption: {},
             selected: { isBool: true },
             disabled: { isBool: true },
             closeable: { isBool: true }
         });
-        this.#spvt.register(this);
+        spvt.register(this);
     }
 
     #pvt= share(this, Tab, {
@@ -43,17 +47,17 @@ export default class Tab extends Base {
         },
         onDisabledChanged(e) {
             let { newValue: newVal } = e.detail;
-            let container = this.shadowRoot.getElementById("container");
+            let container = this.$.#pvt.shadowRoot.getElementById("container");
             container.classList[!!newVal ? "add" : "remove"]("disabled");
         },
         onCloseableChanged(e) {
-            let closeButton = this.shadowRoot.querySelector("slot");
+            let closeButton = this.$.#pvt.shadowRoot.querySelector("slot");
             if (closeButton) {
                 closeButton.classList[this.closeable?"remove":"add"]("hidden");
             }
         },
         onCaptionChanged(e) {
-            let label = this.shadowRoot.querySelector("label");
+            let label = this.$.#pvt.shadowRoot.querySelector("label");
             if (label) {
                 label.innerHTML = this.caption;
             }
@@ -64,10 +68,11 @@ export default class Tab extends Base {
         super();
 
         const pvt = this.$.#pvt;
-        this.addEventListener("render", pvt.render());
-        this.addEventListener("selectedChanged", pvt.onSelectedChanged);
-        this.addEventListener("disabledChanged", pvt.onDisabledChanged);
-        this.addEventListener("closeableChanged", pvt.onCloseableChanged);
-        this.addEventListener("captionChanged", pvt.onCaptionChanged);
+        pvt.registerEvents({
+            selectedChanged: pvt.onSelectedChanged,
+            disabledChanged: pvt.onDisabledChanged,
+            closeableChanged: pvt.onCloseableChanged,
+            captionChanged: pvt.onCaptionChanged
+        });
     }
 }

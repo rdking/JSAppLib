@@ -1,15 +1,44 @@
-import { share, saveSelf } from "/node_modules/cfprotected/index.mjs";
-import ListItem from "/node_modules/jsapplib/src/jsListItem.mjs";
-import Semaphore from "/node_modules/jsapplib/src/util/Semaphore.mjs";
+import { share, define } from "../../cfprotected/index.mjs";
+import TreeLeaf from "./jsTreeLeaf.mjs";
+import Semaphore from "./util/Semaphore.mjs";
 
-export default class TreeBranch extends ListItem {
-    static #tagName = "js-treebranch";
-    static #sprot = share(this, {});
+export default class TreeBranch extends TreeLeaf {
+    static #spvt = share(this, {});
 
-    static { this.#sprot.registerTag(this); }
-    static get tagName() { return this.$.#tagName; }
     static get observedAttributes() {
-        return ListItem.observedAttributes.concat(["collapsible", "collapsed"]); 
+        return TreeLeaf.observedAttributes.concat([
+            "collapsible", "collapsed"
+        ]); 
+    }
+
+    static {
+        define(this, {
+            depth: {
+                get() {
+                    return (this.parentElement?.depth || 0) + 1;
+                }
+            }
+        });
+        this.#spvt.initAttributeProperties(this, {
+            collapsed: {
+                isBool: true,
+                caption: "collapsed",
+                getter: function() {
+                    const pvt = this.$.#pvt;
+                    const cpanel = pvt.getShadowChild("collapsepanel");
+                    return cpanel?.hasAttribute("collapsed") ;
+                },
+                setter: function(v) {
+                    const pvt = this.$.#pvt;
+                    const cpanel = pvt.getShadowChild("collapsepanel");
+                    const caption = pvt.getChild("treeleaf", "[iscaption]")
+                    cpanel.collapsed = !!v;
+                    caption.fireEvent("updateMarker");
+                }
+            },
+            collapsible: { isBool: true, caption: "collapsible" }
+        });
+        this.#spvt.register(this);
     }
 
     #section = new Semaphore();
@@ -19,25 +48,34 @@ export default class TreeBranch extends ListItem {
     #ctrlDown = false;
     #value = "";
 
-    #prot = share(this, TreeBranch, {
+    #pvt = share(this, TreeBranch, {
         getTemplate() {
-            let prot = this.$.#prot;
-            let content = prot.newTag("js-collapsepanel", null, {
+            let pvt = this.$.#pvt;
+            let content = pvt.make(pvt.tagType("collapsepanel"), {}, {
                 children: [
-                    prot.newTag("slot", {
+                    pvt.make("slot", {
                         name: "caption",
                         slot:"header"
                     }),
-                    prot.newTag("div", {class: "itembox"}, {
+                    pvt.make("div", {
+                        class: "itembox"
+                    }, {
                         children: [
-                            prot.newTag("slot", {class: "items"})
+                            pvt.make("slot", {class: "items"})
                         ]
                     })
                 ]
             });
 
-            content.addEventListener("headerClicked", this.$.#prot.onHeaderClicked);
+            content.addEventListener("headerClicked", pvt.onHeaderClicked);
             return content;
+        },
+        getParentType() {
+            const pvt = this.$.#pvt;
+            return pvt.tagTypes(["treebranch", "treeview"]);
+        },
+        getParentMessage() {
+            return "TreeBranch elements can only be placed in a TreeView or another TreeBranch";
         },
         onHeaderClicked(e) {
             e.detail.canToggleCollapse = false;
@@ -47,57 +85,60 @@ export default class TreeBranch extends ListItem {
             e.cancelBubble = true;
         },
         onPreRender() {
-            this.$.#prot.validateChildren(["js-treebranch", "js-treeleaf"],
+            const pvt = this.$.#pvt;
+            pvt.$uper.onPreRender();
+            pvt.validateChildren(
+                pvt.tagTypes(["treebranch", "treeleaf"]),
                 "Only TreeBranch and TreeLeaf elements can be placed in a TreeView");
-            this.$.#prot.validateParent(["js-treebranch", "js-treeview"],
-            "TreeBranch elements can only be placed in a TreeView or TreeBanch");
+        },
+        onPostRender() {
+            const pvt = this.$.#pvt;
+            for (let child of this.children) {
+                child.fireEvent("render");
+
+                if (pvt.isTagType(child, "treeleaf") && child.isCaption) {
+                    child.slot = "caption";
+                }
+                else if (child.slot == "caption") {
+                    child.removeAttribute("slot");
+                }
+            }
+
         },
         onSelectedChange(e) {
             this.$.#section.lock(() => {
                 this.TreeView.fireEvent("selectedChange", e.detail);
             });
         },
-        onCollapsedChange(e) {
-            let panel = this.shadowRoot.querySelector("js-collapsepanel");
-            if (panel) {
-                panel.collapsed = this.collapsed
-                this.$.#prot.onUpdateMarker();
-            }
+        onCollapsedChanged(e) {
+            this.$.#pvt.onUpdateMarker();
         },
-        onCollapsibleChange(e) {
+        onCollapsibleChanged(e) {
             if (!this.collapsible) {
                 this.setBoolAttribute("collapsed", false);
-            }
-        },
-        onUpdateMarker() {
-            let leaf = Array.from(this.children).filter(child => child.slot == "caption")[0];
-            if (leaf) {
-                leaf.fireEvent("updateMarker");
             }
         }
     });
 
+    constructor() {
+        super();
+
+        const pvt = this.$.#pvt;
+        pvt.registerEvents({
+            "collapsedChanged": pvt.onCollapsedChanged,
+            "collapsibleChanged": pvt.onCollapsibleChanged
+        });
+    }
+
     connectedCallback() {
-        const prot = this.$.#prot;
-        this.addEventListener("collapsedChange", prot.onCollapsedChange);
-        this.addEventListener("collapsibleChange", prot.onCollapsibleChange);
-        this.addEventListener("updateMarker", prot.onUpdateMarker);
         super.connectedCallback();
-    }
 
-    get TreeView() {
-        let retval = this.parentElement;
-        if (retval.nodeName.toLowerCase() != "js-treeview") {
-            retval = retval.TreeView;
+        for (let child of this.children) {
+            if ("fireEvent" in child) {
+                child.fireEvent("refresh");
+            }
         }
-        return retval;
     }
-
-    get collapsed() { return this.hasAttribute("collapsed"); }
-    set collapsed(v) { this.$.#prot.setBoolAttribute("collapsed", this.collapsible && v); }
-
-    get collapsible() { return this.hasAttribute("collapsible"); }
-    set collapsible(v) { this.$.#prot.setBoolAttribute("collapsible", v); }
 
     collapseRecursively() {
         if (this.collapsible) {

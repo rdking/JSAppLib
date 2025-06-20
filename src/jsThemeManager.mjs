@@ -7,7 +7,7 @@ export default class ThemeManager extends ManagerBase {
     static #spvt= share(this, {});
 
     static get observedAttributes() {
-        return [ "liblocation", "defaulttheme", "currenttheme" ]; 
+        return ManagerBase.observedAttributes.concat([ "liblocation", "defaulttheme", "currenttheme" ]); 
     }
     
     static {
@@ -84,8 +84,9 @@ export default class ThemeManager extends ManagerBase {
             }
         };
 
-        this.addEventListener("render", pvt.render);
-        this.addEventListener("wait", pvt.wait);
+        pvt.registerEvents({
+            wait: pvt.wait
+        });
     }
 
     connectedCallback() {

@@ -5,7 +5,7 @@
     padding-top: 2px;
     padding-left: 2px;
     overflow: hidden;
-    background-color: var(--brush-shadow);
+    background-color: var(--brush-normal);
 }
 
 :host(:first-child) {

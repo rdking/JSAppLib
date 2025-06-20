@@ -1,13 +1,16 @@
 import { share, saveSelf } from "../../cfprotected/index.mjs";
 import Menu from "./jsMenu.mjs";
 import MenuItem from "./jsMenuItem.mjs";
-import Base from "./jsBase.mjs";
 
 export default class PopupMenu extends Menu {
     static #spvt= share(this, {});
 
     static {
-        this.#spvt.register(this);
+        let spvt = this.#spvt;
+        spvt.initAttributeProperties(this, {
+            caption: {}
+        });
+        spvt.register(this);
     }
 
     #htmlCaption = null;
@@ -45,7 +48,7 @@ export default class PopupMenu extends Menu {
         onExternalClick(e) {
             if (this.$.#showing) {
                 const pvt = this.$.#pvt;
-                const parent = pvt.isTagType(this.parentElement, pvt.tagType("menuitem"))
+                const parent = pvt.isTagType(this.parentElement, "menuitem")
                     ? this.parentElement : null;
 
                 if (![this, parent].includes(e.target)) {
@@ -68,7 +71,7 @@ export default class PopupMenu extends Menu {
         onBlur(e) {
             if (this.$.#showing) {
                 const pvt = this.$.#pvt;
-                const parent = pvt.isTagType(this.parentElement, pvt.tagType("menuitem"))
+                const parent = pvt.isTagType(this.parentElement, "menuitem")
                     ? this.parentElement : null;
 
                 if (![this, parent].includes(e.target)) {
@@ -94,21 +97,19 @@ export default class PopupMenu extends Menu {
         super();
 
         const pvt = this.$.#pvt;
-        //this.addEventListener("mousedown", pvt.onMouseDown);
-        this.addEventListener("render", pvt.render);
-        window.addEventListener("blur", pvt.onBlur);
-        window.addEventListener("click", pvt.onExternalClick);
-        super.connectedCallback();
-    }
 
-    get caption() { return this.getAttribute("caption"); }
-    set caption(v) { this.setAttribute("caption", v); }
+        pvt.registerEvents({
+            blur: pvt.onBlur,
+            click: pvt.onExternalClick
+        });
+        //this.addEventListener("mousedown", pvt.onMouseDown);
+    }
 
     get isShowing() { return this.$.#showing; }
 
     show(left, top) {
         if (!this.$.#showing) {
-            let div = this.shadowRoot.querySelector("#menubody.hidden");
+            let div = this.$.#pvt.shadowRoot.querySelector("#menubody.hidden");
             div.classList.replace("hidden", "showing");
             div.style.top = top;
             div.style.left = left;
@@ -118,7 +119,7 @@ export default class PopupMenu extends Menu {
 
     hide() {
         if (this.$.#showing) {
-            let div = this.shadowRoot.querySelector("#menubody.showing");
+            let div = this.$.#pvt.shadowRoot.querySelector("#menubody.showing");
             if (this.currentMenuItem) {
                 this.currentMenuItem.fireEvent("click");
             }
