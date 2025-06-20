@@ -1,24 +1,23 @@
 import { share, abstract, accessor } from "../../cfprotected/index.mjs";
-import Base from "./jsBase.mjs";
+import Container from "./jsContainer.mjs";
 
-const SplitPanel = abstract(class SplitPanel extends Base {
+const SplitPanel = abstract(class SplitPanel extends Container {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
-        return Base.observedAttributes.concat([
-            "minfirstwidth", "minsecondwidth", "splitpos"
+        return Container.observedAttributes.concat([
+            "minfirstwidth", "minlastwidth", "splitpos"
         ]);
     }
 
     static {
         this.#spvt.initAttributeProperties(this, {
             minfirstwidth: {},
-            minsecondwidth: {},
+            minlastwidth: {},
             splitpos: {}
         });
     }
 
-    #observer;
     #resizing = false;
     #size;
 
@@ -27,47 +26,64 @@ const SplitPanel = abstract(class SplitPanel extends Base {
         const style = window.getComputedStyle(target);
         let retval = target[`offset${widthProp}`];
 
-        const front = parseFloat(style[`margin${widthProp == "Width" ? "Left" : "Top"}`]);
-        const back = parseFloat(style[`margin${widthProp == "Width" ? "Right" : "Bottom"}`]);
+        let front = parseFloat(style[`margin${widthProp == "Width" ? "Left" : "Top"}`])
+            + parseFloat(this.minfirstwidth);
+        let back = parseFloat(style[`margin${widthProp == "Width" ? "Right" : "Bottom"}`])
+            + parseFloat(this.minlastwidth);
 
         return all
             ? {front, body: retval, back}
-            : retval + front + back;
+            : retval - front - back;
     }
 
     #isInside(target, axis, value) {
         const tSize = this.$.#getSize(target, axis, true);
-        return (value > -tSize.front) && (value < tSize.body + tSize.back);
+        return (value > tSize.front) && (value < tSize.body - tSize.back);
     }
 
     #resizeSlots() {
-        const widthProp = this.$.#pvt.widthProp;
-        const size = this.$.#size;
-        let first = this.shadowRoot.querySelector("slot[name=first]");
+        const pvt = this.$.#pvt;
+        const widthProp = pvt.widthProp;
+        const first = pvt.shadowRoot.querySelector("slot[name=first]");
+        const splitter = first?.nextElementSibling;
+        const sgap = pvt.getBounds(splitter, true)[widthProp.toLowerCase()];
+        let size = this.$.#size;
         let pos = ~~this.splitpos;
+
+        if (size === void 0) {
+            size = pvt.getBounds()[widthProp.toLowerCase()];
+        }
+
+        size -= sgap;
         
         //Ignore certain things when resizing
         this.$.#resizing = true;
 
         //Make sure we don't cross the limit....
-        if (pos < this.minfirstwidth) {
-            pos = this.minfirstwidth;
-        } else if (pos > size - this.minsecondwidth) {
-            pos = size - this.minsecondwidth;
+        if (pos < 0) {
+            pos = this[`client${widthProp}`] + pos;
         }
         
-        if (pos !== ~~this.splitpos) {
+        if (pos >= 0) {
+            if (pos < this.minfirstwidth) {
+                pos = this.minfirstwidth;
+            } else if (pos > size - this.minsecondwidth) {
+                pos = size - this.minsecondwidth;
+            }
+        }
+        
+        if ((this.splitpos > 0) && (pos !== ~~this.splitpos)) {
             this.splitpos = pos;
         }
         
         if (first) {
-            let splitter = first.nextElementSibling;
             let second = splitter.nextElementSibling;
             let firstDelta = pos;
             let secondDelta = size - pos;
+            let sprop = widthProp.toLowerCase();
             
-            first.style["flex-basis"] = `${firstDelta}px`;
-            second.style["flex-basis"] = `${secondDelta}px`;
+            first.style[sprop] = `${firstDelta}px`;
+            second.style[sprop] = `${secondDelta}px`;
         }
         this.$.#resizing = false;
     }
@@ -87,6 +103,7 @@ const SplitPanel = abstract(class SplitPanel extends Base {
                     }),
                     pvt.make("div", {
                         draggable: "true",
+                        role: "handle",
                         class: "splitter"
                     },{
                         children: [
@@ -97,98 +114,93 @@ const SplitPanel = abstract(class SplitPanel extends Base {
                         ]
                     }),
                     pvt.make("slot", {
-                        name: "second"
+                        name: "last"
                     })
                 ]
             }));
         },
         onPostRender() {
             const pvt = this.$.#pvt;
-            let splitter = this.shadowRoot.querySelector("div.splitter");
+            let splitter = this.$.#pvt.shadowRoot.querySelector("div.splitter");
             let container = splitter.parentElement;
             splitter.addEventListener("dragstart", pvt.onStartDragSplitter);
             splitter.addEventListener("drag", pvt.onDragSplitter);
             splitter.addEventListener("dragend", pvt.onEndDragSplitter);
             container.addEventListener("dragover", pvt.onDragOver);
-            splitter.previousElementSibling.addEventListener("dragover", pvt.onDragOver);
-            splitter.nextElementSibling.addEventListener("dragover", pvt.onDragOver);
+            container.addEventListener("resize", pvt.onContainerResized);
+            pvt.observeSize(container);
+            pvt.$uper.onPostRender();
         },
         onStartDragSplitter(e) {
             const pvt = this.$.#pvt;
-            const splitter = this.shadowRoot.querySelector("div.splitter");
-            const bounds = pvt.getBounds(splitter);
-            const dimg = this.shadowRoot.querySelector("#dragimg");
+            const dimg = this.$.#pvt.shadowRoot.querySelector("#dragimg");
+            const status = document.querySelector("js-statusbar");
 
             if ((this.$.#size === void 0) || (this.$.#size < 0)) {
-                this.$.#pvt.onResized();
+                pvt.onResized([e]);
             }
             
-            e.dataTransfer.setData("text/plain", e.target.id);
+            this.$.#size = pvt.getBounds()[pvt.widthProp.toLowerCase()];
+
+            e.dataTransfer.setData("application/json", JSON.stringify({
+                id: e.target.id,
+                status: status.status
+            }));
             e.dataTransfer.setDragImage(dimg, 0, 0);
         },
         onDragSplitter(e) {
             const widthProp = this.$.#pvt.widthProp;
-            const lengthProp = widthProp == "Width" ? "Height" : "Width";
             const widthAxis = {Width: "X", Height: "Y"}[widthProp];
-            const heightAxis = widthAxis == "X" ? "Y" : "X";
             const offsetSide = {Width: "Left", Height: "Top"}[widthProp];
-            const offsetLength = e[`offset${heightAxis}`];
-            let splitter = this.shadowRoot.querySelector("div.splitter");
+            const offsetLength = e[`client${widthAxis}`];
+            const status = document.querySelector("js-statusbar");
+            let splitter = this.$.#pvt.shadowRoot.querySelector("div.splitter");
 
-            if (this.$.#isInside(splitter, lengthProp, offsetLength)) {
-                this.splitpos = e[`client${widthAxis}`] - this[`offset${offsetSide}`];
+            if (this.$.#isInside(splitter.parentElement, widthProp, offsetLength)) {
+                this.splitpos = e[`client${widthAxis}`] - this[`app${offsetSide}`];
             }
+
+            status.status = `Offset: ${e[`client${widthAxis}`]}`;
         },
-        onEndDragSplitter(e) {            
-            const widthProp = this.$.#pvt.widthProp;
-            const lengthProp = widthProp == "Width" ? "Height" : "Width";
-            const widthAxis = {Width: "X", Height: "Y"}[widthProp];
-            const heightAxis = widthAxis == "X" ? "Y" : "X";
-            const offsetSide = {Width: "Left", Height: "Top"}[widthProp];
-            const offsetLength = e[`offset${heightAxis}`];
-            let splitter = this.shadowRoot.querySelector("div.splitter");
+        onEndDragSplitter(e) {
+            const status = document.querySelector("js-statusbar");
 
-            if (this.$.#isInside(splitter, lengthProp, offsetLength)) {
-                this.splitpos = e[`client${widthAxis}`] - this[`offset${offsetSide}`];
-            }
+            this.$.#pvt.onDragSplitter(e);
+            status.status = e.dataTransfer.getData("application/json")
         },
         onDragOver(e) {
             e.preventDefault();
+        },
+        onContainerResized(e) {
+            console.log("Split Container Resized!");
         },
         onResized(e) {
             if (e && (e[0].target == this)) {
                 const pvt = this.$.#pvt;
                 const widthProp = pvt.widthProp;
                 const widthAxis = {Width: "inlineSize", Height: "blockSize"}[widthProp];
-                const splitter = this.shadowRoot.querySelector("div.splitter");
+                const status = document.querySelector("js-statusbar");
+                const splitter = pvt.shadowRoot.querySelector("div.splitter");
                 if (splitter) {
                     let bounds = pvt.getBounds(splitter, true);
                     this.$.#size = e[0].devicePixelContentBoxSize[0][widthAxis] - bounds[widthProp.toLowerCase()];
                     this.$.#resizeSlots();
                 }
             }
+            else {
+                this.$.#resizeSlots();
+            }
         },
-        onMinFirstWidthChanged() {
+        onMinSlotWidthChanged() {
             if ((this.$.#size === void 0) || (this.$.#size < 0)) {
                 this.$.#pvt.onResized();
             } else {
                 this.$.#resizeSlots();
             }
         },
-        onMinSecondWidthChanged() {
-            if ((this.$.#size === void 0) || (this.$.#size < 0)) {
-                this.$.#pvt.onResized();
-            } else {
-                this.$.#resizeSlots();
-            }
-        },
-        onSplitPosChanged() {
+        onSplitPosChanged(e) {
             if (!this.$.#resizing) {
-                if ((this.$.#size === void 0) || (this.$.#size < 0)) {
-                    this.$.#pvt.onResized();
-                } else {
-                    this.$.#resizeSlots();
-                }
+                this.$.#resizeSlots();
             }
         }
     });
@@ -197,19 +209,17 @@ const SplitPanel = abstract(class SplitPanel extends Base {
         super();
 
         const pvt = this.$.#pvt;
-        this.$.#observer = new ResizeObserver(pvt.onResized);
-        this.$.#observer.observe(this);
 
-        this.addEventListener("render", pvt.render);
-        this.addEventListener("postRender", pvt.onPostRender);
-        this.addEventListener("dragover", pvt.onDragOver);
-        this.addEventListener("minfirstwidthChanged", pvt.onMinFirstWidthChanged);
-        this.addEventListener("minsecondwidthChanged", pvt.onMinSecondWidthChanged);
-        this.addEventListener("splitposChanged", pvt.onSplitPosChanged);
-        //window.addEventListener("resize", pvt.onResized);
+        pvt.registerEvents({
+            "dragover": pvt.onDragOver,
+            "minfirstwidthChanged": pvt.onMinSlotWidthChanged,
+            "minlastwidthChanged": pvt.onMinSlotWidthChanged,
+            "splitposChanged": pvt.onSplitPosChanged,
+            "resize": pvt.onResized
+        });
 
         this.minfirstwidth = (!this.minfirstwidth && (this.minfirstwidth !== 0)) ? 32 : this.minfirstwidth;
-        this.minsecondwidth = (!this.minsecondwidth && (this.minsecondwidth !== 0)) ? 32 : this.minsecondwidth;
+        this.minlastwidth = (!this.minlastwidth && (this.minlastwidth !== 0)) ? 32 : this.minlastwidth;
     }
 });
 
