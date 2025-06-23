@@ -6,20 +6,23 @@ const SplitPanel = abstract(class SplitPanel extends Container {
 
     static get observedAttributes() {
         return Container.observedAttributes.concat([
-            "minfirstwidth", "minlastwidth", "splitpos"
+            "minfirstwidth", "minlastwidth", "splitpos", "favorlast"
         ]);
     }
 
     static {
         this.#spvt.initAttributeProperties(this, {
+            favorlast: { isBool: true, caption: "favorlast" },
             minfirstwidth: {},
             minlastwidth: {},
             splitpos: {}
         });
     }
 
+    #oldStatus;
     #resizing = false;
-    #size;
+    #isResizing = false;
+    // #size;
 
     #getSize(target, axis, all) {
         const widthProp = axis || this.$.#pvt.widthProp;
@@ -46,44 +49,29 @@ const SplitPanel = abstract(class SplitPanel extends Container {
         const widthProp = pvt.widthProp;
         const first = pvt.shadowRoot.querySelector("slot[name=first]");
         const splitter = first?.nextElementSibling;
+        const last = splitter?.nextElementSibling;
         const sgap = pvt.getBounds(splitter, true)[widthProp.toLowerCase()];
-        let size = this.$.#size;
-        let pos = ~~this.splitpos;
-
-        if (size === void 0) {
-            size = pvt.getBounds()[widthProp.toLowerCase()];
-        }
-
-        size -= sgap;
+        let pos = ~~this.splitpos - (this.favorlast ? sgap : 0);
+        let size = this[`client${widthProp}`] - sgap;
         
         //Ignore certain things when resizing
         this.$.#resizing = true;
-
-        //Make sure we don't cross the limit....
-        if (pos < 0) {
-            pos = this[`client${widthProp}`] + pos;
-        }
         
-        if (pos >= 0) {
-            if (pos < this.minfirstwidth) {
-                pos = this.minfirstwidth;
-            } else if (pos > size - this.minsecondwidth) {
-                pos = size - this.minsecondwidth;
-            }
-        }
-        
-        if ((this.splitpos > 0) && (pos !== ~~this.splitpos)) {
-            this.splitpos = pos;
+        if ((!this.favorlast && (this.minfirstwidth > pos)) 
+            || (this.favorlast && (this.minfirstwidth > size - pos))) {
+            pos = this.favorlast ? size - this.minfirstwidth : this.minfirstwidth;
+        } else if ((this.favorlast && (this.minlastwidth > pos)) 
+            || (!this.favorlast && (this.minlastwidth > size - pos))) {
+            pos = this.favorlast ? this.minlastwidth : size - this.minlastwidth;
         }
         
         if (first) {
-            let second = splitter.nextElementSibling;
-            let firstDelta = pos;
-            let secondDelta = size - pos;
+            let firstDelta = this.favorlast ? size - pos : pos;
+            let lastDelta =  this.favorlast ? pos : size - pos;
             let sprop = widthProp.toLowerCase();
             
             first.style[sprop] = `${firstDelta}px`;
-            second.style[sprop] = `${secondDelta}px`;
+            last.style[sprop] = `${lastDelta}px`;
         }
         this.$.#resizing = false;
     }
@@ -132,41 +120,37 @@ const SplitPanel = abstract(class SplitPanel extends Container {
             pvt.$uper.onPostRender();
         },
         onStartDragSplitter(e) {
-            const pvt = this.$.#pvt;
             const dimg = this.$.#pvt.shadowRoot.querySelector("#dragimg");
             const status = document.querySelector("js-statusbar");
 
-            if ((this.$.#size === void 0) || (this.$.#size < 0)) {
-                pvt.onResized([e]);
+            if (status && ("status" in status)) {
+                this.$.#oldStatus = status.status;
             }
-            
-            this.$.#size = pvt.getBounds()[pvt.widthProp.toLowerCase()];
 
-            e.dataTransfer.setData("application/json", JSON.stringify({
-                id: e.target.id,
-                status: status.status
-            }));
             e.dataTransfer.setDragImage(dimg, 0, 0);
         },
         onDragSplitter(e) {
             const widthProp = this.$.#pvt.widthProp;
             const widthAxis = {Width: "X", Height: "Y"}[widthProp];
-            const offsetSide = {Width: "Left", Height: "Top"}[widthProp];
-            const offsetLength = e[`client${widthAxis}`];
+            const offsetLength = e[`layer${widthAxis}`];
             const status = document.querySelector("js-statusbar");
             let splitter = this.$.#pvt.shadowRoot.querySelector("div.splitter");
 
+            status.status = "";
+
             if (this.$.#isInside(splitter.parentElement, widthProp, offsetLength)) {
-                this.splitpos = e[`client${widthAxis}`] - this[`app${offsetSide}`];
+                let width =  parseFloat(this[`client${widthProp}`]);
+                status.status += `width: ${width}, `;
+                this.splitpos = this.favorlast ? width - offsetLength : offsetLength;
             }
 
-            status.status = `Offset: ${e[`client${widthAxis}`]}`;
+            status.status += `layer${widthAxis}: ${e[`layer${widthAxis}`]}`;
         },
         onEndDragSplitter(e) {
             const status = document.querySelector("js-statusbar");
 
             this.$.#pvt.onDragSplitter(e);
-            status.status = e.dataTransfer.getData("application/json")
+            status.status = this.$.#oldStatus;
         },
         onDragOver(e) {
             e.preventDefault();
@@ -175,25 +159,31 @@ const SplitPanel = abstract(class SplitPanel extends Container {
             console.log("Split Container Resized!");
         },
         onResized(e) {
-            if (e && (e[0].target == this)) {
-                const pvt = this.$.#pvt;
-                const widthProp = pvt.widthProp;
-                const widthAxis = {Width: "inlineSize", Height: "blockSize"}[widthProp];
-                const status = document.querySelector("js-statusbar");
-                const splitter = pvt.shadowRoot.querySelector("div.splitter");
-                if (splitter) {
-                    let bounds = pvt.getBounds(splitter, true);
-                    this.$.#size = e[0].devicePixelContentBoxSize[0][widthAxis] - bounds[widthProp.toLowerCase()];
-                    this.$.#resizeSlots();
-                }
-            }
-            else {
+            this.$.#isResizing = true;
+
+            // if (e && ("detail" in e) && (e.detail.target == this.parentElement)) {
+            //     const pvt = this.$.#pvt;
+            //     const widthProp = pvt.widthProp;
+            //     const splitter = pvt.shadowRoot.querySelector("div.splitter");
+
+            //     if (splitter) {
+            //         let max = this[`client${widthProp}`];
+            //         this.$.#size = max;
+            //         this.$.#resizeSlots();
+            //     }
+            // }
+            // else {
                 this.$.#resizeSlots();
-            }
+            // }
+
+            this.$.#isResizing = false;
         },
-        onMinSlotWidthChanged() {
-            if ((this.$.#size === void 0) || (this.$.#size < 0)) {
-                this.$.#pvt.onResized();
+        onMinSlotWidthChanged(e) {
+            const pvt = this.$.#pvt;
+            let size = this[`client${pvt.widthProp}`];
+
+            if ((size === void 0) || (size < 0)) {
+                pvt.onResized(e);
             } else {
                 this.$.#resizeSlots();
             }
@@ -215,7 +205,7 @@ const SplitPanel = abstract(class SplitPanel extends Container {
             "minfirstwidthChanged": pvt.onMinSlotWidthChanged,
             "minlastwidthChanged": pvt.onMinSlotWidthChanged,
             "splitposChanged": pvt.onSplitPosChanged,
-            "resize": pvt.onResized
+            "parentResized": pvt.onResized
         });
 
         this.minfirstwidth = (!this.minfirstwidth && (this.minfirstwidth !== 0)) ? 32 : this.minfirstwidth;
