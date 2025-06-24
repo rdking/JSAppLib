@@ -12,7 +12,6 @@
     --layout-container-rotation: rotate(0deg);
     --layout-content-rotation: rotate(0deg);
     --layout-last-rotation: rotate(0deg);
-    --layout-flex-direction: row;
     --layout-min-width: unset;
     --layout-min-height: 2px;
 }
@@ -23,7 +22,6 @@
     --layout-container-rotation: rotate(-90deg);
     --layout-content-rotation: rotate(90deg);
     --layout-last-rotation: rotate(180deg);
-    --layout-flex-direction: column;
     --layout-min-width: 2px;
     --layout-min-height: unset;
 }
@@ -36,6 +34,8 @@
     flex-direction: column;
     align-self: stretch;
     justify-self: stretch;
+    padding: 0px;
+    margin: 0px;
     transform: var(--layout-container-rotation);
 }
 
@@ -50,7 +50,7 @@
 slot {
     position: relative;
     display: flex;
-    flex-direction: var(--layout-flex-direction);
+    flex-direction: row;
     flex: 1 0 auto;
     justify-content: flex-start;
     margin: 0px;

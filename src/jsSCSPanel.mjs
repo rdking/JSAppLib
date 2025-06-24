@@ -113,10 +113,11 @@ export default class SCSPanel extends Container {
         onHorizontalChanged() {
             //console.log(`horizontal = ${this.horizontal}`);
             const pvt = this.$.#pvt;
+            const container = pvt.getShadowChild("div", ".container");
+            const content = pvt.getShadowChild("", "slot:not([name])");
             let sparent = pvt.getShadowParent(this.parentElement);
-            if (sparent) {
-                const container = pvt.getShadowChild("div", ".container");
-                const content = pvt.getShadowChild("", "slot:not([name])");
+
+            if (sparent && container && content) {
                 if (this.horizontal) {
                     let cw = sparent.clientWidth,
                         ch = sparent.clientHeight,
