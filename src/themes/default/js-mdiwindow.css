@@ -30,6 +30,7 @@
 
 .header {
     display: flex;
+    flex: 1 0 auto;
     flex-direction: row;
     justify-items: flex-start;
     align-items: center;
@@ -114,6 +115,50 @@ button:active {
 .body {
     display: flex;
     flex: 1 0 auto;
-    margin: 4px;
     min-height: 120px;
+}
+
+.edgecorner {
+    height: 3px;
+    width: 32px;
+    padding: 0px;
+    margin: 0px;
+}
+
+.edgecenter {
+    flex: 1 0 auto;
+    height: 3px;
+    padding: 0px;
+    margin: 0px;
+}
+
+.window {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    padding: 0px;
+    margin: 0px;
+}
+
+iframe {
+    flex: 1 0 auto;
+    border: none;
+    padding: 0px;
+    margin: 0px;
+}
+
+.nsarrow {
+    cursor: ns-resize;
+}
+
+.ewarrow {
+    cursor: ew-resize;
+}
+
+.neswarrow {
+    cursor: nesw-resize;
+}
+
+.nwsearrow {
+    cursor: nwse-resize;
 }

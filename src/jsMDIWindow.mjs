@@ -21,67 +21,132 @@ export default class MDIWindow extends ControlBase {
         render() {
             const pvt = this.$.#pvt;
             pvt.renderContent([
-                pvt.make("div", {
-                    class: "header"
-                }, {
+                pvt.make(pvt.tagType("scspanel"), {}, {
                     children: [
                         pvt.make("div", {
-                            id: "titleArea",
-                            class: "title"
+                            slot: "first",
+                            class: "edgecorner nwsearrow"
+                        }),
+                        pvt.make("div", {
+                            slot: "first",
+                            class: "edgecenter nsarrow"
+                        }),
+                        pvt.make("div", {
+                            slot: "first",
+                            class: "edgecorner neswarrow"
+                        }),
+                        pvt.make(pvt.tagType("scspanel"), {
+                            horizontal: ""
                         }, {
                             children: [
-                                pvt.make("label", {
-                                    id: "title",
+                                pvt.make("div", {
+                                    slot: "first",
+                                    class: "edgecorner neswarrow"
+                                }),
+                                pvt.make("div", {
+                                    slot: "first",
+                                    class: "edgecenter ewarrow"
+                                }),
+                                pvt.make("div", {
+                                    slot: "first",
+                                    class: "edgecorner nwsearrow"
+                                }),
+                                pvt.make(pvt.tagType("scspanel"), {
+                                    nolast: ""
                                 }, {
-                                    innerHTML: this.title || " "
+                                    children: [
+                                        pvt.make("div", {
+                                            slot: "first",
+                                            class: "header"
+                                        }, {
+                                            children: [
+                                                pvt.make("div", {
+                                                    id: "titleArea",
+                                                    class: "title"
+                                                }, {
+                                                    children: [
+                                                        pvt.make("label", {
+                                                            id: "title",
+                                                        }, {
+                                                            innerHTML: this.title || " "
+                                                        })
+                                                    ]
+                                                }),
+                                                pvt.make("div", {
+                                                    class: "buttons"
+                                                }, {
+                                                    children: [
+                                                        pvt.make("button", {
+                                                            id: "minimize"
+                                                        }, {
+                                                            innerHTML: "&#x2500;"
+                                                        }),
+                                                        pvt.make("button", {
+                                                            id: "maximize"
+                                                        }, {
+                                                            innerHTML: "&#x2610;"
+                                                        }),
+                                                        pvt.make("button", {
+                                                            id: "tiled",
+                                                            class: "hidden"
+                                                        }, {
+                                                            innerHTML: "&#x2750;"
+                                                        }),
+                                                        pvt.make("button", {
+                                                            id: "close"
+                                                        }, {
+                                                            innerHTML: "&#x2715;"
+                                                        })
+                                                    ]
+                                                })
+                                            ]
+                                        }),
+                                        pvt.make("div", {
+                                            class: "body"
+                                        }, {
+                                            children: [
+                                                pvt.make("slot", null, {
+                                                    children: [
+                                                        pvt.make("iframe")
+                                                    ]
+                                                })
+                                            ]
+                                        })
+                                    ]
+                                }),
+                                pvt.make("div", {
+                                    slot: "last",
+                                    class: "edgecorner neswarrow"
+                                }),
+                                pvt.make("div", {
+                                    slot: "last",
+                                    class: "edgecenter ewarrow"
+                                }),
+                                pvt.make("div", {
+                                    slot: "last",
+                                    class: "edgecorner nwsearrow"
                                 })
                             ]
                         }),
                         pvt.make("div", {
-                            class: "buttons"
-                        }, {
-                            children: [
-                                pvt.make("button", {
-                                    id: "minimize"
-                                }, {
-                                    innerHTML: "&#x2500;"
-                                }),
-                                pvt.make("button", {
-                                    id: "maximize"
-                                }, {
-                                    innerHTML: "&#x2610;"
-                                }),
-                                pvt.make("button", {
-                                    id: "tiled",
-                                    class: "hidden"
-                                }, {
-                                    innerHTML: "&#x2750;"
-                                }),
-                                pvt.make("button", {
-                                    id: "close"
-                                }, {
-                                    innerHTML: "&#x2715;"
-                                })
-                            ]
+                            slot: "last",
+                            class: "edgecorner neswarrow"
+                        }),
+                        pvt.make("div", {
+                            slot: "last",
+                            class: "edgecenter nsarrow"
+                        }),
+                        pvt.make("div", {
+                            slot: "last",
+                            class: "edgecorner nwsearrow"
                         })
                     ]
                 }),
-                pvt.make("div", {
-                    class: "body"
-                }, {
-                    children: [
-                        pvt.make("slot", null, {
-                            children: [
-                                // pvt.make("iframe")
-                            ]
-                        })
-                    ]
-                })
             ]);
         },
         onPostRender() {
             const pvt = this.$.#pvt;
-            let titleArea = pvt.shadowRoot.querySelector("#titleArea");
+            let titleArea = pvt.shadowRoot.querySelector("div.header");
             let minimize = pvt.shadowRoot.querySelector("#minimize");
             let maximize = pvt.shadowRoot.querySelector("#maximize");
             let tiled = this.shadowRoot.querySelector("#tiled");
@@ -208,11 +273,33 @@ export default class MDIWindow extends ControlBase {
     get noClose() { this.hasAttribute("noclose"); }
     set noClose(v) { this.$.#pvt.setBoolAttribute("noclose", v); }
 
-    get title() { return this.getAttribute("title"); }
-    set title(v) { this.setAttribute("title", v); }
+    get title() {
+        const pvt = this.$.#pvt;
+        let titleLabel = pvt.shadowRoot.querySelector("#title");
+        return titleLabel?.innerText;
+    }
+    set title(v) {
+        const pvt = this.$.#pvt;
+        let titleLabel = pvt.shadowRoot.querySelector("#title");
+        if (titleLabel) {
+            titleLabel.innerText = v;
+        }
+    }
 
     get maximized() {
         let tiled = this.shadowRoot.querySelector("#tiled");
         return !tiled.classList.contains("hidden");
+    }
+
+    get browser() {
+        return this.$.#pvt.getShadowChild("iframe");
+    }
+
+    get document() {
+        return this.$.browser.contentDocument;
+    }
+
+    get context() {
+        return this.$.browser.contentWindow;
     }
 }
