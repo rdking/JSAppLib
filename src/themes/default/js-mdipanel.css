@@ -24,4 +24,5 @@ slot {
     height: fit-content;
     overflow-x: clip;
     overflow-y: clip;
+    max-height: 32px;
 }

@@ -15,6 +15,12 @@ export default class MDIPanel extends ControlBase {
 
     #dragOffsets = null;
     #anonId = 0;
+    #newDelta = {
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0
+    };
 
     #pvt = share(this, MDIPanel, {
         render() {
@@ -47,26 +53,28 @@ export default class MDIPanel extends ControlBase {
             e.preventDefault();
         },
         onDrop(e) {
-            const { offsetX, offsetY } = this.$.#dragOffsets;
-            const pvt = this.$.#pvt;
-            const target = document.getElementById(e.dataTransfer.getData(`text/plain`));
-            const pdims = pvt.getBounds(e.target);
-            const tdims = pvt.getBounds();
-            let x = e.offsetX - offsetX;
-            let y = e.offsetY - offsetY;
+            if (this.$.#dragOffsets) {
+                const { offsetX, offsetY } = this.$.#dragOffsets;
+                const pvt = this.$.#pvt;
+                const target = document.getElementById(e.dataTransfer.getData(`text/plain`));
+                const pdims = pvt.getBounds(e.target);
+                const tdims = pvt.getBounds();
+                let x = e.offsetX - offsetX;
+                let y = e.offsetY - offsetY;
 
-            if (!pvt.isTagType(e.target, "MDIPanel")) {
-                x += parseFloat(pdims.left) - parseFloat(tdims.left);
-                y += parseFloat(pdims.top) - parseFloat(tdims.top);
+                if (!pvt.isTagType(e.target, "MDIPanel")) {
+                    x += parseFloat(pdims.left) - parseFloat(tdims.left);
+                    y += parseFloat(pdims.top) - parseFloat(tdims.top);
+                }
+
+                target.style.left = x + "px";
+                target.style.top = y + "px";
+                target.classList.remove("dragging");
+                target.style.opacity = '';
+
+                this.$.#dragOffsets = null;
+                e.preventDefault();
             }
-
-            target.style.left = x + "px";
-            target.style.top = y + "px";
-            target.classList.remove("dragging");
-            target.style.opacity = '';
-
-            this.$.#dragOffsets = null;
-            e.preventDefault();
         },
         onSetDragOffsets(e) {
             this.$.#dragOffsets = e.detail;
@@ -116,5 +124,33 @@ export default class MDIPanel extends ControlBase {
         
         lastChild.style.zIndex = this.childElementCount - 1;
         lastChild.classList.add("ontop");
+    }
+
+    newWindow() {
+        const pvt = this.$.#pvt;
+        const delta = this.$.#newDelta;
+        let win = document.createElement(pvt.tagType("mdiwindow"));
+        win.style.top = delta.y + "px";
+        win.style.left = delta.x + "px";
+        this.appendChild(win);
+        delta.x += 32;
+        delta.y += 32;
+
+        if ((delta.x > this.clientWidth/2) || (delta.y > this.clientHeight/2)) {
+            delta.w += 32;
+            if (delta.w > this.clientWidth/2) {
+                delta.w = 0;
+                delta.h += 32;
+
+                if (delta.h > this.clientHeight/2) {
+                    delta.h = 0;
+                }
+            }
+
+            delta.x = delta.w;
+            delta.y = delta.h;
+        }
+
+        return win;
     }
 }
