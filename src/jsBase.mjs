@@ -347,12 +347,18 @@ const Base = abstract(class Base extends HTMLElement {
          */
         getShadowParent(parent) {
             let retval = parent;
-            const shadow = retval.$.#shadowRoot;
 
-            if (shadow) {
-                let slotName = this.getAttribute("slot") || "";
-                let slot = slotName ? `[name=${slotName}]` : ":not([name])";
-                retval = shadow.querySelector(`slot${slot}`);
+            if (!retval) {
+                retval = this;
+            }
+            else {
+                const shadow = ("$" in retval) ? retval.$.#shadowRoot : null;
+
+                if (shadow) {
+                    let slotName = this.getAttribute("slot") || "";
+                    let slot = slotName ? `[name=${slotName}]` : ":not([name])";
+                    retval = shadow.querySelector(`slot${slot}`);
+                }
             }
 
             return retval;
