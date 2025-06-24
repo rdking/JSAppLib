@@ -85,9 +85,9 @@ const ControlBase = abstract(class ControlBase extends Base {
 
     connectedCallback() {
         const pvt = this.$.#pvt;
-        super.connectedCallback();
-        
         this.$.#resizeObserver = new ResizeObserver(pvt.onResized);
+        
+        super.connectedCallback();
     }
 
     disconnectedCallback() {
