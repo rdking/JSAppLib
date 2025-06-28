@@ -110,12 +110,14 @@ export default class SCSPanel extends Container {
                 slots[2].classList[this.nolast? "add": "remove"]("gone");
             }
         },
-        onHorizontalChanged() {
+        onHorizontalChanged(e) {
             //console.log(`horizontal = ${this.horizontal}`);
             const pvt = this.$.#pvt;
             const container = pvt.getShadowChild("div", ".container");
             const content = pvt.getShadowChild("", "slot:not([name])");
             let sparent = pvt.getShadowParent(this.parentElement);
+            let first = pvt.getShadowChild("slot", "[name=first]");
+            let last = pvt.getShadowChild("slot", "[name=first]");
 
             if (sparent && container && content) {
                 if (this.horizontal) {
@@ -131,19 +133,18 @@ export default class SCSPanel extends Container {
                         container.style.height = pcw;
                         container.style.transformOrigin = `${hch} ${hch}`;
 
-                        let ccw = content.clientWidth, cch = content.clientHeight;
-                        let cshort = `${Math.min(ccw, cch)/2}px`;
-                        content.style.width = `${cch}px`;
-                        content.style.height = `${ccw}px`;
-                        content.style.transformOrigin = `${cshort} ${cshort}`;
+                        let ccw = `${cw - first.clientHeight - last.clientHeight}px`;
+                        content.style.width = ccw;
+                        content.style.height = pch;
+                        content.style.transformOrigin = `${hch} ${hch}`;
                     }
                 } else {
                     if (content) {
-                        content.style.width = void 0;
-                        content.style.height = void 0;
+                        content.style.width = "";
+                        content.style.height = "";
                     }
-                    this.style.width = void 0;
-                    this.style.height = void 0;
+                    this.style.width = "";
+                    this.style.height = "";
                 }
             }
         }
