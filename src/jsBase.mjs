@@ -349,7 +349,7 @@ const Base = abstract(class Base extends HTMLElement {
             let retval = parent;
 
             if (!retval) {
-                retval = this;
+                retval = this.$.#pvt.shadowRoot.host;
             }
             else {
                 const shadow = ("$" in retval) ? retval.$.#shadowRoot : null;
