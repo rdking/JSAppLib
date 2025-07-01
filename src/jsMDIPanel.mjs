@@ -13,7 +13,6 @@ export default class MDIPanel extends ControlBase {
         this.#spvt.register(this);
     }
 
-    #dragOffsets = null;
     #anonId = 0;
     #newDelta = {
         x: 0,
@@ -26,6 +25,9 @@ export default class MDIPanel extends ControlBase {
         render() {
             const pvt = this.$.#pvt;
             pvt.renderContent([
+                pvt.make("div", {
+                    class: "dragoverlay"
+                }),
                 pvt.make("slot"),
                 pvt.make("slot", {
                     id: "minArea",
@@ -49,35 +51,23 @@ export default class MDIPanel extends ControlBase {
                 this.children[this.childElementCount - 1].classList.add("ontop");
             }
         },
-        onDragOver(e) {
-            e.preventDefault();
-        },
-        onDrop(e) {
-            if (this.$.#dragOffsets) {
-                const { offsetX, offsetY } = this.$.#dragOffsets;
-                const pvt = this.$.#pvt;
-                const target = document.getElementById(e.dataTransfer.getData(`text/plain`));
-                const pdims = pvt.getBounds(e.target);
-                const tdims = pvt.getBounds();
-                let x = e.offsetX - offsetX;
-                let y = e.offsetY - offsetY;
-
-                if (!pvt.isTagType(e.target, "MDIPanel")) {
-                    x += parseFloat(pdims.left) - parseFloat(tdims.left);
-                    y += parseFloat(pdims.top) - parseFloat(tdims.top);
-                }
-
-                target.style.left = x + "px";
-                target.style.top = y + "px";
-                target.classList.remove("dragging");
-                target.style.opacity = '';
-
-                this.$.#dragOffsets = null;
-                e.preventDefault();
+        onStartDrag(e) {
+            const overlay = this.$.#pvt.getShadowChild("div",".dragoverlay");
+            if (e.detail) {
+                overlay.classList.add("dragging");
+                e.detail.style.zIndex = parseInt(e.detail.style.zIndex) + 1000000;
+            } else {
+                overlay.classList.add("resizing");
             }
         },
-        onSetDragOffsets(e) {
-            this.$.#dragOffsets = e.detail;
+        onEndDrag(e) {
+            const overlay = this.$.#pvt.getShadowChild("div",".dragoverlay");
+            if (e.detail) {
+                overlay.classList.remove("dragging");
+                e.detail.style.zIndex -= 1000000;
+            } else {
+                overlay.classList.remove("resizing");
+            }
         }
     });
 
@@ -86,10 +76,9 @@ export default class MDIPanel extends ControlBase {
 
         let pvt = this.$.#pvt;
         pvt.registerEvents({
-            dragover: pvt.onDragOver,
-            drop: pvt.onDrop,
             postRender: pvt.onPostRender,
-            setDragOffsets: pvt.onSetDragOffsets
+            startDrag: pvt.onStartDrag,
+            endDrag: pvt.onEndDrag
         });
     }
 
