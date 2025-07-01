@@ -31,9 +31,8 @@
 }
 
 :host(.maximized) {
-    position: revert;
-    justify-self: stretch;
-    align-self: stretch;
+    inset: 0 !important;
+    width: unset !important;
 }
 
 .header {

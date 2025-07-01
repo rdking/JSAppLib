@@ -24,7 +24,7 @@ slot {
     height: fit-content;
     overflow-x: clip;
     overflow-y: clip;
-    max-height: 32px;
+    max-height: 40px;
 }
 
 .dragoverlay {

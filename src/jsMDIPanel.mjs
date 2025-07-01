@@ -28,10 +28,17 @@ export default class MDIPanel extends ControlBase {
                 pvt.make("div", {
                     class: "dragoverlay"
                 }),
-                pvt.make("slot"),
-                pvt.make("slot", {
-                    id: "minArea",
-                    name: "minArea"
+                pvt.make(pvt.tagType("scspanel"), {
+                    nofirst: ""
+                }, {
+                    children: [
+                        pvt.make("slot"),
+                        pvt.make("slot", {
+                            id: "minArea",
+                            name: "minArea",
+                            slot: "last"
+                        })
+                    ]
                 })
             ]);
         },
