@@ -64,8 +64,6 @@ export default class SCSPanel extends Container {
             }
         },
         onResize(e) {
-            let parent  = this.parentElement;
-            let shadowParent = this.$.#pvt.getShadowParent(parent);
             let content = this.$.#pvt.getShadowChild("", "slot:not([name])");
             if (content) {
                 let oHeight = e.target.offsetHeight;
@@ -86,7 +84,6 @@ export default class SCSPanel extends Container {
             const container = pvt.getShadowChild("", "div.container");
             if (container) {
                 if (this.horizontal) {
-                    const parent = pvt.getShadowParent(e.detail.target);
                     container.style.width = e.detail.contentRect.height + "px";
                     container.style.height = e.detail.contentRect.width + "px";
                 }
@@ -111,7 +108,6 @@ export default class SCSPanel extends Container {
             }
         },
         onHorizontalChanged(e) {
-            //console.log(`horizontal = ${this.horizontal}`);
             const pvt = this.$.#pvt;
             const container = pvt.getShadowChild("div", ".container");
             const content = pvt.getShadowChild("", "slot:not([name])");
@@ -122,17 +118,16 @@ export default class SCSPanel extends Container {
             if (sparent && container && content) {
                 if (this.horizontal) {
                     let cw = sparent.clientWidth,
-                        ch = sparent.clientHeight,
-                        hshort = Math.min(cw, ch);
+                        ch = sparent.clientHeight;
                     let pcw = `${cw}px`,
                         pch = `${ch}px`;
 
                     if ((container.style.width != pch) || (container.style.height != pcw)) {
-                        let hch = `${hshort/2}px`
+                        let hch = `${ch/2}px`
                         container.style.width = pch;
                         container.style.height = pcw;
                         container.style.transformOrigin = `${hch} ${hch}`;
-
+                        
                         let ccw = `${cw - first.clientHeight - last.clientHeight}px`;
                         content.style.width = ccw;
                         content.style.height = pch;

@@ -61,6 +61,7 @@ slot {
 
 slot:not([name]) {
     /* transition: transform 10s; */
+    flex: 0 0 auto !important;
     width: 100%;
     height: 100%;
     transform: var(--layout-content-rotation);
