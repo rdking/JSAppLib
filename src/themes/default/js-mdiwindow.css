@@ -11,6 +11,7 @@
     min-height: var(--title-size);
     background-color: var(--brush-normal);
     border: 1px solid var(--brush-container-disabled);
+    --deselected-pointer-events: none;
 }
 
 :host(.minimized.ontop),
@@ -26,6 +27,13 @@
 :host(.ontop) {
     box-shadow: 0px 0px 8px 4px var(--brush-overlay);
     border: 1px solid var(--brush-container-selected);
+    --deselected-pointer-events: auto;
+}
+
+:host(.maximized) {
+    position: revert;
+    justify-self: stretch;
+    align-self: stretch;
 }
 
 .header {
@@ -119,7 +127,7 @@ button:active {
 }
 
 .edgecorner {
-    height: 3px;
+    height: 4px;
     width: 32px;
     padding: 0px;
     margin: 0px;
@@ -127,7 +135,7 @@ button:active {
 
 .edgecenter {
     flex: 1 0 auto;
-    height: 3px;
+    height: 4px;
     padding: 0px;
     margin: 0px;
 }
@@ -145,6 +153,7 @@ iframe {
     border: none;
     padding: 0px;
     margin: 0px;
+    pointer-events: var(--deselected-pointer-events);
 }
 
 .nsarrow {

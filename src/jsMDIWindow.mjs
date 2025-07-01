@@ -13,9 +13,44 @@ export default class MDIWindow extends ControlBase {
         this.#spvt.register(this);
     }
 
-    #oldPosition = null;
+    #oldHeight = null;
     #dragOffsets = null;
     #oldStatus = null;
+    #resizing = false;
+
+    #withEdges(fn) {
+        const pvt = this.$.#pvt;
+        let edges = [
+            pvt.getShadowChildren(`div[slot=first].nwsearrow`),
+            [pvt.getShadowChild(`div[slot=first].nsarrow`)],
+            pvt.getShadowChildren(`div[slot=first].neswarrow`),
+            [pvt.getShadowChild(`div[slot=first].ewarrow`)],
+            [pvt.getShadowChild(`div[slot=last].ewarrow`)],
+            pvt.getShadowChildren(`div[slot=last].neswarrow`),
+            [pvt.getShadowChild(`div[slot=last].nsarrow`)],
+            pvt.getShadowChildren(`div[slot=last].nwsearrow`),
+        ];
+
+        for (let edge of edges) {
+            for (let part of edge) {
+                fn(part);
+            }
+        }
+    }
+
+    #disableEdges() {
+        this.$.#withEdges(part => {
+            part.style.cursor = "default";
+            part.style.pointerEvents = "none";
+        });
+    }
+
+    #enableEdges() {
+        this.$.#withEdges(part => {
+            part.style.cursor = "";
+            part.style.pointerEvents = "";
+        });
+    }
 
     #pvt = share(this, MDIWindow, {
         render() {
@@ -25,15 +60,18 @@ export default class MDIWindow extends ControlBase {
                     children: [
                         pvt.make("div", {
                             slot: "first",
-                            class: "edgecorner nwsearrow"
+                            class: "edgecorner nwsearrow",
+                            "data-edge": "0"
                         }),
                         pvt.make("div", {
                             slot: "first",
-                            class: "edgecenter nsarrow"
+                            class: "edgecenter nsarrow",
+                            "data-edge": "1"
                         }),
                         pvt.make("div", {
                             slot: "first",
-                            class: "edgecorner neswarrow"
+                            class: "edgecorner neswarrow",
+                            "data-edge": "2"
                         }),
                         pvt.make(pvt.tagType("scspanel"), {
                             horizontal: ""
@@ -41,15 +79,18 @@ export default class MDIWindow extends ControlBase {
                             children: [
                                 pvt.make("div", {
                                     slot: "first",
-                                    class: "edgecorner neswarrow"
+                                    class: "edgecorner neswarrow",
+                                    "data-edge": "5"
                                 }),
                                 pvt.make("div", {
                                     slot: "first",
-                                    class: "edgecenter ewarrow"
+                                    class: "edgecenter ewarrow",
+                                    "data-edge": "3"
                                 }),
                                 pvt.make("div", {
                                     slot: "first",
-                                    class: "edgecorner nwsearrow"
+                                    class: "edgecorner nwsearrow",
+                                    "data-edge": "0"
                                 }),
                                 pvt.make(pvt.tagType("scspanel"), {
                                     nolast: ""
@@ -116,29 +157,35 @@ export default class MDIWindow extends ControlBase {
                                 }),
                                 pvt.make("div", {
                                     slot: "last",
-                                    class: "edgecorner neswarrow"
+                                    class: "edgecorner neswarrow",
+                                    "data-edge": "2"
                                 }),
                                 pvt.make("div", {
                                     slot: "last",
-                                    class: "edgecenter ewarrow"
+                                    class: "edgecenter ewarrow",
+                                    "data-edge": "4"
                                 }),
                                 pvt.make("div", {
                                     slot: "last",
-                                    class: "edgecorner nwsearrow"
+                                    class: "edgecorner nwsearrow",
+                                    "data-edge": "7"
                                 })
                             ]
                         }),
                         pvt.make("div", {
                             slot: "last",
-                            class: "edgecorner neswarrow"
+                            class: "edgecorner neswarrow",
+                            "data-edge": "5"
                         }),
                         pvt.make("div", {
                             slot: "last",
-                            class: "edgecenter nsarrow"
+                            class: "edgecenter nsarrow",
+                            "data-edge": "6"
                         }),
                         pvt.make("div", {
                             slot: "last",
-                            class: "edgecorner nwsearrow"
+                            class: "edgecorner nwsearrow",
+                            "data-edge": "7"
                         })
                     ]
                 }),
@@ -158,6 +205,12 @@ export default class MDIWindow extends ControlBase {
             maximize.addEventListener("click", pvt.onMaximizeClick);
             tiled.addEventListener("click", pvt.onTiledClick);
             close.addEventListener("click", pvt.onCloseClick);
+
+            this.$.#withEdges(part => {
+                part.addEventListener("mousedown", pvt.onResizeStart);
+                part.addEventListener("mousemove", pvt.onResize);
+                part.addEventListener("mouseup", pvt.onResizeEnd);
+            });
         },
         onTitleChange(e) {
             this.$.#pvt.shadowRoot.querySelector("#title").caption = this.title;
@@ -171,29 +224,47 @@ export default class MDIWindow extends ControlBase {
             this.removeAttribute("draggable");
         },
         onDragStart(e) {
-            this.parentElement.fireEvent("setDragOffsets", { 
+            const status = document.querySelector("js-statusbar");
+
+            this.$.#dragOffsets = { 
                 offsetX: e.offsetX,
                 offsetY: e.offsetY
-            });
+            };
+            this.parentElement.fireEvent("startDrag", this);
 
             this.classList.add("dragging");
             e.dataTransfer.setData("text/plain", e.target.id);
-            this.style.opacity="0.001";
+            this.style.opacity="0.1";
 
-            let status = document.querySelector("js-statusbar");
             if (status) {
                 this.$.#oldStatus = status.status;
             }
         },
         onDragging(e) {
-            let status = document.querySelector("js-statusbar");
+            const status = document.querySelector("js-statusbar");
+            const deltas = this.$.#dragOffsets;
+            let left = e.pageX - this.$.appLeft - deltas.offsetX;
+            let top = e.pageY - this.$.appTop - deltas.offsetY;
+            this.style.display="none";
+
+            left = (left < 0) ? 0 : left;
+            top = (top < 0) ? 0 : top;
+
+            this.style.left = `${left}px`;
+            this.style.top = `${top}px`;
+
             if (status) {
-                status.status = `Dragging to {${e.offsetX}, ${e.offsetY}}`;
+                status.status = `deltas: {${deltas.offsetX}, ${deltas.offsetY}}, page: {${e.pageX-this.$.appLeft}, ${e.pageY-this.$.appTop}}`;
             }
         },
         onDragEnd(e) {
+            this.style.pointerEvents = "";
             this.classList.remove("dragging");
             this.style.opacity = '';
+            this.style.display="";
+            this.parentElement.fireEvent("endDrag", this);
+
+            e.preventDefault();
 
             let status = document.querySelector("js-statusbar");
             if (status) {
@@ -214,6 +285,7 @@ export default class MDIWindow extends ControlBase {
             titleArea.addEventListener("dblclick", pvt.onUnMinimize);
             this.classList.add("minimized");
             this.style.position = "revert";
+            this.$.#disableEdges();
         },
         onUnMinimize() {
             const pvt = this.$.#pvt;
@@ -226,16 +298,24 @@ export default class MDIWindow extends ControlBase {
             this.style.position = "";
             this.classList.remove("minimized");
             this.slot = '';
+            this.$.#enableEdges();
         },
         onMaximizeClick(e) {
+            const pvt = this.$.#pvt;
             e.srcElement.classList.add("hidden");
             e.srcElement.nextElementSibling.classList.remove("hidden");
-            this.style.position = "revert";
+            this.classList.add("maximized");
+            this.$.#oldHeight = this.style.height;
+            this.style.height = '';
+            this.$.#disableEdges();
         },
         onTiledClick(e) {
+            const pvt = this.$.#pvt;
             e.srcElement.classList.add("hidden");
             e.srcElement.previousElementSibling.classList.remove("hidden");
-            this.style.position = "";
+            this.classList.remove("maximized");
+            this.style.height = this.$.#oldHeight;
+            this.$.#enableEdges();
         },
         onCloseClick() {
             let response = { canClose: true };
@@ -247,6 +327,61 @@ export default class MDIWindow extends ControlBase {
         },
         onWindowClick() {
             this.parentElement.moveToTop(this);
+        },
+        onResizeStart(e) {
+            if (e.buttons == 1) {
+                console.log("Beginning resizing...");
+                this.$.#resizing = {
+                    x: e.screenX,
+                    y: e.screenY,
+                    edge: parseInt(e.target.getAttribute("data-edge")),
+                    left: parseFloat(this.style.left),
+                    top: parseFloat(this.style.top),
+                    width: parseFloat(this.style.width),
+                    height: parseFloat(this.style.height)
+                };
+
+                this.addEventListener("mousemove", this.$.#pvt.onResize);
+                window.addEventListener("mousemove", this.$.#pvt.onResize);
+                window.addEventListener("mouseup", this.$.#pvt.onResizeEnd);
+                this.parentElement.fireEvent("startDrag");
+            }
+        },
+        onResize(e) {
+            let sz = this.$.#resizing;
+
+            if (sz) {
+                console.log("Still resizing...");
+                let delta = {
+                    x: e.screenX - sz.x,
+                    y: e.screenY - sz.y
+                };
+
+                if (sz.edge < 3) {
+                    this.style.top = `${sz.top + delta.y}px`;
+                    this.style.height = `${sz.height - delta.y}px`;
+                }
+
+                if (sz.edge > 4) {
+                    this.style.height = `${sz.height + delta.y}px`;
+                }
+
+                if ([0, 3, 5].includes(sz.edge)) {
+                    this.style.left = `${sz.left + delta.x}px`;
+                    this.style.width = `${sz.width - delta.x}px`;
+                }
+
+                if ([2, 4, 7].includes(sz.edge)) {
+                    this.style.width = `${sz.width + delta.x}px`;
+                }
+            }
+        },
+        onResizeEnd(e) {
+            console.log("Ending resizing...");
+            this.$.#resizing = false;
+            this.parentElement.fireEvent("endDrag");
+            window.removeEventListener("mouseup", this.$.#pvt.onResizeEnd);
+            window.removeEventListener("mousemove", this.$.#pvt.onResize);
         }
     });
 
@@ -258,6 +393,7 @@ export default class MDIWindow extends ControlBase {
             dragstart: pvt.onDragStart,
             drag: pvt.onDragging,
             dragend: pvt.onDragEnd,
+            drop: pvt.onDrop,
             //dragover: pvt.onDragOver,
             titleChange: pvt.onTitleChange,
             mousedown: pvt.onWindowClick
