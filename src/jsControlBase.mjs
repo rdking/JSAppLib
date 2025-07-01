@@ -98,24 +98,24 @@ const ControlBase = abstract(class ControlBase extends Base {
     }
 
     get appTop() {
-        let parent = this.offsetParent;
+        let parent = this.offsetParent || this.parentElement;
         let retval = this.offsetTop;
         
         while (!this.$.#pvt.isTagType(parent, "app")) {
             retval += parent.offsetTop;
-            parent = parent.offsetParent;
+            parent = parent.offsetParent || this.parentElement;
         }
 
         return retval;
     }
 
     get appLeft() {
-        let parent = this.offsetParent;
+        let parent = this.offsetParent || this.parentElement;
         let retval = this.offsetLeft;
         
         while (!this.$.#pvt.isTagType(parent, "app")) {
             retval += parent.offsetLeft;
-            parent = parent.offsetParent;
+            parent = parent.offsetParent || this.parentElement;
         }
 
         return retval;
