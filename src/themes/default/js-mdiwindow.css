@@ -43,7 +43,7 @@
     align-items: center;
     background-color: var(--brush-shadow);
     color: var(--pen-normal);
-    font-size: 1.25em;
+    font-size: 1.1em;
     height: var(--title-size);
 }
 
@@ -52,12 +52,7 @@
     flex: 1 0 auto;
     flex-direction: row;
     align-items: center;
-}
-
-.title {
-    display: flex;
-    flex: 1 0 auto;
-    flex-direction: row;
+    align-self: stretch;
 }
 
 #title {

@@ -16,7 +16,7 @@ export default class MDIWindow extends ControlBase {
     #oldHeight = null;
     #dragOffsets = null;
     #oldStatus = null;
-    #resizing = false;
+    #deltas = false;
 
     #withEdges(fn) {
         const pvt = this.$.#pvt;
@@ -103,7 +103,6 @@ export default class MDIWindow extends ControlBase {
                                             children: [
                                                 pvt.make("div", {
                                                     id: "titleArea",
-                                                    class: "title"
                                                 }, {
                                                     children: [
                                                         pvt.make("label", {
@@ -148,7 +147,9 @@ export default class MDIWindow extends ControlBase {
                                             children: [
                                                 pvt.make("slot", null, {
                                                     children: [
-                                                        pvt.make("iframe")
+                                                        pvt.make("iframe", {
+                                                            sandbox: "allow-scripts allow-modals allow-popups allow-forms allow-same-origin"
+                                                        })
                                                     ]
                                                 })
                                             ]
@@ -193,7 +194,7 @@ export default class MDIWindow extends ControlBase {
         },
         onPostRender() {
             const pvt = this.$.#pvt;
-            let titleArea = pvt.shadowRoot.querySelector("div.header");
+            let titleArea = pvt.shadowRoot.querySelector("div#titleArea");
             let minimize = pvt.shadowRoot.querySelector("#minimize");
             let maximize = pvt.shadowRoot.querySelector("#maximize");
             let tiled = this.shadowRoot.querySelector("#tiled");
@@ -201,6 +202,10 @@ export default class MDIWindow extends ControlBase {
 
             titleArea.addEventListener("mouseenter", pvt.onMouseEnterTitle);
             titleArea.addEventListener("mouseleave", pvt.onMouseLeaveTitle)
+            titleArea.addEventListener("dblclick", pvt.onDoubleTitleClick);
+            titleArea.addEventListener("mousedown", pvt.onStartMoving);
+            titleArea.addEventListener("mousemove", pvt.onMoving);
+            titleArea.addEventListener("mouseup", pvt.onEndMoving);
             minimize.addEventListener("click", pvt.onMinimizeClick);
             maximize.addEventListener("click", pvt.onMaximizeClick);
             tiled.addEventListener("click", pvt.onTiledClick);
@@ -223,56 +228,50 @@ export default class MDIWindow extends ControlBase {
         onMouseLeaveTitle(e) {
             this.removeAttribute("draggable");
         },
-        onDragStart(e) {
-            const status = document.querySelector("js-statusbar");
+        onStartMoving(e) {
+            if (e.buttons == 1) {
+                console.log("Beginning moving...");
+                this.$.#deltas = {
+                    type: "moving",
+                    x: e.screenX,
+                    y: e.screenY,
+                    edge: parseInt(e.target.getAttribute("data-edge")),
+                    left: parseFloat(this.style.left),
+                    top: parseFloat(this.style.top),
+                    width: parseFloat(this.style.width),
+                    height: parseFloat(this.style.height)
+                };
 
-            this.$.#dragOffsets = { 
-                offsetX: e.offsetX,
-                offsetY: e.offsetY
-            };
-            this.parentElement.fireEvent("startDrag", this);
-
-            this.classList.add("dragging");
-            e.dataTransfer.setData("text/plain", e.target.id);
-            this.style.opacity="0.1";
-
-            if (status) {
-                this.$.#oldStatus = status.status;
+                this.addEventListener("mousemove", this.$.#pvt.onMoving);
+                window.addEventListener("mousemove", this.$.#pvt.onMoving);
+                window.addEventListener("mouseup", this.$.#pvt.onEndMoving);
+                this.parentElement.fireEvent("startDrag");
             }
         },
-        onDragging(e) {
-            const status = document.querySelector("js-statusbar");
-            const deltas = this.$.#dragOffsets;
-            let left = e.pageX - this.$.appLeft - deltas.offsetX;
-            let top = e.pageY - this.$.appTop - deltas.offsetY;
-            this.style.display="none";
+        onMoving(e) {
+            let sz = this.$.#deltas;
 
-            left = (left < 0) ? 0 : left;
-            top = (top < 0) ? 0 : top;
+            if (sz.type == "moving") {
+                console.log("Still moving...");
+                let delta = {
+                    x: e.screenX - sz.x,
+                    y: e.screenY - sz.y
+                };
 
-            this.style.left = `${left}px`;
-            this.style.top = `${top}px`;
-
-            if (status) {
-                status.status = `deltas: {${deltas.offsetX}, ${deltas.offsetY}}, page: {${e.pageX-this.$.appLeft}, ${e.pageY-this.$.appTop}}`;
+                this.style.top = `${sz.top + delta.y}px`;
+                this.style.left = `${sz.left + delta.x}px`;
             }
         },
-        onDragEnd(e) {
-            this.style.pointerEvents = "";
-            this.classList.remove("dragging");
-            this.style.opacity = '';
-            this.style.display="";
-            this.parentElement.fireEvent("endDrag", this);
+        onEndMoving(e) {
+            let sz = this.$.#deltas;
 
-            e.preventDefault();
-
-            let status = document.querySelector("js-statusbar");
-            if (status) {
-                status.status = this.$.#oldStatus;
+            if (sz.type == "moving") {
+                console.log("Ending moving...");
+                this.$.#deltas = false;
+                this.parentElement.fireEvent("endDrag");
+                window.removeEventListener("mouseup", this.$.#pvt.onEndMoving);
+                window.removeEventListener("mousemove", this.$.#pvt.onMoving);
             }
-        },
-        onDragOver(e) {
-            e.preventDefault();
         },
         onMinimizeClick() {
             const pvt = this.$.#pvt;
@@ -302,8 +301,10 @@ export default class MDIWindow extends ControlBase {
         },
         onMaximizeClick(e) {
             const pvt = this.$.#pvt;
-            e.srcElement.classList.add("hidden");
-            e.srcElement.nextElementSibling.classList.remove("hidden");
+            const maximize = pvt.shadowRoot.querySelector("#maximize");
+            const tiled = this.shadowRoot.querySelector("#tiled");
+            maximize.classList.add("hidden");
+            tiled.classList.remove("hidden");
             this.classList.add("maximized");
             this.$.#oldHeight = this.style.height;
             this.style.height = '';
@@ -311,8 +312,10 @@ export default class MDIWindow extends ControlBase {
         },
         onTiledClick(e) {
             const pvt = this.$.#pvt;
-            e.srcElement.classList.add("hidden");
-            e.srcElement.previousElementSibling.classList.remove("hidden");
+            const maximize = pvt.shadowRoot.querySelector("#maximize");
+            const tiled = this.shadowRoot.querySelector("#tiled");
+            tiled.classList.add("hidden");
+            maximize.classList.remove("hidden");
             this.classList.remove("maximized");
             this.style.height = this.$.#oldHeight;
             this.$.#enableEdges();
@@ -320,18 +323,23 @@ export default class MDIWindow extends ControlBase {
         onCloseClick() {
             let response = { canClose: true };
             this.fireEvent("closing", response);
-
+            
             if (response.canClose) {
                 this.parentElement.removeChild(this);
             }
         },
-        onWindowClick() {
-            this.parentElement.moveToTop(this);
+        onDoubleTitleClick(e) {
+            const pvt = this.$.#pvt;
+            this.$.maximized ? pvt.onTiledClick(e) : pvt.onMaximizeClick(e);
+        },
+        onWindowClick(e) {
+            this.focus();
         },
         onResizeStart(e) {
             if (e.buttons == 1) {
                 console.log("Beginning resizing...");
-                this.$.#resizing = {
+                this.$.#deltas = {
+                    type: "resizing",
                     x: e.screenX,
                     y: e.screenY,
                     edge: parseInt(e.target.getAttribute("data-edge")),
@@ -348,9 +356,9 @@ export default class MDIWindow extends ControlBase {
             }
         },
         onResize(e) {
-            let sz = this.$.#resizing;
+            let sz = this.$.#deltas;
 
-            if (sz) {
+            if (sz.type == "resizing") {
                 console.log("Still resizing...");
                 let delta = {
                     x: e.screenX - sz.x,
@@ -378,7 +386,7 @@ export default class MDIWindow extends ControlBase {
         },
         onResizeEnd(e) {
             console.log("Ending resizing...");
-            this.$.#resizing = false;
+            this.$.#deltas = false;
             this.parentElement.fireEvent("endDrag");
             window.removeEventListener("mouseup", this.$.#pvt.onResizeEnd);
             window.removeEventListener("mousemove", this.$.#pvt.onResize);
@@ -390,11 +398,6 @@ export default class MDIWindow extends ControlBase {
 
         const pvt = this.$.#pvt;
         pvt.registerEvents({
-            dragstart: pvt.onDragStart,
-            drag: pvt.onDragging,
-            dragend: pvt.onDragEnd,
-            drop: pvt.onDrop,
-            //dragover: pvt.onDragOver,
             titleChange: pvt.onTitleChange,
             mousedown: pvt.onWindowClick
         });
@@ -437,5 +440,9 @@ export default class MDIWindow extends ControlBase {
 
     get context() {
         return this.$.browser.contentWindow;
+    }
+
+    focus() {
+        this.parentElement.moveToTop(this);
     }
 }
