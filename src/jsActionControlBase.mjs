@@ -60,7 +60,7 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
                 this.$.#oldStatus = "";
             }
         },
-        onClick() {
+        onAction() {
             if (!this.disabled) {
                 if (this.toggle) {
                     this.selected = !this.selected;
@@ -85,7 +85,8 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
             if (this.toggle) {
                 this.currentAction.register(this);
             }
-        }
+        },
+
     });
 
     constructor() {
@@ -93,6 +94,7 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
 
         const pvt = this.$.#pvt;
         pvt.registerEvents({
+            action: pvt.onAction,
             actionChanged: pvt.onActionChanged,
             selectedChanged: pvt.onSelectedChanged,
             mouseenter: pvt.onMouseEnter,

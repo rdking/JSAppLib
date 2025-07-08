@@ -8,7 +8,7 @@ export default class Action extends Base {
     static get observedAttributes() {
         return Base.observedAttributes.concat([
             "caption", "description", "disabled", "hotkey", "icon", "name",
-            "toggle", "selected", "onaction"
+            "toggle", "selected"
         ]);
     }
 
@@ -22,8 +22,7 @@ export default class Action extends Base {
             icon: { readonly: true },
             name: { readonly: true },
             toggle: { readonly: true, isBool: true, caption: "toggle" },
-            selected: { isBool: true, caption: "selected" },
-            onaction: { readonly: true }
+            selected: { isBool: true, caption: "selected" }
         });
         spvt.register(this);
     }
@@ -115,6 +114,7 @@ export default class Action extends Base {
                     item.selected = this.selected;
                 }
             }
+            this.fireEvent(`${this.selected ? "" : "de"}selected`)
         }
     });
 

@@ -58,7 +58,7 @@ export default class ActionManager extends ManagerBase {
      * @returns Action
      */
     getAction(name) {
-        return this.querySelector(`${this.$.#pvt.tagType("action")}[name=${name}]`);
+        return window[name];
     }
 
     registerHotKey(hotkey, action) {

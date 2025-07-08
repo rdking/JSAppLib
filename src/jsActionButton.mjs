@@ -81,6 +81,9 @@ export default class ActionButton extends ActionControlBase {
                 const img = pvt.shadowRoot.querySelector("img");
                 img.src = this.icon;
             }
+        },
+        onClicked() {
+            this.fireEvent("action");
         }
     });
 
@@ -89,6 +92,7 @@ export default class ActionButton extends ActionControlBase {
 
         const pvt = this.$.#pvt;
         pvt.registerEvents({
+            click: pvt.onClicked,
             update: pvt.onButtonModeChanged,
             buttonmodeChanged: pvt.onButtonModeChanged,
             captionChanged: pvt.onCaptionChanged,
