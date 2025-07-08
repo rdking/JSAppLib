@@ -128,7 +128,7 @@ export default class SCSPanel extends Container {
                         container.style.height = pcw;
                         container.style.transformOrigin = `${hch} ${hch}`;
                         
-                        let ccw = `${cw - first.clientHeight - last.clientHeight}px`;
+                        let ccw = `${cw - (this.nofirst ? 0 : first.clientHeight) - (this.nolast ? 0 : last.clientHeight)}px`;
                         content.style.width = ccw;
                         content.style.height = pch;
                         content.style.transformOrigin = `${hch} ${hch}`;

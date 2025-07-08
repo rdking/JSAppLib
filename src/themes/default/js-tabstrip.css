@@ -1,11 +1,19 @@
 :host {
     display: flex;
+    flex: 1 0 auto;
     flex-direction: row;
     margin: 2px -1px -2px;
     padding-top: 2px;
     padding-left: 2px;
     overflow: hidden;
     background-color: var(--brush-normal);
+    --no-tab-border-bottom: 1px solid black;
+    --no-tab-border-top: unset;
+}
+
+:host([flip]) {
+    --no-tab-border-bottom: unset;
+    --no-tab-border-top: 1px solid black;
 }
 
 :host(:first-child) {
@@ -21,5 +29,6 @@
     display: flex;
     flex: 1;
     border: none;
-    border-bottom: 1px solid black;
+    border-bottom: var(--no-tab-border-bottom);
+    border-top: var(--no-tab-border-top);
 }

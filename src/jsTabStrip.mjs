@@ -5,12 +5,17 @@ export default class TabStrip extends Container {
     static #spvt= share(this, {});
 
     static get observedAttributes() {
-        return Container.observedAttributes.concat([]);
+        return Container.observedAttributes.concat(["flip", "reverse"]);
     }
 
     static {
-        this.#spvt.initAttributeProperties(this, {});
-        this.#spvt.register(this);
+        saveSelf(this, "$");
+        const spvt = this.#spvt;
+        spvt.initAttributeProperties(this, {
+            flip: { isBool: true, caption: "flip" }, 
+            reverse: { isBool: true, caption: "reverse" }
+        });
+        spvt.register(this);
     }
 
     #pvt= share(this, TabStrip, {
@@ -18,7 +23,9 @@ export default class TabStrip extends Container {
             const pvt = this.$.#pvt;
 
             pvt.renderContent([
-                pvt.make("slot"),
+                pvt.make("slot", {
+                    style: this.reverse ? "flex-direction: row-reverse;" : ""
+                }),
                 pvt.make("div", {
                     class: "notab"
                 })
