@@ -44,7 +44,10 @@ const Base = abstract(class Base extends HTMLElement {
             }
 
             function getBAccessors(attr) {
-                function getter() { return this.hasAttribute(attr); }
+                function getter() {
+                    return this.hasAttribute(attr) &&
+                        !["no", "false", "0"].includes(this.getAttribute(attr).toLowerCase().trim());
+                }
                 function setter(v) {
                     if (v) {
                         this.setAttribute(attr, "");
@@ -469,6 +472,10 @@ const Base = abstract(class Base extends HTMLElement {
 
     get elementTagName() {
         return this.nodeName.toLowerCase();
+    }
+
+    get isRendered() {
+        return this.$.#pvt.shadowRoot.innerHTML.length > 0;
     }
 });
 
