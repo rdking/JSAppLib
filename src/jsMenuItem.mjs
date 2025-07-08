@@ -212,6 +212,7 @@ export default class MenuItem extends ActionControlBase {
                     if (app.menu && app.menu.currentMenuItem) {
                         app.menu.currentMenuItem.$.#hidePopup();
                     }
+                    this.fireEvent("action");
                 }
             }
         },
