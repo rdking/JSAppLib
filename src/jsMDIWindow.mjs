@@ -229,7 +229,9 @@ export default class MDIWindow extends ControlBase {
             this.removeAttribute("draggable");
         },
         onStartMoving(e) {
-            if (e.buttons == 1) {
+            const pvt = this.$.#pvt;
+
+            if ((e.detail != 2) && (e.buttons == 1)) {
                 console.log("Beginning moving...");
                 this.$.#deltas = {
                     type: "moving",
@@ -242,9 +244,9 @@ export default class MDIWindow extends ControlBase {
                     height: parseFloat(this.style.height)
                 };
 
-                this.addEventListener("mousemove", this.$.#pvt.onMoving);
-                window.addEventListener("mousemove", this.$.#pvt.onMoving);
-                window.addEventListener("mouseup", this.$.#pvt.onEndMoving);
+                this.addEventListener("mousemove", pvt.onMoving);
+                window.addEventListener("mousemove", pvt.onMoving);
+                window.addEventListener("mouseup", pvt.onEndMoving);
                 this.parentElement.fireEvent("startDrag");
             }
         },
@@ -263,14 +265,15 @@ export default class MDIWindow extends ControlBase {
             }
         },
         onEndMoving(e) {
+            const pvt = this.$.#pvt;
             let sz = this.$.#deltas;
 
             if (sz.type == "moving") {
                 console.log("Ending moving...");
                 this.$.#deltas = false;
                 this.parentElement.fireEvent("endDrag");
-                window.removeEventListener("mouseup", this.$.#pvt.onEndMoving);
-                window.removeEventListener("mousemove", this.$.#pvt.onMoving);
+                window.removeEventListener("mouseup", pvt.onEndMoving);
+                window.removeEventListener("mousemove", pvt.onMoving);
             }
         },
         onMinimizeClick() {
