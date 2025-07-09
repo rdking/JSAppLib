@@ -23,11 +23,16 @@ export default class TabStrip extends Container {
             const pvt = this.$.#pvt;
 
             pvt.renderContent([
-                pvt.make("slot", {
-                    style: this.reverse ? "flex-direction: row-reverse;" : ""
-                }),
                 pvt.make("div", {
-                    class: "notab"
+                    class: "tabstrip",
+                    style: this.reverse ? "flex-direction: row-reverse;" : ""
+                }, {
+                    children: [
+                        pvt.make("slot"),
+                        pvt.make("div", {
+                            class: "notab"
+                        })
+                    ]
                 })
             ]);
         },

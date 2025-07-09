@@ -22,6 +22,7 @@
 
 .tabstrip {
     display: flex;
+    flex: 1 0 auto;
     flex-direction: row;
 }
 

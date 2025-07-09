@@ -44,17 +44,25 @@ export default class TabBook extends Container {
     #pvt= share(this, TabBook, {
         render() {
             const pvt = this.$.#pvt;
-            const left = TabBook.#TabSide.left == this.tabside;
-            const bottom = TabBook.#TabSide.bottom == this.tabside;
-            const lr = [ TabBook.#TabSide.left, TabBook.#TabSide.right ].includes(this.tabside);
-            const lt = [ TabBook.#TabSide.left, TabBook.#TabSide.top ].includes(this.tabside);
+            const tabside = this.tabside || TabBook.#TabSide.top;
+            const left = TabBook.#TabSide.left == tabside;
+            const bottom = TabBook.#TabSide.bottom == tabside;
+            const lr = [ TabBook.#TabSide.left, TabBook.#TabSide.right ].includes(tabside);
+            const lt = [ TabBook.#TabSide.left, TabBook.#TabSide.top ].includes(tabside);
 
             pvt.renderContent([
                 pvt.make(pvt.tagType("scspanel"), 
-                lr ? {
+                left && lr ? {
                     id: "panel",
                     nolast: "",
                     horizontal: ""
+                }: !left && lr ? {
+                    id: "panel",
+                    nofirst: "",
+                    horizontal: ""
+                }: !bottom && !lr ? {
+                    id: "panel",
+                    nolast: ""
                 }: {
                     id: "panel",
                     nofirst: ""
@@ -63,9 +71,13 @@ export default class TabBook extends Container {
                         pvt.make(pvt.tagType("tabstrip"), 
                         bottom ? {
                             id: "tabs",
-                            slot: lt ? "first" : "last",
+                            slot: "last",
                             flip: ""
-                        } : {
+                        }: left ? {
+                            id: "tabs",
+                            slot: "first",
+                            reverse: ""
+                        }: {
                             id: "tabs",
                             slot: lt ? "first" : "last"
                         }),
