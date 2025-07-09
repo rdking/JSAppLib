@@ -64,10 +64,11 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
             if (!this.disabled) {
                 if (this.toggle) {
                     this.selected = !this.selected;
-                } else {
-                    if (typeof(this.onaction) == "string") {
-                        Function(this.onaction).call();
-                    }
+                } else if (this.action) {
+                    this.currentAction?.trigger();
+                }
+                else {
+                    this.$.#pvt.callEventHandler("action");
                 }
             }
         },
@@ -101,6 +102,10 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
             mouseleave: pvt.onMouseLeave,
             click: pvt.onClick
         });
+    }
+
+    triggerAction() {
+        this.$.#pvt.onAction();
     }
 
     get currentAction() {

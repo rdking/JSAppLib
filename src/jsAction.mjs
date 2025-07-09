@@ -115,6 +115,9 @@ export default class Action extends Base {
                 }
             }
             this.fireEvent(`${this.selected ? "" : "de"}selected`)
+        },
+        onAction() {
+            this.$.#pvt.callEventHandler("action");
         }
     });
 
@@ -123,6 +126,7 @@ export default class Action extends Base {
 
         const pvt = this.$.#pvt;
         pvt.registerEvents({
+            action: pvt.onAction,
             hotkeyChanged: pvt.onHotkeyChanged,
             selectedChanged: pvt.onSelectedChanged
         });
@@ -130,5 +134,9 @@ export default class Action extends Base {
 
     register(item) {
         this.$.#registered.push(item);
+    }
+
+    trigger() {
+        this.fireEvent("action");
     }
 };

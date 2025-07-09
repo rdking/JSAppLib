@@ -61,8 +61,9 @@ const Base = abstract(class Base extends HTMLElement {
 
             function getEAccessors(attr, enum_t, dflt) {
                 function getter() {
-                    let retval = enum_t(this.getAttribute(attr) || dflt); 
-                    return enum_t(retval);
+                    const value = this.getAttribute(attr) || dflt;
+                    let retval = value ? enum_t(value) : void 0; 
+                    return retval;
                 }
                 function setter(v) {
                     this.setAttribute(attr, ["",void 0].includes(v) ? v : enum_t(v).name);
@@ -407,6 +408,13 @@ const Base = abstract(class Base extends HTMLElement {
                 { style:"background-color: red; color: yellow; font-weight: bold;" },
                 { innerHTML: "ERROR!" }));
         },
+        callEventHandler(event) {
+            const eventName = `on${event.toLowerCase()}`;
+            const value = this.getAttribute(eventName);
+            if (this.hasAttribute(eventName) && value.trim().length) {
+                Function(value).call();
+            }
+        },
         registerEvents(map) {
             for (let event in map) {
                 this.addEventListener(event, map[event]);
@@ -432,6 +440,14 @@ const Base = abstract(class Base extends HTMLElement {
             "preRender": () => pvt.onPreRender(),
             "postRender": () => pvt.onPostRender()
         });
+
+        //Set up onxxx handlers for the static "observedEvents" array if declared
+        const events = this.cla$$.observedEvents;
+        if (Array.isArray(events)) {
+            for (let event of events) {
+                this.addEventListener(event, () => this.$.#pvt.callEventHandler(event));
+            }
+        }
     }
 
     attributeChangedCallback(attr, oldV, newV) {
