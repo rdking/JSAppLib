@@ -7,13 +7,13 @@
     padding-left: 2px;
     overflow: hidden;
     background-color: var(--brush-normal);
-    --no-tab-border-bottom: 1px solid black;
+    --no-tab-border-bottom: 1px solid var(--brush-overlay);
     --no-tab-border-top: unset;
 }
 
 :host([flip]) {
     --no-tab-border-bottom: unset;
-    --no-tab-border-top: 1px solid black;
+    --no-tab-border-top: 1px solid var(--brush-overlay);
 }
 
 :host(:first-child) {

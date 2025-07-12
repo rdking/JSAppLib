@@ -46,14 +46,18 @@ export default class TabStrip extends Container {
         onPostRender() {
             const pvt = this.$.#pvt;
 
+            pvt.validateChildren("tab", "TabStrip can only contain tabs!")
+
             for (let child of this.children) {
-                if (child.tagName.toLowerCase() == pvt.tagType("tab")) {
-                    child.addEventListener("click", pvt.onTabClicked);
-    
-                    if (!this.$.#activeTab) {
-                        this.$.#activeTab = child;
-                        child.isSelected = true;
-                    }
+                child.addEventListener("click", pvt.onTabClicked);
+
+                if (this.flip) {
+                    child.flip = true;
+                }
+
+                if (!this.$.#activeTab) {
+                    this.$.#activeTab = child;
+                    child.isSelected = true;
                 }
             }
         }

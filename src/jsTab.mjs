@@ -1,11 +1,12 @@
 import { share, saveSelf, accessor, abstract, final } from "../../cfprotected/index.mjs";
-import Container from "./jsContainer.mjs";
+// import Container from "./jsContainer.mjs";
+import ControlBase from "./jsControlBase.mjs";
 
-export default class Tab extends Container {
+export default class Tab extends ControlBase {
     static #spvt= share(this, {});
 
     static get observedAttributes() {
-        return Container.observedAttributes.concat([ "caption", "closeable", "disabled", "selected" ]);
+        return ControlBase.observedAttributes.concat([ "caption", "closeable", "disabled", "flip", "selected" ]);
     }
 
     static {
@@ -14,7 +15,17 @@ export default class Tab extends Container {
             caption: {},
             selected: { isBool: true },
             disabled: { isBool: true },
-            closeable: { isBool: true }
+            closeable: { isBool: true },
+            flip: {
+                readonly: true,
+                isBool: true,
+                caption: "flip",
+                getter() { 
+                    return (this.hasAttribute("flip") &&
+                        !["no", "false", "0"].includes(this.getAttribute("flip").toLowerCase().trim())) ||
+                        this.parentElement.flip;
+                }
+            }
         });
         spvt.register(this);
     }
@@ -24,24 +35,34 @@ export default class Tab extends Container {
             const pvt = this.$.#pvt;
             pvt.renderContent([
                 pvt.make("div", {
-                    class: "tab"
+                    class: `container ${this.flip ? "flip" : ""}`
                 }, {
                     children: [
-                        pvt.make("label", {
-                            class: "tabLabel"
+                        pvt.make("div", {
+                            class: "tab"
                         }, {
-                            innerHTML: this.caption || null
+                            children: [
+                                pvt.make("label", {
+                                    class: "tabLabel"
+                                }, {
+                                    innerHTML: this.caption || null
+                                }),
+                                pvt.make("slot", {
+                                    name: "closeButton",
+                                    class: "hidden"
+                                })
+                            ]
                         }),
-                        pvt.make("slot", {
-                            name: "closeButton",
-                            class: "hidden"
+                        pvt.make("div", {
+                            class: "tabTrim"
                         })
                     ]
-                }),
-                pvt.make("div", {
-                    class: "tabTrim"
                 })
             ]);
+        },
+        opPostRender() {
+            const pvt = this.$.#pvt;
+            pvt.validateParent(pvt.tagType("tabstrip"), "Tabs can only be used in tabstrips!");
         },
         onSelectedChanged(e) {
         },
@@ -61,6 +82,10 @@ export default class Tab extends Container {
             if (label) {
                 label.innerHTML = this.caption;
             }
+        },
+        onFlipChanged(e) {
+            const div = this.$.#pvt.getShadowChild("div", ".container");
+            div.classList[this.flip ? "add" : "remove"]("flip");
         }
     });
 
@@ -69,6 +94,7 @@ export default class Tab extends Container {
 
         const pvt = this.$.#pvt;
         pvt.registerEvents({
+            flipChanged: pvt.onFlipChanged,
             selectedChanged: pvt.onSelectedChanged,
             disabledChanged: pvt.onDisabledChanged,
             closeableChanged: pvt.onCloseableChanged,

@@ -1,3 +1,21 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+    --tab-label-margin: 0px -2px -0.75em;
+    --tab-label-align-items: inherit;
+    --tab-trim-position: inherit;
+    --tab-trim-top: unset;
+}
+
+.flip {
+    flex-direction: column-reverse;
+    --tab-label-margin: -0.75em -2px 0px;
+    --tab-label-align-items: center;
+    --tab-trim-position: relative;
+    --tab-trim-top: -0.95em;
+}
+
 .tab {
     display: flex;
     flex-direction: column;
@@ -6,23 +24,26 @@
 }
 
 .tabTrim {
+    position: var(--tab-trim-position);
+    top: var(--tab-trim-top);
     display: flex;
     height: 0.75em;
     width: calc(100% + 4px);
-    padding: 0;
+    padding: 0px;
     margin: 2px -2px -0.75em;
-    border-top: 1px solid black;
+    border-top: 1px solid var(--brush-overlay);
+    border-bottom: 1px solid var(--brush-overlay);
+    background-color: var(--brush-normal);
 }
 
 .tabLabel {
     display: flex;
     flex-direction: row;
+    align-items: var(--tab-label-align-items);
     height: 2em;
-    margin: 0px -2px -0.75em;
+    margin: var(--tab-label-margin);
     padding: 4px 0.75em 0px !important;
-    border-left: 1px solid black;
-    border-top: 1px solid black;
-    border-right: 1px solid black;
+    border: 1px solid var(--brush-overlay);
     border-radius: 8px;
     background-color: var(--brush-shadow);
 }
