@@ -162,6 +162,11 @@ const Base = abstract(class Base extends HTMLElement {
         return [ "action", "theme", "style", "classList" ];
     }
 
+    //Needed as the base of the concatenation chain.
+    static get observedEvents() {
+        return [];
+    }
+
     #rendering = false;
     #shadowRoot;
 

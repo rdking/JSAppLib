@@ -4,11 +4,53 @@ import ControlBase from "./jsControlBase.mjs";
 export default class MDIWindow extends ControlBase {
     static #spvt = share(this, {});
 
+    static get observedAttributes() {
+        return ControlBase.observedAttributes.concat([
+            "maximize", "minimize", "nomaximize", "nominimize", "noclose"
+        ]);
+    }
+
+    static get observedEvents() {
+        return ControlBase.observedAttributes.concat([
+            "maximizeChanged", "minimizeChanged"
+        ]);
+    }
+
     static { 
         saveSelf(this, "$");
 
         const spvt = this.#spvt;
         spvt.initAttributeProperties(this, {
+            maximize: { isBool: true, caption: "maximized",
+                getter: function getMaximized() {
+                    let tiled = this.shadowRoot.querySelector("#tiled");
+                    return !tiled.classList.contains("hidden");
+                },
+                setter: function setMaximized(v) {
+                    const pvt = this.$.#pvt;
+                    if (v) {
+                        pvt.onMaximizeClick();
+                    } else {
+                        pvt.onTiledClick();
+                    }
+                }
+            },
+            minimize: { isBool: true, caption: "minimized",
+                getter: function getMinimized() {
+                    return this.slot == "minArea";
+                },
+                setter: function setMinimized(v) {
+                    const pvt = this.$.#pvt;
+                    if (v) {
+                        pvt.onMinimizeClick();
+                    } else {
+                        pvt.onUnMinimizeClick();
+                    }
+                }
+            },
+            nomaximize: { isBool: true, readonly: true, caption: "noMaximize" },
+            nominimize: { isBool: true, readonly: true, caption: "noMinimize" },
+            noclose: { isBool: true, readonly: true, caption: "noClose" }
         });
         this.#spvt.register(this);
     }
@@ -288,6 +330,7 @@ export default class MDIWindow extends ControlBase {
             this.classList.add("minimized");
             this.style.position = "revert";
             this.$.#disableEdges();
+            this.$.setAttribute("minimized", "");
         },
         onUnMinimize() {
             const pvt = this.$.#pvt;
@@ -301,6 +344,7 @@ export default class MDIWindow extends ControlBase {
             this.classList.remove("minimized");
             this.slot = '';
             this.$.#enableEdges();
+            this.$.removeAttribute("minimized");
         },
         onMaximizeClick(e) {
             const pvt = this.$.#pvt;
@@ -312,6 +356,7 @@ export default class MDIWindow extends ControlBase {
             this.$.#oldHeight = this.style.height;
             this.style.height = '';
             this.$.#disableEdges();
+            this.$.setAttribute("maximized", "");
         },
         onTiledClick(e) {
             const pvt = this.$.#pvt;
@@ -322,6 +367,7 @@ export default class MDIWindow extends ControlBase {
             this.classList.remove("maximized");
             this.style.height = this.$.#oldHeight;
             this.$.#enableEdges();
+            this.$.removeAttribute("maximized");
         },
         onCloseClick() {
             let response = { canClose: true };
@@ -406,15 +452,6 @@ export default class MDIWindow extends ControlBase {
         });
     }
 
-    get noMinimize() { this.hasAttribute("nominimize"); }
-    set noMinimize(v) { this.$.#pvt.setBoolAttribute("nominimize", v); }
-
-    get noMaximize() { this.hasAttribute("nomaximize"); }
-    set noMaximize(v) { this.$.#pvt.setBoolAttribute("nomaximize", v); }
-
-    get noClose() { this.hasAttribute("noclose"); }
-    set noClose(v) { this.$.#pvt.setBoolAttribute("noclose", v); }
-
     get title() {
         const pvt = this.$.#pvt;
         let titleLabel = pvt.shadowRoot.querySelector("#title");
@@ -426,11 +463,6 @@ export default class MDIWindow extends ControlBase {
         if (titleLabel) {
             titleLabel.innerText = v;
         }
-    }
-
-    get maximized() {
-        let tiled = this.shadowRoot.querySelector("#tiled");
-        return !tiled.classList.contains("hidden");
     }
 
     get browser() {
