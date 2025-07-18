@@ -46,6 +46,7 @@
     border: 1px solid var(--brush-overlay);
     border-radius: 8px;
     background-color: var(--brush-shadow);
+    font-size: small;
 }
 
 :host([selected]) .tabLabel {
