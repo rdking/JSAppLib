@@ -126,8 +126,8 @@ export default class ThemeManager extends ManagerBase {
         return this.currentTheme.globalLink;
     }
     
-    getTagStyle(tagName) {
-        return this.currentTheme.componentLink(tagName);
+    getTagStyle(tag, shadow) {
+        return this.currentTheme.componentLink(tag, shadow);
     }
 
     get ready() {

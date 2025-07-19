@@ -113,6 +113,12 @@ const Base = abstract(class Base extends HTMLElement {
             const tag = `${this.$.#prefix}-${className.toLowerCase()}`;
             Base.$.#tagNames.set(klass, tag);
             Base.$.#tagClasses.set(tag, klass);
+
+            if (Base.$.#tagsRegistered.size) {
+                console.log(`Registering "${className}" as "<${tag}>"`);
+                Base.$.#tagsRegistered.add(tag);
+                customElements.define(tag, klass);
+            }
         },
         registerElements() {
             const iter = Base.$.#tagClasses[Symbol.iterator]();
@@ -178,12 +184,14 @@ const Base = abstract(class Base extends HTMLElement {
 
             const tm = app.themeManager;
             let shadow = target || this.$.#shadowRoot;
-            let link = (!tm || !("ready" in tm)) ? null : tm.getTagStyle(this.tagName.toLowerCase());
+            let link = (!tm || !("ready" in tm)) ? [] : tm.getTagStyle(this, shadow);
 
             if (!Array.isArray(content)) {
                 content = [content];
             }
-            shadow.innerHTML = link || "";
+
+            shadow.innerHTML = "";
+            shadow.adoptedStyleSheets = link;
             for (let element of content) {
                 if (typeof(element) == "string") {
                     shadow.innerHTML += element;

@@ -42,20 +42,61 @@ const Theme = final(class Theme extends Base {
             if (!this.$.#loading) {
                 this.$.#loading = true;
                 let prefix = this.themePath + ((this.themePath[this.themePath.length-1] == "/") ? "" : "/");
-                let themeFile = await fetch(prefix + "theme.json");
-                let info = JSON.parse(await themeFile.text());
-                let components = info.components;
-                this.$.#globalStyleSheet = prefix + components.global;
-                this.$.#componentColors = prefix + components.color;
-        
-                if (Array.isArray(components.tags)) {
-                    this.$.#componentSheets = {};
-        
-                    for (let name of components.tags) {
-                        this.$.#componentSheets[name] = prefix + name + ".css";
-                    }
-                }
+                let stack = [];
+                let components;
 
+                this.$.#globalStyleSheet = [];
+                this.$.#componentColors = [];
+
+                do {
+                    let themeFile = await fetch(prefix + "theme.json");
+                    let info = JSON.parse(await themeFile.text());
+                    components = info.components;
+                    
+                    if (components.inherits) {
+                        stack.push([prefix, components]);
+                        prefix = components.inherits;
+                    }
+                } while (components.inherits);
+
+                do {
+                    let css = await Promise.all([fetch(prefix + components.global), fetch(prefix + components.color)]);
+                    let globalStyle = new CSSStyleSheet();
+                    let colorStyle = new CSSStyleSheet();
+                    const gsText = await css[0].text();
+                    const csText = await css[1].text();
+
+                    globalStyle.replaceSync(gsText);
+                    colorStyle.replaceSync(csText);
+                    this.$.#globalStyleSheet.push(globalStyle);
+                    this.$.#componentColors.push(colorStyle);
+                    
+                    if (Array.isArray(components.tags)) {
+                        if (!this.$.componentSheets) {
+                            this.$.#componentSheets = {};
+                        }
+                        
+                        for (let name of components.tags) {
+                            if (!this.$.#componentSheets[name]) {
+                                this.$.#componentSheets[name] = [];
+                            }
+
+                            let sheet = new CSSStyleSheet();
+                            sheet.replaceSync(await (await fetch(prefix + name + ".css")).text());
+                            this.$.#componentSheets[name].push(sheet);
+                        }
+                    }
+
+                    if (stack.length) {
+                        let next = stack.pop();
+                        prefix = next[0];
+                        components = next[1];
+                    } else {
+                        prefix = void 0;
+                        components = void 0;
+                    }
+                } while (prefix);
+                
                 this.$.#loaded = true;
                 console.log(`Loaded ${this.themeName} theme...`);
                 this.fireEvent("loaded");
@@ -134,12 +175,12 @@ const Theme = final(class Theme extends Base {
         }
     }
 
-    componentLink(tagName) {
+    componentLink(tag, shadow) {
         const sheets = this.$.#componentSheets;
-        let retval = "";
+        const tagName = tag.cla$$.tagName;
+        let retval = [];
         if (sheets && (tagName in sheets)) {
-            retval = this.$.#createLink("colors", this.$.#componentColors)
-                + this.$.#createLink("componentTheme", sheets[tagName]);
+            retval = this.$.#componentColors.concat(sheets[tagName]);
         }
         else {
             console.warn(`Could not find style for ${tagName}...`);
@@ -148,8 +189,7 @@ const Theme = final(class Theme extends Base {
     }
 
     get globalLink() {
-        return this.$.#createLink("colors", this.$.#componentColors)
-            + this.$.#createLink("theme", this.$.#globalStyleSheet);
+        return this.$.#componentColors.concat(this.$.#globalStyleSheet);
     }
 
     get ready() { return this.$.#loaded; }
