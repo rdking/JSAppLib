@@ -26,6 +26,12 @@
     --layout-min-height: unset;
 }
 
+.focusable {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+}
+
 .container {
     position: absolute;
     inset: 0px;

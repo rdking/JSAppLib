@@ -82,10 +82,9 @@ export default class MDIPanel extends ControlBase {
         super();
 
         let pvt = this.$.#pvt;
-        pvt.registerEvents({
-            postRender: pvt.onPostRender,
-            startDrag: pvt.onStartDrag,
-            endDrag: pvt.onEndDrag
+        pvt.registerEvents(pvt, {
+            startDrag: "onStartDrag",
+            endDrag: "onEndDrag"
         });
     }
 

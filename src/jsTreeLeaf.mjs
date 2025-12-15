@@ -92,11 +92,11 @@ export default class TreeLeaf extends ListItem {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            "updateMarker": pvt.onUpdateMarker,
-            "refresh": pvt.onRefresh,
-            "opencharChanged": pvt.onRefresh,
-            "closecharChanged": pvt.onRefresh
+        pvt.registerEvents(pvt, {
+            updateMarker: "onUpdateMarker",
+            refresh: "onRefresh",
+            opencharChanged: "onRefresh",
+            closecharChanged: "onRefresh"
         });
     }
 

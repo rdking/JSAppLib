@@ -1,47 +1,40 @@
 import { share, final } from "../../cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
-import Base from "./jsBase.mjs";
+import ManageableBase from "./jsManageableBase.mjs";
 
-const Theme = final(class Theme extends Base {
+const Theme = final(class Theme extends ManageableBase {
     
     static #spvt= share(this, {});
     
     static get observedAttributes() {
-        return Base.observedAttributes.concat([ "themename", "themepath" ]);
+        return ManageableBase.observedAttributes.concat([ "themename", "themepath" ]);
     }
 
     static {
         const spvt = this.#spvt;
         spvt.initAttributeProperties(this, {
-            themeName: {},
-            themePath: {}
+            themename: { readonly: true, caption: "themeName" },
+            themepath: { readonly: true, caption: "themePath" }
         });
         spvt.register(this);
     }
 
-    static get isManagement() { return true; }
-
     #globalStyleSheet = null;
     #componentColors = null;
     #componentSheets = null;
-    #attributeError = false;
+    #attributeChanging = false;
     #loaded = false;
     #loading = false;
-
-    #createLink(name, file) {
-        let retval = "";
-        if (file) {
-            retval = `<style id="${name}">@import url("${file}")</style>`;
-        }
-        return retval;
-    }
 
     async #loadTheme() {
         try {
             console.log(`Loading ${this.themeName} theme...`);
             if (!this.$.#loading) {
                 this.$.#loading = true;
-                let prefix = this.themePath + ((this.themePath[this.themePath.length-1] == "/") ? "" : "/");
+                const libPrefix = this.parentElement.getAttribute("liblocation") || "";
+                const tpath = `${libPrefix}${libPrefix.endsWith("/") ? "" : "/"}${this.themeName || "default"}/`;
+                let path = this.themePath || tpath;
+                let baseUrl = new URL(path.endsWith('/') ? path : path + '/', window.location.href);
                 let stack = [];
                 let components;
 
@@ -49,18 +42,32 @@ const Theme = final(class Theme extends Base {
                 this.$.#componentColors = [];
 
                 do {
-                    let themeFile = await fetch(prefix + "theme.json");
+                    const themeJsonUrl = new URL("theme.json", baseUrl.href);
+                    let themeFile = await fetch(themeJsonUrl.href);
                     let info = JSON.parse(await themeFile.text());
                     components = info.components;
                     
                     if (components.inherits) {
-                        stack.push([prefix, components]);
-                        prefix = components.inherits;
+                        stack.push([baseUrl, components]);
+                        // Resolve the inherited path relative to the current theme's URL
+                        baseUrl = new URL(components.inherits, baseUrl.href);
+                        if (!baseUrl.href.endsWith("/")) {
+                            baseUrl = new URL(baseUrl.href + "/");
+                        }
                     }
                 } while (components.inherits);
 
+                let prefix;
                 do {
-                    let css = await Promise.all([fetch(prefix + components.global), fetch(prefix + components.color)]);
+                    prefix = baseUrl.href;
+                    let list = [];
+                    list.push(components.global
+                        ? fetch(prefix + components.global)
+                        : new Promise((resolve) => { resolve({ text() { return ""; } }) }));
+                    list.push(components.color
+                        ? fetch(prefix + components.color)
+                        : new Promise((resolve) => { resolve({ text() { return ""; } }) }));
+                    let css = await Promise.all(list);
                     let globalStyle = new CSSStyleSheet();
                     let colorStyle = new CSSStyleSheet();
                     const gsText = await css[0].text();
@@ -72,24 +79,28 @@ const Theme = final(class Theme extends Base {
                     this.$.#componentColors.push(colorStyle);
                     
                     if (Array.isArray(components.tags)) {
-                        if (!this.$.componentSheets) {
+                        if (!this.$.#componentSheets) {
                             this.$.#componentSheets = {};
                         }
-                        
-                        for (let name of components.tags) {
-                            if (!this.$.#componentSheets[name]) {
-                                this.$.#componentSheets[name] = [];
-                            }
 
-                            let sheet = new CSSStyleSheet();
-                            sheet.replaceSync(await (await fetch(prefix + name + ".css")).text());
-                            this.$.#componentSheets[name].push(sheet);
-                        }
+                        let sheets = await Promise.all(components.tags.map(name => fetch(prefix + name + ".css")));
+                        sheets = await Promise.all(sheets.map(sheet => sheet.text()));
+                        sheets = await Promise.all(sheets.map(sheet => {
+                            let retval = new CSSStyleSheet();
+                            return retval.replace(sheet);
+                        }));
+
+                        sheets.forEach((style, index) => {
+                            const componentSheets = this.$.#componentSheets;
+                            let name = components.tags[index];
+                            const isArray = Array.isArray(componentSheets[name]);
+                            isArray ? componentSheets[name].push(style) : componentSheets[name] = [ style ];
+                        });
                     }
 
                     if (stack.length) {
                         let next = stack.pop();
-                        prefix = next[0];
+                        baseUrl = next[0];
                         components = next[1];
                     } else {
                         prefix = void 0;
@@ -103,7 +114,7 @@ const Theme = final(class Theme extends Base {
             }
         }
         catch(e) {
-            throw new AppLibError(`Failed to load themes from "${this.path}"`, e);
+            throw new AppLibError(`Failed to load theme "${this.themeName}"`, e);
         }
     }
 
@@ -111,52 +122,43 @@ const Theme = final(class Theme extends Base {
         render() {
             //NOP
         },
+        onPostRender() {
+            const pvt = this.$.#pvt
+            pvt.validateParent(pvt.tagType("thememanager"), "Themes can only be declared in a ThemeManager.");
+        },
         onNameChange(e) {
-            if (!this.$.#attributeError) {
+            if (!this.$.#attributeChanging) {
                 let {oldValue: oldVal, newValue: newVal} = e.detail;
+                this.$.#attributeChanging = true;
 
-                if ((oldVal === null) && (typeof(newVal) == "string")) {
-                    if ((typeof(this.themePath) == "string") && this.themePath.length) {
-                        this.$.#loadTheme();
-                    }
-                }
-                else {
-                    this.$.#attributeError = true;
-                    try {
-                        this.themeName = oldVal;
-                    }
-                    finally {
-                        this.$.#attributeError = false;
+                //If the name has already been set, don't allow it to be changed.
+                if (oldVal !== null) {
+                    if (oldVal !== newVal) {
+                        this.setAttribute("themename", oldVal);
                     }
                     throw new TypeError((oldVal != "") 
                         ? "Theme name cannot be altered."
-                        : "Invalid new theme name."
-                    );
+                        : "Invalid new theme name.");
                 }
+
+                this.$.#attributeChanging = false;
             }
         },
         onPathChange(e) {
-            if (!this.$.#attributeError) {
+            if (!this.$.#attributeChanging) {
                 let {oldValue: oldVal, newValue: newVal} = e.detail;
+                this.$.#attributeChanging = true;
 
-                if ((oldVal === null) && (typeof(newVal) == "string")) {
-                    if ((typeof(this.themeName) == "string") && this.themeName.length) {
-                        this.$.#loadTheme();
-                    }
-                }
-                else {
-                    this.$.#attributeError = true;
-                    try {
-                        this.themePath = oldVal;
-                    }
-                    finally {
-                        this.$.#attributeError = false;
+                if (oldVal !== null) {
+                    if (oldVal !== newVal) {
+                        this.setAttribute("themepath", oldVal);
                     }
                     throw new TypeError((oldVal != "") 
                         ? "Theme path cannot be altered."
-                        : "Invalid new theme path."
-                    );
+                        : "Invalid new theme path.");
                 }
+
+                this.$.#attributeChanging = false;
             }
         }
     });
@@ -165,19 +167,15 @@ const Theme = final(class Theme extends Base {
         super();   
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            themenameChanged: pvt.onNameChange,
-            themepathChanged: pvt.onPathChange
+        pvt.registerEvents(pvt, {
+            themenameChanged: "onNameChange",
+            themepathChanged: "onPathChange"
         });
-
-        if (this.themeName === "default") {
-            pvt.onNameChange({ detail: { oldValue: null, newValue: this.themeName } });
-        }
     }
 
     componentLink(tag, shadow) {
         const sheets = this.$.#componentSheets;
-        const tagName = tag.cla$$.tagName;
+        const tagName = tag.localName;
         let retval = [];
         if (sheets && (tagName in sheets)) {
             retval = this.$.#componentColors.concat(sheets[tagName]);
@@ -192,7 +190,13 @@ const Theme = final(class Theme extends Base {
         return this.$.#componentColors.concat(this.$.#globalStyleSheet);
     }
 
-    get ready() { return this.$.#loaded; }
+    get loaded() { return this.$.#loaded; }
+
+    async load(cb) {
+        if (!this.$.#loaded) {
+            await this.$.#loadTheme();
+        }
+    }
 });
 
 export default Theme;

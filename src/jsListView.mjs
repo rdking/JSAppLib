@@ -1,14 +1,13 @@
 import { share, accessor } from "../../cfprotected/index.mjs";
 import FocusableTag from "./jsFocusableTag.mjs";
+import jsContainer from "./jsContainer.mjs";
 import Semaphore from "./util/Semaphore.mjs";
 
-export default class ListView extends FocusableTag {
+export default class ListView extends jsContainer {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
-        return FocusableTag.observedAttributes.concat([
-            "items"
-        ]); 
+        return FocusableTag.observedAttributes;
     }
     
     static { 
@@ -172,6 +171,13 @@ export default class ListView extends FocusableTag {
                 throw new TypeError("ListView can only have 1 template definition.");
             }
         },
+        onPostRender() {
+            const pvt = this.$.#pvt;
+            const items = this.querySelectorAll(pvt.tagType("listitem"));
+            items.forEach(item => {
+                item.addEventListener("selectedChanged", pvt.onSelectedChanged);
+            });
+        },
         onSelectedChanged(e) {
             let prevItem = this.$.#lastItem;
             let items = this.items;
@@ -189,18 +195,26 @@ export default class ListView extends FocusableTag {
                 : false;
         },
         onItemAdded(e) {
+            const pvt = this.$.#pvt;
             let item = e.detail;
-            item.addEventListener("selectedChanged", this.$.#pvt.onSelectedChanged);
-        },
+
+            if (item && (item.parentElement === this) && pvt.isTagType(item, pvt.tagType("listitem"))) {
+                item.addEventListener("selectedChanged", pvt.onSelectedChanged);
+            }
+       },
         onItemRemoved(e) {
+            const pvt = this.$.#pvt;
             let item = e.detail;
-            item.removeEventListener("selectedChanged", this.$.#pvt.onSelectedChanged);
+
+            if (item && (item.parentElement === this) && pvt.isTagType(item, pvt.tagType("listitem"))) {
+                item.removeEventListener("selectedChanged", pvt.onSelectedChanged);
+            }
         },
         onFocused(e) {
-            console.log(`${this.cla$$.tagName} focused`);
+            console.log(`${this.localName} focused`);
         },
         onBlur(e) {
-            console.log(`${this.cla$$.tagName} lost focus`);
+            console.log(`${this.localName} lost focus`);
         }
     });
 
@@ -210,15 +224,13 @@ export default class ListView extends FocusableTag {
         const pvt = this.$.#pvt;
 
 
-        pvt.registerEvents({
-            "render": pvt.render,
-            "preRender": pvt.onPreRender,
-            "keydown": pvt.onKeyDown,
-            "setModifiers": pvt.onSetModifiers,
-            "itemAdded": pvt.onItemAdded,
-            "itemRemoved": pvt.onItemRemoved,
-            "focus": pvt.onFocused,
-            "blur": pvt.onBlur
+        pvt.registerEvents(pvt, {
+            keydown: "onKeyDown",
+            setModifiers: "onSetModifiers",
+            itemAdded: "onItemAdded",
+            itemRemoved: "onItemRemoved",
+            focus: "onFocused",
+            blur: "onBlur"
         });
     }
 

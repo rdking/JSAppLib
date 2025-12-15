@@ -14,7 +14,8 @@
     flex: 2 0 auto;
 }
 
-:host(:hover:not([disabled]):not([separator])) {
+:host(:hover:not([disabled]):not([separator])),
+:host([highlighted]:not([disabled]):not([separator])) {
     background-color: var(--brush-selected);
     color: var(--pen-selected);
 }

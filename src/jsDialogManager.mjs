@@ -1,27 +1,27 @@
-import { share } from "/node_modules/cfprotected/index.mjs";
-import TagBase from "/node_modules/jsapplib/src/jsTagBase.mjs";
-import Dialog from "/node_modules/jsapplib/src/jsDialog.mjs";
+import { share, final } from "/node_modules/cfprotected/index.mjs";
+import ManagerBase from "/node_modules/jsapplib/src/jsManagerBase.mjs";
+import DialogBase from "./jsDialogBase.mjs";
 
-export default class DialogManager extends TagBase {
-    static #tagName = "js-dialogmanager";
-    static #sprot = share(this, {});
+export default final(class DialogManager extends ManagerBase {
+    static #spvt = share(this, {});
 
-    static { this.#sprot.registerTag(this, true); }
-    static get tagName() { return this.$.#tagName; }
-    static get isManagement() {return true};
+    static {
+        this.#spvt.register(this);
+    }
 
     #clients = {};
-    #prot = share(this, DialogManager, {
-        render() {
-            const prot = this.$.#prot;
-            prot.renderContent(prot.newTag("slot"));
-        },
+    #pvt = share(this, DialogManager, {
+        render() {},
         onPreRender() {
             if (document.querySelectorAll(DialogManager.tagName).length > 1) {
                 throw new TypeError("Only 1 instance of DialogManager allowed");
             }
-            this.$.#prot.validateChildren("js-action",
-                "DialogManager can only contain Dialog elements");
+
+            for (const child of this.children) {
+                if (!(child instanceof DialogBase)) {
+                    throw new TypeError("DialogManager can only contain components that extend DialogBase.");
+                }
+            }
         },
         onManagerReady() {
             //Force the dialogs to re-render after the themes are ready
@@ -32,8 +32,7 @@ export default class DialogManager extends TagBase {
     });
 
     connectedCallback() {
-        this.parentElement.addEventListener("ready", this.$.#prot.onManagerReady);
+        this.$.#pvt.ready = true;
         super.connectedCallback();
-        this.fireEvent("ready");
     }
-};
+});

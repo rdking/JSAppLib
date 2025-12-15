@@ -19,7 +19,7 @@ button {
     color: var(--pen-selected);
 }
 
-:host(:not([disabled])[selected]) {
+:host(:not([disabled]).selected) {
     background-color: var(--brush-selected);
     color: var(--pen-selected);
 }

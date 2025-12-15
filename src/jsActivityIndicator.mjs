@@ -12,7 +12,7 @@ const ActivityIndicator = final(class ActivityIndicator extends ControlBase {
         const spvt = this.#spvt;
 
         spvt.initAttributeProperties(this, {
-            image: { default: "/test/html/images/activity.png"},
+            image: { default: "/images/activity.png"},
             layers: { readonly: true }
         });
         spvt.register(this);
@@ -63,8 +63,8 @@ const ActivityIndicator = final(class ActivityIndicator extends ControlBase {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            "imageChange": pvt.onImageChange
+        pvt.registerEvents(pvt, {
+            imageChange: "onImageChange"
         });
     }
 

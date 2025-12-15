@@ -8,13 +8,15 @@ export default class MenuItem extends ActionControlBase {
     static {
         const spvt = this.#spvt;
         spvt.initAttributeProperties(this, {
-            separator: { isBool: true, readonly: true, caption: "separator" }
+            separator: { isBool: true, readonly: true, caption: "separator" },
+            highlighted: { isBool: true, caption: "highlighted" },
+            parentmenu: { readonly: true, caption: "parentMenu" }
         });
         spvt.register(this);
     }
     static get observedAttributes() {
         return ActionControlBase.observedAttributes
-            .concat([ "separator" ]); 
+            .concat([ "highlighted", "parentmenu", "separator" ]); 
     }
 
     #hasPopup() {
@@ -32,22 +34,22 @@ export default class MenuItem extends ActionControlBase {
             let popup = this.firstElementChild;
             if (!popup.isShowing) {
                 const pvt = this.$.#pvt;
-                let bounds = pvt.getBounds();
+                const bounds = pvt.getBounds(this);
                 let gpType = this.parentElement.nodeName.toLowerCase();
-                let left = "0px", top = "0px";
+                let left = bounds.left;
+                let top = bounds.top;
 
                 if (gpType == pvt.tagType("menu")) {
-                    left = bounds.left + "px";
-                    top = bounds.top + bounds.height + "px";
+                    top += bounds.height;
                 }
                 else {
-                    let grandParent = this.parentElement.shadowRoot.querySelector("#menubody");
-                    left = `calc(${bounds.width + "px"} + ${bounds.left + "px"} + ${grandParent.style.left})`;
-                    top = `calc(${bounds.top + "px"} - ${grandParent.style.top})`;
+                    // For nested items, calculate position relative to the parent popup.
+                    const parentPopupBounds = pvt.getBounds(this.parentElement);
+                    top -= parentPopupBounds.top;
+                    left = bounds.width;
                 }
                 popup.show(left, top);
-                this.selected = true;
-                this.parentElement.fireEvent("popupOpened", { menuItem: this });
+                this.highlighted = true;
             }
         }
     }
@@ -57,9 +59,8 @@ export default class MenuItem extends ActionControlBase {
             let popup = this.firstElementChild;
             if (popup.isShowing) {
                 let menuItem = popup.currentMenuItem;
-                this.parentElement.fireEvent("popupClosed", { menuItem: this });
                 popup.hide();
-                this.selected = false;
+                this.highlighted = false;
 
                 if (menuItem) {
                     menuItem.$.#hidePopup();
@@ -100,7 +101,7 @@ export default class MenuItem extends ActionControlBase {
                         children: [
                             !isPopupMenu ? null : pvt.make("div", {
                                 id: "check",
-                                class: (this.toggle && this.selected) ? "" : "hidden"
+                                class: (this.toggle && this.highlighted) ? "" : "hidden"
                             }, {
                                 innerHTML: "&check;"
                             }),
@@ -179,8 +180,21 @@ export default class MenuItem extends ActionControlBase {
         },
         onSelectedChanged() {
             let check = this.$.#pvt.shadowRoot.querySelector("#check");
-            if (check && this.toggle)
+            if (check)
                 check.classList[this.selected?"remove":"add"]("hidden");
+        },
+        onHighlightedChanged() {
+            if (this.$.#hasPopup()) {
+                let popup = this.firstElementChild;
+                if (this.parentElement.menuOpen) {
+                    this.highlighted
+                        ? this.$.#showPopup()
+                        : this.$.#hidePopup();
+                }
+                else if (popup.isShowing) {
+                    this.$.#hidePopup();
+                }
+            }
         },
         onShowIconsChanged(e) {
             let iconbox = this.$.#pvt.shadowRoot.querySelector(".iconcol");
@@ -199,41 +213,19 @@ export default class MenuItem extends ActionControlBase {
                         e.preventDefault();
                     }
                 }
-                else if ((this.parentElement === app.menu) && this.$.#hasPopup()) {
-                    let popup = this.firstElementChild;
-                    if (popup.isShowing) {
-                        this.$.#hidePopup();
-                    }
-                    else {
-                        this.$.#showPopup();
-                    }
-                }
-                else if (!this.disabled) {
-                    if (app.menu && app.menu.currentMenuItem) {
-                        app.menu.currentMenuItem.$.#hidePopup();
-                    }
-                    if (this.action) {
-                        this.currentAction?.trigger();
-                    }
-                    else {
-                        this.$.#pvt.callEventHandler("action");
+                else {
+                    this.parentElement.fireEvent("itemClicked", { item: this });
+                    if (!this.highlighted) {
+                        JSAppLib.app?.menu?.fireEvent("closeMenu");
                     }
                 }
             }
         },
         onMouseEntered(e) {
-            let currentItem = this.parentElement.currentMenuItem;
-            if (currentItem || (app.menu && app.menu.currentMenuItem)) {
-                if (currentItem && (currentItem !== this)) {
-                    currentItem.$.#hidePopup();
-                }
-                this.$.#showPopup();
-            }
+            this.parentElement.fireEvent("itemHovered", { item: this });
         },
         onMouseLeft(e) {
-            if (this.parentElement !== app.menu) {
-                this.$.#hidePopup();
-            }
+            this.parentElement.fireEvent("itemLeft", { item: this, relatedTarget: e.relatedTarget });
         }
     });
 
@@ -241,21 +233,22 @@ export default class MenuItem extends ActionControlBase {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            captionChanged: pvt.onCaptionChanged,
-            iconChanged: pvt.onIconChanged,
-            hotkeyChanged: pvt.onHotkeyChanged,
-            separatorChanged: pvt.onSeparatorChanged,
-            selectedChanged: pvt.onSelectedChanged,
-            showiconsChanged: pvt.onShowIconsChanged,
-            mouseenter: pvt.onMouseEntered,
-            mouseleave: pvt.onMouseLeft,
-            click: pvt.onClicked
+        pvt.registerEvents(pvt, {
+            captionChanged: "onCaptionChanged",
+            iconChanged: "onIconChanged",
+            hotkeyChanged: "onHotkeyChanged",
+            highlightedChanged: "onHighlightedChanged",
+            showiconsChanged: "onShowIconsChanged",
+            mouseenter: "onMouseEntered",
+            mouseleave: "onMouseLeft",
+            click: "onClicked"
         });
     }
 
-    deselect() {
-        this.$.#hidePopup();
-        this.selected = false;
+    get hasPopup() { return this.$.#hasPopup(); }
+
+    get isShowingPopup() {
+        let popup = this.firstElementChild;
+        return !!(popup && popup.isShowing);
     }
 }

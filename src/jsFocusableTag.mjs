@@ -7,6 +7,7 @@ const FocusableTag = abstract(class FocusableTag extends ControlBase {
             const pvt = this.$.#pvt;
             pvt.$uper.renderContent(pvt.make("div", {
                 tabIndex: 0,
+                style: "display: flex; flex: 1 0 auto;",
                 class: "focusable"
             }, {
                 children: Array.isArray(content) ? content : [ content ]

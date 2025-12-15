@@ -1,4 +1,4 @@
-import { share, saveSelf } from "../../cfprotected/index.mjs";
+import { share } from "../../cfprotected/index.mjs";
 import ManagerBase from "./jsManagerBase.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
 
@@ -10,6 +10,7 @@ export default class ActionManager extends ManagerBase {
     }
 
     #keyMap = {};
+    #observer = null;
 
     #pvt = share(this, ActionManager, {
         render() {
@@ -19,25 +20,51 @@ export default class ActionManager extends ManagerBase {
         onPreRender() {
             const pvt = this.$.#pvt;
             if (document.querySelectorAll(ActionManager.tagName).length > 1) {
-                throw new TypeError("Only 1 instance of ActionManager allowed");
+                throw new AppLibError("Only 1 instance of ActionManager allowed");
             }
             pvt.validateChildren(pvt.tagType("action"),
                 "ActionManager can only contain Action elements");
         },
-        onKeyPress(e) {
+        onKeyDown(e) {
+            if (["Control", "Alt", "Shift", "Meta"].includes(e.key)) return;
+
             let key = "";
-            key += e.altKey ? "Alt" : "";
-            key += e.ctrlKey ? (key.length ? "+" : "") + "Ctrl" : "";
+            key += e.ctrlKey ? "Ctrl" : "";
+            key += e.altKey ? (key.length ? "+" : "") + "Alt" : "";
             key += e.shiftKey ? (key.length ? "+" : "") + "Shift" : "";
-            key += e.metaKey ? (key.length ? "+" : "") + "Win" : "";
-            key += (key.length ? "+" : "") + e.key.toUpperCase();
-            console.log(`key: ${key}`);
+            key += e.metaKey ? (key.length ? "+" : "") + "Meta" : "";
+            
+            let keyName = e.key;
+            keyName = (keyName.length === 1) ? keyName.toUpperCase() : keyName.toLowerCase();
+            key += (key.length ? "+" : "") + keyName;
 
             let entry = this.$.#keyMap[key];
 
             if (entry) {
-                Function(entry.action).call();
+                e.preventDefault();
+                e.stopPropagation();
+                entry.action.trigger();
             }
+        },
+        onMutation(mutations) {
+            const pvt = this.$.#pvt;
+            const actionTag = pvt.tagType("action").toUpperCase();
+            
+            for (const mutation of mutations) {
+                for (const node of mutation.removedNodes) {
+                    if (node.nodeType === 1 && node.tagName === actionTag) {
+                        pvt.cleanupAction(node);
+                    }
+                }
+            }
+        },
+        cleanupAction(action) {
+            const map = this.$.#keyMap;
+            Object.keys(map).forEach(key => {
+                if (map[key].action === action) {
+                    delete map[key];
+                }
+            });
         }
     });
 
@@ -45,11 +72,29 @@ export default class ActionManager extends ManagerBase {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            render: pvt.render,
-            preRender: pvt.onPreRender
+        pvt.registerEvents(pvt, {
+            render: "render",
+            preRender: "onPreRender"
         });
-        window.addEventListener("keypress", pvt.onKeyPress);
+    }
+
+    connectedCallback() {
+        super.connectedCallback();
+        const pvt = this.$.#pvt;
+        window.addEventListener("keydown", pvt.onKeyDown);
+        
+        this.#observer = new MutationObserver(pvt.onMutation);
+        this.#observer.observe(this, { childList: true });
+    }
+
+    disconnectedCallback() {
+        if (super.disconnectedCallback) super.disconnectedCallback();
+        const pvt = this.$.#pvt;
+        window.removeEventListener("keydown", pvt.onKeyDown);
+        if (this.#observer) {
+            this.#observer.disconnect();
+            this.#observer = null;
+        }
     }
 
     /**
@@ -58,54 +103,36 @@ export default class ActionManager extends ManagerBase {
      * @returns Action
      */
     getAction(name) {
-        return window[name];
+        return this.querySelector(`${this.$.#pvt.tagType("action")}[name="${name}"]`);
     }
 
     registerHotKey(hotkey, action) {
-        const presses = hotkey.split(",");
-        let value = { keys: [], action };
+        const presses = hotkey.split(",").map(p => p.trim()).filter(p => p);
 
-        for (let press of presses) {
-            const keys = press.split("+");
-            let keyData = {
-                altKey: keys.includes("Alt"),
-                ctrlKey: keys.includes("Ctrl"),
-                shift: keys.includes("Shift"),
-                metaKey: keys.includes("Meta") || keys.includes("Win")
-            };
-
-            let i = 0;
-            while (keys[i]) {
-                if (["Alt", "Ctrl", "Shift", "Meta", "Win"].includes(keys[i])) {
-                    keys.shift();
-                } else {
-                    ++i;
+        for (const press of presses) {
+            if (press in this.$.#keyMap) {
+                if (this.$.#keyMap[press].action !== action) {
+                    throw new AppLibError(`Hotkey sequence already in use: ${press}`);
                 }
+            } else {
+                this.$.#keyMap[press] = { action };
             }
-            if (keys.length != 1) {
-                throw new AppLibError(`Invalid hotkey sequence: ${press}`);
-            }
-
-            keyData.key = keys[0];
-            value.keys.push(keyData);
         }
-
-        if (hotkey in this.$.#keyMap) {
-            throw new AppLibError(`Hotkey sequence already in use: ${hotkey}`);
-        }
-
-        this.$.#keyMap[hotkey] = value;
     }
 
     unregisterHotKey(hotkey, action) {
-        let entry = this.$.#keyMap[hotkey];
+        const presses = hotkey.split(",").map(p => p.trim()).filter(p => p);
 
-        if (entry) {
-            if (entry.action === action) {
-                delete this.$.#keyMap[hotkey];
-            }
-            else {
-                throw new AppLibError(`Can't delete a hotkey you don't own!`);
+        for (const press of presses) {
+            let entry = this.$.#keyMap[press];
+
+            if (entry) {
+                if (entry.action === action) {
+                    delete this.$.#keyMap[press];
+                }
+                else {
+                    throw new AppLibError(`Can't delete a hotkey you don't own!`);
+                }
             }
         }
     }

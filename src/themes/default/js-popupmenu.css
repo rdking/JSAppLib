@@ -1,3 +1,10 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+    position: absolute;
+}
+
 slot {
     display: flex;
     flex-direction: column;

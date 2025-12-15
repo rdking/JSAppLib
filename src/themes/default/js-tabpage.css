@@ -6,3 +6,8 @@
 :host([selected]) {
     display: flex;
 }
+
+slot {
+    display: flex;
+    flex: 1 0 auto;
+}

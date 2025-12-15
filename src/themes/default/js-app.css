@@ -26,3 +26,19 @@ slot {
     contain: strict;
     overflow: clip;
 }
+
+slot[name="overlay"] {
+    position: absolute;
+    inset: 0;
+    display: none;
+    z-index: 1000000;
+}
+
+slot.visible[name="overlay"] {
+    display: flex;
+}
+
+div {
+    display: flex;
+    flex: 1 0 auto;
+}

@@ -121,8 +121,8 @@ export default class TabBook extends Container {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            tabsideChanged: pvt.onTabSideChanged
+        pvt.registerEvents(pvt, {
+            tabsideChanged: "onTabSideChanged"
         });
 
     }

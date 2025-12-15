@@ -14,34 +14,30 @@ const ControlBase = abstract(class ControlBase extends Base {
 
     #pvt = share(this, ControlBase, {
         getBounds(other, withMargins) {
-            let e = other || this;
-            let b = e.getBoundingClientRect();
-            let c = window.getComputedStyle(e);
-            let {height, width, bottom, right} = b;
-            let top = e.offsetTop, left = e.offsetLeft;
-            let margins = {
-                top: parseFloat(c.marginTop),
-                left: parseFloat(c.marginLeft),
-                right: parseFloat(c.marginRight),
-                bottom: parseFloat(c.marginBottom)
-            };
-            
-            while (e.offsetParent) {
-                e = e.offsetParent;
-                top += e.offsetTop + (e.scrollX || e.scrollLeft || 0);
-                left += e.offsetLeft + (e.scrollY || e.scrollTop || 0);         
-            }
+            const element = other || this;
+            const rect = element.getBoundingClientRect();
+            let { top, left, width, height, right, bottom } = rect;
+
+            // getBoundingClientRect is relative to the viewport, so add scroll offsets
+            // to get the position relative to the document.
+            top += window.scrollY;
+            left += window.scrollX;
 
             if (withMargins) {
-                top -= margins.top;
-                left -= margins.left;
-                right += margins.right
-                bottom += margins.bottom;
-                width += margins.left + margins.right;
-                height += margins.top + margins.bottom;
+                const style = window.getComputedStyle(element);
+                const marginTop = parseFloat(style.marginTop);
+                const marginLeft = parseFloat(style.marginLeft);
+                const marginRight = parseFloat(style.marginRight);
+                const marginBottom = parseFloat(style.marginBottom);
+
+                top -= marginTop;
+                left -= marginLeft;
+                width += marginLeft + marginRight;
+                height += marginTop + marginBottom;
             }
     
-            return { top: ~~top, left: ~~left, width: ~~width, height: ~~height };
+            // Using Math.round() is generally safer than the bitwise ~~ operator for rounding.
+            return { top: Math.round(top), left: Math.round(left), width: Math.round(width), height: Math.round(height) };
         },
         /**
          * Finds all of the children having the same parent, whether in the
@@ -98,27 +94,23 @@ const ControlBase = abstract(class ControlBase extends Base {
     }
 
     get appTop() {
-        let parent = this.offsetParent || this.parentElement;
-        let retval = this.offsetTop;
-        
-        while (!this.$.#pvt.isTagType(parent, "app")) {
-            retval += parent.offsetTop;
-            parent = parent.offsetParent || this.parentElement;
+        const app = this.closest('js-app');
+        if (app) {
+            const appRect = app.getBoundingClientRect();
+            const thisRect = this.getBoundingClientRect();
+            return thisRect.top - appRect.top;
         }
-
-        return retval;
+        return 0; // Or handle the "not in-app" case as needed
     }
 
     get appLeft() {
-        let parent = this.offsetParent || this.parentElement;
-        let retval = this.offsetLeft;
-        
-        while (!this.$.#pvt.isTagType(parent, "app")) {
-            retval += parent.offsetLeft;
-            parent = parent.offsetParent || this.parentElement;
+        const app = this.closest('js-app');
+        if (app) {
+            const appRect = app.getBoundingClientRect();
+            const thisRect = this.getBoundingClientRect();
+            return thisRect.left - appRect.left;
         }
-
-        return retval;
+        return 0; // Or handle the "not in-app" case as needed
     }
 });
 

@@ -124,9 +124,9 @@ export default class TreeBranch extends TreeLeaf {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            "collapsedChanged": pvt.onCollapsedChanged,
-            "collapsibleChanged": pvt.onCollapsibleChanged
+        pvt.registerEvents(pvt, {
+            collapsedChanged: "onCollapsedChanged",
+            collapsibleChanged: "onCollapsibleChanged"
         });
     }
 

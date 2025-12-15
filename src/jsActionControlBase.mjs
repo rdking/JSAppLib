@@ -14,17 +14,36 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
         ]);
     }
 
-    static #ghandler(attr) {
+    static #ggetter(attr) {
         return function actionPropGetter() {
             let value = this.getAttribute(attr);
             return (this.currentAction) ? this.currentAction[attr] || value : value;
         }
     }
 
-    static #bhandler(attr) {
+    static #bgetter(attr) {
         return function binaryActionPropGetter() {
-            let value = !!this.getAttribute(attr);
+            let value = !!this.hasAttribute(attr) &&
+                !["no", "false", "0"].includes(this.getAttribute(attr).toLowerCase().trim());
             return !!((this.currentAction) ? this.currentAction[attr] : value);
+        }
+    }
+
+    static #bsetter(attr) {
+        return function binaryActionPropSetter(val) {
+            const action = this.currentAction;
+            if (action) {
+                if (action[attr] !== !!val) {
+                    action[attr] = !!val;
+                }
+            }
+            else {
+                if (!!val) {
+                    this.setAttribute(attr, "");
+                } else {
+                    this.removeAttribute(attr);
+                }
+            }
         }
     }
 
@@ -32,14 +51,22 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
         const spvt = this.#spvt;
         spvt.initAttributeProperties(this, {
             action: { readonly: true },
-            caption: { getter: this.#ghandler("caption") },
-            description: { getter: this.#ghandler("description") },
-            disabled: { getter: this.#bhandler("disabled"), isBool: true, caption: "disabled" },
-            icon: { getter: this.#ghandler("icon") },
-            hotkey: { getter: this.#ghandler("hotkey") },
-            toggle: { getter: this.#bhandler("toggle"), isBool: true, caption: "toggle" },
-            selected: { getter: this.#bhandler("selected"), isBool: true, caption: "selected" },
-            onaction: { getter: this.#ghandler("onaction") }
+            caption: { getter: this.#ggetter("caption") },
+            description: { getter: this.#ggetter("description") },
+            disabled: { isBool: true, caption: "disabled",
+                getter: this.#bgetter("disabled"),
+                setter: this.#bsetter("disabled")
+            },
+            icon: { getter: this.#ggetter("icon") },
+            hotkey: { getter: this.#ggetter("hotkey") },
+            toggle: { isBool: true, readonly: true, caption: "toggle",
+                getter: this.#bgetter("toggle")
+            },
+            selected: { isBool: true, caption: "selected",
+                getter: this.#bgetter("selected"),
+                setter: this.#bsetter("selected")
+            },
+            onaction: { getter: this.#ggetter("onaction") }
         });
     }
 
@@ -47,6 +74,7 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
 
     #pvt = share(this, ActionControlBase, {
         onMouseEnter(e) {
+            const app = JSAppLib.app;
             if (!this.disabled && app.statusBar) {
                 this.$.#oldStatus = app.statusBar.status;
                 if (this.description) {
@@ -55,6 +83,7 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
             }
         },
         onMouseLeave(e) {
+            const app = JSAppLib.app;
             if (!this.disabled && app.statusBar) {
                 app.statusBar.status = this.$.#oldStatus;
                 this.$.#oldStatus = "";
@@ -73,42 +102,40 @@ const ActionControlBase = abstract(class ActionControlBase extends ControlBase {
             }
         },
         onSelectedChanged(e) {
-            let { oldValue, newValue } = e.detail;
-
-            if (oldValue !== newValue) {
-                let action = this.currentAction;
-                if (action) {
-                    action.selected = (newValue != null);
-                }
-            }
+            //NOP. For use by descendant classes.
         },
-        onActionChanged() {
+        onActionChanged(e) {
+            const pvt = this.$.#pvt;
+            const app = JSAppLib.app;
+            const oldAction = app?.actionManager?.getAction(e.detail.oldValue);
+            if (oldAction) {
+                oldAction.unregister(this, pvt.onSelectedChanged);
+            }
             if (this.toggle) {
-                this.currentAction.register(this);
+                this.currentAction.register(this, pvt.onSelectedChanged);
             }
-        },
-
+        }
     });
 
     constructor() {
         super()
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            action: pvt.onAction,
-            actionChanged: pvt.onActionChanged,
-            selectedChanged: pvt.onSelectedChanged,
-            mouseenter: pvt.onMouseEnter,
-            mouseleave: pvt.onMouseLeave,
-            click: pvt.onClick
+        pvt.registerEvents(pvt, {
+            action: "onAction",
+            actionChanged: "onActionChanged",
+            selectedChanged: "onSelectedChanged",
+            mouseenter: "onMouseEnter",
+            mouseleave: "onMouseLeave"
         });
     }
 
     triggerAction() {
-        this.$.#pvt.onAction();
+        this.fireEvent("action");
     }
 
     get currentAction() {
+        const app = JSAppLib.app;
         let retval = null;
         if (this.action && app.actionManager) {
             retval = app.actionManager.getAction(this.action);

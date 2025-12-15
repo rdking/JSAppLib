@@ -1,5 +1,4 @@
 import { share } from "../../cfprotected/index.mjs";
-import WaitBox from "./util/WaitBox.mjs";
 import Container from "./jsContainer.mjs";
 
 export default class ListItem extends Container {
@@ -19,9 +18,6 @@ export default class ListItem extends Container {
         this.#spvt.register(this);
     }
 
-    #observer = null;
-    #parentWait = new WaitBox();
-
     #clone(array) {
         return Object.assign([], array);
     }
@@ -29,37 +25,25 @@ export default class ListItem extends Container {
     #populate(template) {
         let retval = template;
 
+        //What comes in may not be from this class. Descendants can pass
+        //  anything you can put into HTML as the template. We need to make
+        //  sure we're only processing a string.
         if (retval.nodeName == "#text") {
             retval = retval.textContent;
         }
-        
-        if (typeof(retval) == "string") {
-            let params = retval.match(/\$\{(\w+)}/g);
-            retval = retval.trim();
-
-            if (params) {
-                for (let param of params) {
-                    let key = param.substring(2, param.length - 1);
-                    retval = retval.replaceAll(param, this.value[key] || "");
-                }
-            }
-        }
-        else {
-            if (retval.children.length) {
-                for (let child of retval.childNodes) {
-                    this.$.#populate(child);
-                }
-            } else {
-                retval.textContent = this.$.#populate(retval.textContent);
-            }
+        else if (retval instanceof HTMLElement) {
+            retval = retval.outerHTML;
         }
 
-        return retval;
+        //Replace every token with the corresponding value.
+        return retval.replace(/\$\{(\w+)\}/g, (match, key) => {
+            return this?.value[key] || "";
+        }).trim();
     }
 
     #pvt = share(this, ListItem, {
         getTemplate() {
-            return this.parentElement.querySelector("template").innerHTML || "";
+            return this.parentElement?.querySelector("template")?.innerHTML || "";
         },
         getParentType() {
             return this.$.#pvt.tagType("listview");
@@ -69,18 +53,14 @@ export default class ListItem extends Container {
         },
         render() {
             let pvt = this.$.#pvt;
-            let template = pvt.getTemplate();
-            let pTemplate = this.$.#populate(template);
-            let isString = typeof(template) == "string";
+            let templateString = pvt.getTemplate();
+            let populatedHtml = this.$.#populate(templateString);
             
             pvt.renderContent(pvt.make("div", {
                 class: "listitem",
                 tabindex: ""
             }, {
-                innerHTML: isString ? pTemplate : "",
-                children: [
-                    isString ? null: pTemplate
-                ]
+                innerHTML: populatedHtml
             }));
         },
         onPreRender() {
@@ -98,43 +78,39 @@ export default class ListItem extends Container {
         onTypeChanged(e) {
             let {newValue, oldValue} = e.detail;
 
-            const translator = app.dataFormatManager;
+            const translator = JSAppLib.app.dataFormatManager;
             if (translator && !translator.isRegistered(newValue)) {
                 this.setAttribute("type", oldValue);
             }
         },
         onParentReady(e) {
-            this.$.#parentWait.trigger();
+            this.$.#pvt.waitbox.trigger();
         }
     });
 
     constructor() {
         super();
         this.type = this.type || "json";
-        this.$.#observer = new MutationObserver(this.$.#pvt.render);
-        this.$.#observer.observe(this, { attributes: false, childList: true, subtree: true});
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            "render": pvt.render,
-            "preRender": pvt.onPreRender,
-            "click": pvt.onClick,
-            "selectedChanged": pvt.onSelectedChanged,
-            "typeChanged": pvt.onTypeChanged
+        pvt.registerEvents(pvt, {
+            click: "onClick",
+            // selectedChanged: "onSelectedChanged",
+            typeChanged: "onTypeChanged",
+            childListChanged: "render" // Re-render when innerHTML is changed externally
         });
     }
 
     connectedCallback() {
-        let p = this.parentElement;
-        if (!("fireEvent" in p)) {
-            p.addEventListener("ready", this.$.#pvt.onParentReady);
-            this.$.#parentWait.add(this,() => {
-                this.parentElement.fireEvent("itemAdded", this);
-            }, []);
-        }
-        else {
+        const parent = this.parentElement;
+        const box = this.$.#pvt.waitbox;
+
+        // Always add the 'itemAdded' task to the WaitBox to ensure it fires after parent is ready.
+        box.add(this, () => {
             this.parentElement.fireEvent("itemAdded", this);
-        }
+        }, []);
+
+        parent.addEventListener("ready", this.$.#pvt.onParentReady);
         super.connectedCallback();
     }
 
@@ -143,7 +119,7 @@ export default class ListItem extends Container {
     }
 
     get value() { 
-        const translator = app.dataFormatManager;
+        const translator = JSAppLib.app.dataFormatManager;
         let retval = this.innerHTML;
 
         if (translator) {
@@ -153,7 +129,7 @@ export default class ListItem extends Container {
         return retval;
     }
     set value(v) {
-        const translator = app.dataFormatManager;
+        const translator = JSAppLib.app.dataFormatManager;
         if (translator) {
             this.innerHTML = translator.translate("js", this.type, v);
         }

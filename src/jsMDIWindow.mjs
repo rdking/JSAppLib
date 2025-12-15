@@ -6,13 +6,13 @@ export default class MDIWindow extends ControlBase {
 
     static get observedAttributes() {
         return ControlBase.observedAttributes.concat([
-            "maximize", "minimize", "nomaximize", "nominimize", "noclose"
+            "maximize", "minimize", "nomaximize", "nominimize", "noclose", "uri"
         ]);
     }
 
     static get observedEvents() {
         return ControlBase.observedAttributes.concat([
-            "maximizeChanged", "minimizeChanged"
+            "maximizeChanged", "minimizeChanged", "uriChanged"
         ]);
     }
 
@@ -446,7 +446,7 @@ export default class MDIWindow extends ControlBase {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
+        pvt.registerEvents(pvt, {
             titleChange: pvt.onTitleChange,
             mousedown: pvt.onWindowClick
         });

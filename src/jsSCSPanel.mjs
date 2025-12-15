@@ -149,12 +149,12 @@ export default class SCSPanel extends Container {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            "resize": pvt.onResize,
-            "parentResized": pvt.parentResized,
-            "nofirstChanged": pvt.onNoFirstChanged,
-            "nolastChanged": pvt.onNoLastChanged,
-            "horizontalChanged": pvt.onHorizontalChanged
+        pvt.registerEvents(pvt, {
+            resize: "onResize",
+            parentResized: "parentResized",
+            nofirstChanged: "onNoFirstChanged",
+            nolastChanged: "onNoLastChanged",
+            horizontalChanged: "onHorizontalChanged"
         });
     }
 

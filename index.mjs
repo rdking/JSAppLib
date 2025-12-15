@@ -16,13 +16,10 @@ import ActivityIndicator from "./src/jsActivityIndicator.mjs";
 import ActionButton from "./src/jsActionButton.mjs";
 import SCSPanel from "./src/jsSCSPanel.mjs";
 import Surface from "./src/jsSurface.mjs";
-// import ActivityIndicator from "./src/jsActivityIndicator.mjs";
-// import Editor from "./src/jsEditor.mjs";
 import Menu from "./src/jsMenu.mjs";
 import MenuItem from "./src/jsMenuItem.mjs";
 import PopupMenu from "./src/jsPopupMenu.mjs";
 import StatusBar from "./src/jsStatusBar.mjs";
-import Layout from "./src/jsLayout.mjs";
 import SplitPanel from "./src/jsSplitPanel.mjs";
 import HSplitPanel from "./src/jsHSplitPanel.mjs";
 import VSplitPanel from "./src/jsVSplitPanel.mjs";
@@ -42,12 +39,23 @@ import TreeLeaf from "./src/jsTreeLeaf.mjs";
 import App from "./src/jsApp.mjs";
 
 // @ts-ignore
-globalThis.JSAppLib = { 
+if (!globalThis.JSAppLib) {
+    Object.defineProperty(globalThis, "JSAppLib", {
+        enumerable: false,
+        configurable: false,
+        writable: false,
+        value: {}
+    });
+}
+
+Object.assign(globalThis.JSAppLib, { 
     CFProtected, Base, App, ManagerBase, Management, ActionManager, Action,
     ActivityIndicator, ThemeManager, Theme, DataFormatManager, DataFormat,
-    From, To, /*DialogManager, Dialog,*/ ActionButton, Surface,
-    /*Editor,*/ Layout, Menu, MenuItem, PopupMenu, SCSPanel, StatusBar,
-    SplitPanel, HSplitPanel, VSplitPanel, MDIPanel, MDIWindow, Tab,
-    TabStrip, TabBook, TabPage, ToolBar, ListView, ListItem,
-    CollapsePanel, TreeView, TreeBranch, TreeLeaf
-};
+    From, To, /*DialogManager, Dialog,*/ ActionButton, Surface, Menu,
+    MenuItem, PopupMenu, SCSPanel, StatusBar, SplitPanel, HSplitPanel, 
+    VSplitPanel, MDIPanel, MDIWindow, Tab, TabStrip, TabBook, TabPage, 
+    ToolBar, ListView, ListItem, CollapsePanel, TreeView, TreeBranch, TreeLeaf
+});
+
+JSAppLib.App.ready();
+JSAppLib.app.classList.remove("hidden");

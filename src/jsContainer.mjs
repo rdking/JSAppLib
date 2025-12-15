@@ -1,8 +1,8 @@
-import { share, accessor, abstract, final } from "../../cfprotected/index.mjs";
+import { share, abstract } from "../../cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
-import ControlBase from "./jsControlBase.mjs";
+import FocusableTag from "./jsFocusableTag.mjs";
 
-const Container = abstract(class Container extends ControlBase {
+const Container = abstract(class Container extends FocusableTag {
     static #spvt = share(this, {});
 
     static {
@@ -16,7 +16,7 @@ const Container = abstract(class Container extends ControlBase {
     }
 
     static get observedAttributes() {
-        return ControlBase.observedAttributes.concat(["fixed", "horizontal"]);
+        return FocusableTag.observedAttributes.concat(["fixed", "horizontal"]);
     }
 
     #contentObserver;
@@ -51,19 +51,21 @@ const Container = abstract(class Container extends ControlBase {
             e.forEach(mutation => {
                 switch(mutation.type) {
                     case "childList":
-                        this.fireEvent("onChildListChanged", mutation);
+                        this.fireEvent("childListChanged", mutation);
+                        mutation.addedNodes.forEach(node => {
+                            if (node.nodeType === 1) this.fireEvent("itemAdded", node);
+                        });
+                        mutation.removedNodes.forEach(node => {
+                            if (node.nodeType === 1) this.fireEvent("itemRemoved", node);
+                        });
                         break;
                     case "characterData":
-                        this.fireEvent("onTextChanged", mutation);
+                        this.fireEvent("textChanged", mutation);
+                        break;
                     default:
                         break;
                 }
             });
-        },
-        observeChildren(target) {
-            const pvt = this.$.#pvt;
-
-            pvt.contentObserver.observe(target);
         }
     });
 
@@ -71,9 +73,9 @@ const Container = abstract(class Container extends ControlBase {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            fixedChanged: pvt.onFixedChanged,
-            horizontalChanged: pvt.onHorizontalChanged
+        pvt.registerEvents(pvt, {
+            fixedChanged: "onFixedChanged",
+            horizontalChanged: "onHorizontalChanged"
         });
     }
 
@@ -93,7 +95,7 @@ const Container = abstract(class Container extends ControlBase {
         let mutations = observer.takeRecords();
 
         if (mutations.length > 0) {
-            pvt.onMutation(mutations);
+            this.$.#pvt.onMutation(mutations);
         }
         observer.disconnect();
 

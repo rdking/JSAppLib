@@ -18,21 +18,11 @@ export default class DataFormatManager extends ManagerBase {
 
     static {
         const spvt =  this.#spvt;
-        spvt.initAttributeProperties(this, {
-
-        });
+        spvt.initAttributeProperties(this, {});
         spvt.register(this); 
     }
 
-    #schema = null;
-    #translators = {};
-
     #pvt = share(this, DataFormatManager, {
-        render() {
-            const pvt = this.$.#pvt;
-
-            pvt.renderContent(pvt.make("slot"));
-        },
         onPostRender() {
             const pvt = this.$.#pvt;
             pvt.validateChildren(pvt.tagType("dataformat"), 
@@ -92,12 +82,12 @@ export default class DataFormatManager extends ManagerBase {
         this.addEventListener("render", pvt.render);
     }
 
-    get knownFormats() {
-        return Object.getOwnPropertyNames(this.$.#translators); 
+    get formats() {
+        return [...this.children];
     }
 
     get stringFormats() {
-        return this.knownFormats.filter(f => this.$.#translators[f].type == "string");
+        return [...this.children].filter(f => f.type == "string");
     }
 
     isRegistered(format) {

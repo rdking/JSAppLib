@@ -17,10 +17,6 @@ export default class Management extends ManagerBase {
 
     #waitingflags = 0;
     #pvt= share(this, Management, {
-        doRender() {
-            const pvt = this.$.#pvt;
-            pvt.renderContent(pvt.make("slot"));
-        },
         onPreRender() {
             const pvt = this.$.#pvt;
             const prefix = ManagerBase.prefix;
@@ -45,7 +41,4 @@ export default class Management extends ManagerBase {
     });
     
     get isManagement() { return this.cla$$.isManagement; }
-
-    get autoinit() { return this.hasAttribute("autoinit"); }
-    set autoinit(v) { this.$.#pvt.setBoolAttribute("autoinit"); }
 }

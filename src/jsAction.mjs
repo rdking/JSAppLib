@@ -27,58 +27,53 @@ export default class Action extends Base {
         spvt.register(this);
     }
     
+    static #MODIFIERS = {
+        "ctrl": "Ctrl", "control": "Ctrl",
+        "alt": "Alt",
+        "shift": "Shift",
+        "meta": "Meta", "win": "Meta", "command": "Meta"
+    };
+    static #MODIFIER_ORDER = ["Ctrl", "Alt", "Shift", "Meta"];
+
     static validateHotKey(hotkey) {
-        let retval = "";
-
-        if (hotkey) {
-            const presses = hotkey.split(",");
-
-            for (let press of presses) {
-                let i = 0, keys = press.toLowerCase().split("+");
-                let c = 0;
-                let rPress = "";
-
-                if (retval && keys.length) {
-                    retval += ",";
-                }
-                if (keys.includes("ctrl")) {
-                    rPress += "Ctrl";
-                }
-                if (keys.includes("alt")) {
-                    rPress += (rPress.length ? "+" : "") + "Alt";
-                }
-                if (keys.includes("shift")) {
-                    rPress += (rPress.length ? "+" : "") + "Shift";
-                }
-                if (keys.includes("meta")) {
-                    if (keys.includes("win")) {
-                        throw new AppLibError(`Invalid hotkey sequence. "Meta" === "Win": ${press}`);
-                    }
-                    rPress += (rPress.length ? "+" : "") + "Meta";
-                }
-                else if (keys.includes("win")) {
-                    rPress += (rPress.length ? "+" : "") + "Win";
-                }
-
-                while (keys[i]) {
-                    let key = keys[i].toLowerCase();
-                    if (!["alt", "ctrl", "shift", "meta", "win"].includes(key)) {
-                        if (++c > 1) {
-                            throw new AppLibError(`Invalid hotkey sequence: ${press}`);
-                        }
-                        rPress += (rPress.length ? "+" : "") + key.toUpperCase();
-                    }
-                    ++i;
-                }
-
-                retval += rPress;
-            }
+        if (!hotkey) {
+            return "";
         }
-
-        return retval;
+    
+        const presses = hotkey.split(',').map(p => p.trim()).filter(p => p);
+    
+        const validatedPresses = presses.map(press => {
+            const keys = press.toLowerCase().split('+').map(k => k.trim()).filter(k => k);
+            const modifiers = new Set();
+            let mainKey = null;
+    
+            for (const key of keys) {
+                if (key in this.#MODIFIERS) {
+                    modifiers.add(this.#MODIFIERS[key]);
+                } else {
+                    if (mainKey !== null) {
+                        throw new AppLibError(`Invalid hotkey sequence: "${press}". Only one non-modifier key allowed.`);
+                    }
+                    mainKey = key;
+                }
+            }
+    
+            const sortedModifiers = [...modifiers].sort((a, b) => 
+                this.#MODIFIER_ORDER.indexOf(a) - this.#MODIFIER_ORDER.indexOf(b)
+            );
+    
+            const finalKeys = [...sortedModifiers];
+            if (mainKey) {
+                finalKeys.push(mainKey.length === 1 ? mainKey.toUpperCase() : mainKey);
+            }
+    
+            return finalKeys.join('+');
+        });
+    
+        return validatedPresses.join(',');
     }
     
-    #registered = [];
+    #registered = new Map();
 
     #pvt = share(this, Action, {
         render() {
@@ -95,26 +90,32 @@ export default class Action extends Base {
             this.$.#pvt.validateParent(this.$.#pvt.tagType("actionmanager"),
                 "Action elements can only contained by an ActionManager element");
         },
+        onPostRender() {
+            if (this.hotkey) {
+                this.parentElement.registerHotKey(this.hotkey, this);
+            }
+        },
         onHotkeyChanged(e) {
             let { oldValue, newValue } = e.detail;
             let hotkey = Action.validateHotKey(newValue);
             if (newValue != hotkey) {
+                if (this.parentElement && oldValue) {
+                    this.parentElement.unregisterHotKey(oldValue, this);
+                }
                 this.setAttribute("hotkey", hotkey);
             } else {
-                const am = app.actionManager;
-                if (am) {
-                    am.unregisterHotKey(this.hotkey, this);
-                    am.registerHotKey(this.hotkey, this);
+                if (this.parentElement) {
+                    if (oldValue) {
+                        this.parentElement.unregisterHotKey(oldValue, this);
+                    }
+                    if (hotkey) {
+                        this.parentElement.registerHotKey(hotkey, this);
+                    }
                 }
             }
         },
-        onSelectedChanged() {
-            for (let item of this.$.#registered) {
-                if ("selected" in item) {
-                    item.selected = this.selected;
-                }
-            }
-            this.fireEvent(`${this.selected ? "" : "de"}selected`)
+        onSelectedChanged(e) {
+            this.fireEvent(`actionSelectedChanged`, e.detail);
         },
         onAction() {
             this.$.#pvt.callEventHandler("action");
@@ -125,15 +126,24 @@ export default class Action extends Base {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            action: pvt.onAction,
-            hotkeyChanged: pvt.onHotkeyChanged,
-            selectedChanged: pvt.onSelectedChanged
+        pvt.registerEvents(pvt, {
+            action: "onAction",
+            hotkeyChanged: "onHotkeyChanged",
+            selectedChanged: "onSelectedChanged"
         });
     }
 
-    register(item) {
-        this.$.#registered.push(item);
+    register(item, onActionSelectedChanged) {
+        this.$.#registered.set(item, onActionSelectedChanged);
+        this.addEventListener("actionSelectedChanged", onActionSelectedChanged);
+    }
+
+    unregister(item) {
+        if (this.$.#registered.has(item)) {
+            const onActionSelectedChanged = this.$.#registered.get(item);
+            this.removeEventListener("actionSelectedChanged", onActionSelectedChanged);
+            this.$.#registered.delete(item);
+        }
     }
 
     trigger() {

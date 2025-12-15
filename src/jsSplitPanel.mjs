@@ -200,12 +200,12 @@ const SplitPanel = abstract(class SplitPanel extends Container {
 
         const pvt = this.$.#pvt;
 
-        pvt.registerEvents({
-            "dragover": pvt.onDragOver,
-            "minfirstwidthChanged": pvt.onMinSlotWidthChanged,
-            "minlastwidthChanged": pvt.onMinSlotWidthChanged,
-            "splitposChanged": pvt.onSplitPosChanged,
-            "parentResized": pvt.onResized
+        pvt.registerEvents(pvt, {
+            dragover: "onDragOver",
+            minfirstwidthChanged: "onMinSlotWidthChanged",
+            minlastwidthChanged: "onMinSlotWidthChanged",
+            splitposChanged: "onSplitPosChanged",
+            parentResized: "onResized"
         });
 
         this.minfirstwidth = (!this.minfirstwidth && (this.minfirstwidth !== 0)) ? 32 : this.minfirstwidth;

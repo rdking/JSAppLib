@@ -1,4 +1,5 @@
-import { share, saveSelf, accessor, abstract, final } from "../../cfprotected/index.mjs";
+import { share, saveSelf, accessor, abstract } from "../../cfprotected/index.mjs";
+import AppLibError from "./errors/AppLibError.mjs";
 import WaitBox from "./util/WaitBox.mjs";
 
 const Base = abstract(class Base extends HTMLElement {
@@ -38,7 +39,7 @@ const Base = abstract(class Base extends HTMLElement {
             let proto = klass.prototype;
 
             function getAccessors(attr, dflt) {
-                function getter() { return this.getAttribute(attr) || dflt; }
+                function getter() { return this.getAttribute(attr) ?? dflt; }
                 function setter(v) { this.setAttribute(attr, v); }
                 return {getter, setter};
             }
@@ -114,19 +115,18 @@ const Base = abstract(class Base extends HTMLElement {
             Base.$.#tagNames.set(klass, tag);
             Base.$.#tagClasses.set(tag, klass);
 
-            if (Base.$.#tagsRegistered.size) {
-                console.log(`Registering "${className}" as "<${tag}>"`);
-                Base.$.#tagsRegistered.add(tag);
-                customElements.define(tag, klass);
-            }
+            // This method now only collects the class and its tag name.
+            // The actual registration is handled by registerElements().
         },
         registerElements() {
             const iter = Base.$.#tagClasses[Symbol.iterator]();
             for (const [tag, klass] of iter) {
-                const className = klass.name;
-                console.log(`Registering "${className}" as "<${tag}>"`);
-                Base.$.#tagsRegistered.add(tag);
-                customElements.define(tag, klass);
+                if (!customElements.get(tag)) {
+                    const className = klass.name;
+                    console.log(`Registering "${className}" as "<${tag}>"`);
+                    Base.$.#tagsRegistered.add(tag);
+                    customElements.define(tag, klass);
+                }
             }
         },
         /**
@@ -165,7 +165,7 @@ const Base = abstract(class Base extends HTMLElement {
     }
 
     static get observedAttributes() { 
-        return [ "action", "theme", "style", "classList" ];
+        return [ "action", "theme", "style", "class" ];
     }
 
     //Needed as the base of the concatenation chain.
@@ -175,6 +175,7 @@ const Base = abstract(class Base extends HTMLElement {
 
     #rendering = false;
     #shadowRoot;
+    #waitbox = new WaitBox();
 
     #doRenderContent(content, target) {
         if (!this.$.#rendering) try {
@@ -182,16 +183,16 @@ const Base = abstract(class Base extends HTMLElement {
 
             this.fireEvent("preRender");
 
-            const tm = app.themeManager;
+            const tm = JSAppLib.app.themeManager;
             let shadow = target || this.$.#shadowRoot;
-            let link = (!tm || !("ready" in tm)) ? [] : tm.getTagStyle(this, shadow);
+            let styles = (!tm || !("ready" in tm)) ? [] : tm.getTagStyle(this, shadow);
 
             if (!Array.isArray(content)) {
                 content = [content];
             }
 
             shadow.innerHTML = "";
-            shadow.adoptedStyleSheets = link;
+            shadow.adoptedStyleSheets = styles;
             for (let element of content) {
                 if (typeof(element) == "string") {
                     shadow.innerHTML += element;
@@ -207,9 +208,32 @@ const Base = abstract(class Base extends HTMLElement {
         }
     }
 
+    /**
+     * Retrieves the class constructor for a given tag name, caching it for future use.
+     * @param {string} type The full tag name (e.g., 'js-app', 'div').
+     * @returns {Function|null} The constructor for the tag, or null if not found.
+     * @private
+     */
+    #getClassForTag(type) {
+        let klass = Base.$.#tagClasses.get(type);
+        if (!klass) {
+            // For built-in elements, check if it's a known element constructor.
+            const potentialClass = window[`HTML${type.charAt(0).toUpperCase() + type.slice(1)}Element`];
+            if (typeof potentialClass === 'function' && /\[native code\]/.test(potentialClass.toString())) {
+                Base.$.#tagClasses.set(type, potentialClass);
+                klass = potentialClass;
+            }
+        }
+
+        return klass;
+    }
+
     #pvt= share(this, Base, {
         shadowRoot: accessor({
             get() { return this.$.#shadowRoot; }
+        }),
+        waitbox: accessor({
+            get() { return this.$.#waitbox; }
         }),
         render() {
             throw new TypeError(`The protected "render" method must be overridden`);
@@ -227,10 +251,11 @@ const Base = abstract(class Base extends HTMLElement {
              */
         },
         renderContent(content, target) {
+            const app = JSAppLib.app;
             const tm = app.themeManager;
 
             if (tm && (!("ready" in tm) || !tm.ready)) {
-                this.fireEvent.call(tm, "wait", {tag: this, method: this.$.#doRenderContent, params:[content, target]});
+                app.fireEvent("wait", {tag: this, method: this.$.#doRenderContent, params:[content, target]});
             } else {
                 this.$.#doRenderContent(content, target);
             }
@@ -288,7 +313,7 @@ const Base = abstract(class Base extends HTMLElement {
         /**
          * Checks to see if the given tag is or inherits from the type specified by its name.
          * Unlike many of the other type managing functions, this one DOES NOT automatically
-         * assume tha tthe tag type passed in is a member of this library. As such, it can
+         * assume that the tag type passed in is a member of this library. As such, it can
          * be used to check the type of any element passed in. However, you must remember to
          * specify the full tag name (preferably using "tagType('name')) when querying for a
          * tag from this library.
@@ -297,30 +322,37 @@ const Base = abstract(class Base extends HTMLElement {
          * @returns true if the tag is or inherits from the given type name. Otherwise false.
          */
         isTagType(target, type) {
-            let k = target.cla$$ || target.constructor;
-            let nodeName = (target.nodeName || target).toLowerCase();
-            let klasses = [k ? (k.tagName || nodeName || k.name) : nodeName];
-
-            while (k && (k !== HTMLElement)) {
-                k = Object.getPrototypeOf(k);
-                if ((typeof(k) == "function") && ("prototype" in k) && (typeof(k.prototype) == "object")) {
-                    klasses.push(k.tagName || k.name);
+            let retval = false;
+            if ((target instanceof HTMLElement) && (typeof type === 'string')) {
+                // For non-library tags, a direct comparison is simple and effective.
+                if (!type.startsWith(`${Base.#prefix}-`)) {
+                    retval = target.tagName.toLowerCase() === type.toLowerCase();
+                }
+                else {
+                    const klass = this.$.#getClassForTag(type);
+                    retval = klass ? (target instanceof klass) : false;
                 }
             }
-
-            return klasses.includes(this.$.#pvt.tagType(type));
+            return retval;
+        
         },
         validateParent(type, message) {
             const pvt = this.$.#pvt;
 
-            if (typeof(type) == "string") {
+            if (!Array.isArray(type)) {
                 type = [type];
             }
 
             let parent = this.parentElement;
             let found = false;
             for (let t of type) {
-                found |= pvt.isTagType(parent, t);
+                if (typeof(t) == "string") {
+                    found = pvt.isTagType(parent, pvt.tagType(t));
+                }
+                else if (typeof(t) == "function") {
+                    found = (parent instanceof t);
+                }
+                if (found) break;
             }
 
             if (!found) {
@@ -330,22 +362,24 @@ const Base = abstract(class Base extends HTMLElement {
         },
         validateChildren(type, message) {
             const pvt = this.$.#pvt;
-            if (["function", "string"].includes(typeof(type))) {
+            if (!Array.isArray(type)) {
                 type = [type];
             }
-            type = pvt.tagTypes(type);
 
             for (let child of this.children) {
                 let found = false;
                 for (let t of type) {
                     if (typeof(t) == "string") {
-                        found |= pvt.isTagType(child, t);
+                        if (pvt.isTagType(child, pvt.tagType(t))) {
+                            found = true;
+                            break;
+                        }
                     }
-                    else if (child instanceof Base) {
-                        found |= t(child);
-                    }
-                    else {
-                        found |= t(Base.$.#tagClasses.get(child.tagName.toLowerCase()));
+                    else if (typeof(t) == "function") {
+                        if (child instanceof t) {
+                            found = true;
+                            break;
+                        }
                     }
                 }
 
@@ -392,12 +426,13 @@ const Base = abstract(class Base extends HTMLElement {
         validateAncestry(type, not, message, noerr) {
             const pvt = this.$.#pvt;
 
-            if (arguments.length < 2) {
+            if (typeof not === "string") {
+                noerr = message;
                 message = not;
                 not = false;
             }
 
-            if (typeof(type) == "string") {
+            if (!Array.isArray(type)) {
                 type = [type];
             }
 
@@ -406,13 +441,26 @@ const Base = abstract(class Base extends HTMLElement {
 
             while (parent && (parent != document.body)) {
                 for (let t of type) {
-                    found |= pvt.isTagType(parent, t);
+                    if (typeof(t) == "string") {
+                        if (pvt.isTagType(parent, pvt.tagType(t))) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    else if (typeof(t) == "function") {
+                        if (parent instanceof t) {
+                            found = true;
+                            break;
+                        }
+                    }
                 }
+                if (found) break;
+                parent = parent.parentElement;
+            }
 
-                if (!found) {
-                    if (!noerr) pvt.tagError();
-                    throw new TypeError(message);
-                }
+            if ((not && found) || (!not && !found)) {
+                if (!noerr) pvt.tagError();
+                throw new TypeError(message);
             }
         },
         tagError() {
@@ -428,10 +476,41 @@ const Base = abstract(class Base extends HTMLElement {
                 Function(value).call();
             }
         },
-        registerEvents(map) {
-            for (let event in map) {
-                this.addEventListener(event, map[event]);
+        /**
+         * Registers handler functions for each event key in the map.
+         * @param {Object} pvt The protected container of the calling class.
+         * @param {Object} map Key:value pairs where the key is the event name, and the value is either a function or name of a protected member function.
+         */
+        registerEvents(pvt, map) {
+            if (!map) {
+                throw new AppLibError("Must provide a map of event handlers.");
             }
+            if (!pvt) {
+                throw new AppLibError("Must provide the class instance's protected container.");
+            }
+
+            for (let event in map) {
+                let fn = map[event];
+
+                if ((typeof fn !== "function") && !pvt[fn]) {
+                    throw new AppLibError(`Cannot register non-existent event handler for "${event}" on ${this.tagName}`);
+                }
+                if (typeof fn === "function") {
+                    this.addEventListener(event, fn);
+                }
+                else if (typeof fn === "string") {
+                    //Seems redundant, but "this" isn't being bound properly without the bind call.
+                    const call = (function (...args) { pvt[fn](...args); }).bind(this);
+                    this.addEventListener(event, call);
+                }
+                else {
+                    throw new AppLibError(`Attempted to register ${fn.toString} as an event handler for "${event}" on ${this.tagName}.`);
+                }
+            }
+        },
+        onWait(e) {
+            let {tag, method, params} = e.detail;
+            this.$.#waitbox.add(tag, method, params);
         }
     });
 
@@ -442,16 +521,17 @@ const Base = abstract(class Base extends HTMLElement {
         const pvt = this.#pvt;
 
         //Set up the shadow DOM
-        if (document.body.hasAttribute="data-debug") {
+        if (document.body.hasAttribute("data-debug")) {
             this.#shadowRoot = this.attachShadow({mode: "open"});
         }
         else {
             this.#shadowRoot = this.attachShadow({mode: "closed"});
         }
-        pvt.registerEvents({
-            "render": () => pvt.render(),
-            "preRender": () => pvt.onPreRender(),
-            "postRender": () => pvt.onPostRender()
+        pvt.registerEvents(pvt, {
+            render: "render",
+            preRender: "onPreRender",
+            postRender: "onPostRender",
+            wait: "onWait"
         });
 
         //Set up onxxx handlers for the static "observedEvents" array if declared
@@ -469,7 +549,9 @@ const Base = abstract(class Base extends HTMLElement {
 
     connectedCallback() {
         const pvt = this.$.#pvt;
-        if (globalThis.app && pvt.isTagType(app, "app")) {
+        const app = JSAppLib.app;
+
+        if (app && pvt.isTagType(app, pvt.tagType("app"))) {
             if (this.id && !(this.id in app)) {
                 app.fireEvent("addComponent", this.id);
             }
@@ -479,8 +561,9 @@ const Base = abstract(class Base extends HTMLElement {
 
     disconnectedCallback() {
         const pvt = this.$.#pvt;
+        const app = JSAppLib.app;
 
-        if (globalThis.app && pvt.isTagType(app, "app")) {
+        if (app && pvt.isTagType(app, "app")) {
             if (this.id in app) {
                 app.fireEvent("removeComponent", this.id);
             }

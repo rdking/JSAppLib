@@ -1,11 +1,11 @@
-import { share, abstract, accessor } from "../../cfprotected/index.mjs";
-import ControlBase from "./jsControlBase.mjs"
+import { share } from "../../cfprotected/index.mjs";
+import ManageableBase from "./jsManageableBase.mjs";
 
-export default class DataFormat extends ControlBase {
+export default class DataFormat extends ManageableBase {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
-        return ControlBase.observedAttributes.concat([
+        return ManageableBase.observedAttributes.concat([
             "fixed", "format", "type"
         ]);
     }
@@ -27,23 +27,14 @@ export default class DataFormat extends ControlBase {
     }
 
     #pvt = share(this, DataFormat, {
-        render() {},
         onPostRender() {
             const pvt = this.$.#pvt;
+            pvt.validateParent(pvt.tagType("dataformatmanager"), 
+                "DataFormat elements can only be contained by a DataFormatManager element.");
             pvt.validateChildren([pvt.tagType("from"), pvt.tagType("to")], 
-                "Invalid child of DataFormatManager. Children must be DataFormat tags only.");
+                "DataFormat elements can only contain From or To elements.");
         }
     });
-
-    constructor() {
-        super();
-
-        const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            from: pvt.onOnFromChanged,
-            to: pvt.onOnToChanged
-        });
-    }
 
     from(data) {
         let retval;

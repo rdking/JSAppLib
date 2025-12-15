@@ -1,7 +1,9 @@
-import { share, saveSelf, accessor, abstract, final } from "../../../cfprotected/index.mjs";
+import { saveSelf } from "../../../cfprotected/index.mjs";
 
 export default class WaitBox {
     #queue = [];
+    #triggered = false;
+
 
     constructor() {
         saveSelf(this, "$");
@@ -17,18 +19,23 @@ export default class WaitBox {
         }
 
         this.$.#queue.push({ inst, method, params });
+
+        //If the trigger has already been called, go ahead and run it immediately.
+        if (this.$.#triggered) {
+            this.trigger();
+        }
     }
 
-    get ready() { return !!this.$.#queue.length; }
+    get ready() { return !!this.$.#triggered; }
 
     trigger() {
-        let queue = this.$.#queue;
+        this.$.#triggered = true;
+        const itemsToProcess = this.$.#queue;
+        this.$.#queue = []; // Clear the queue before processing
 
-        while (queue.length) {
-            let { inst, method, params } = queue.shift();
+        // Process only the items that were in the queue when trigger was called.
+        for (const { inst, method, params } of itemsToProcess) {
             method.apply(inst, params);
         }
-
-        this.$.#queue.length = 0;
     }
 }

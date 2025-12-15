@@ -93,12 +93,12 @@ export default class Tab extends ControlBase {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            flipChanged: pvt.onFlipChanged,
-            selectedChanged: pvt.onSelectedChanged,
-            disabledChanged: pvt.onDisabledChanged,
-            closeableChanged: pvt.onCloseableChanged,
-            captionChanged: pvt.onCaptionChanged
+        pvt.registerEvents(pvt, {
+            flipChanged: "onFlipChanged",
+            selectedChanged: "onSelectedChanged",
+            disabledChanged: "onDisabledChanged",
+            closeableChanged: "onCloseableChanged",
+            captionChanged: "onCaptionChanged"
         });
     }
 }

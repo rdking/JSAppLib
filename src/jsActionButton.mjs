@@ -18,7 +18,7 @@ export default class ActionButton extends ActionControlBase {
                 enumType: BM,
                 getter: function() {
                     return BM(this.hasAttribute("buttonmode") 
-                        ? this.getAttribute(attr) 
+                        ? this.getAttribute("buttonmode") 
                         : this.parentElement.getAttribute("displaymode") || BM.both);
                 }
             },
@@ -84,6 +84,9 @@ export default class ActionButton extends ActionControlBase {
         },
         onClicked() {
             this.fireEvent("action");
+        },
+        onSelectedChanged(e) {
+            this.classList[this.selected ? "add" : "remove"]("selected");
         }
     });
 
@@ -91,12 +94,12 @@ export default class ActionButton extends ActionControlBase {
         super();
 
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            click: pvt.onClicked,
-            update: pvt.onButtonModeChanged,
-            buttonmodeChanged: pvt.onButtonModeChanged,
-            captionChanged: pvt.onCaptionChanged,
-            iconChanged: pvt.onIconChanged,
+        pvt.registerEvents(pvt, {
+            click: "onClicked",
+            update: "onButtonModeChanged",
+            buttonmodeChanged: "onButtonModeChanged",
+            captionChanged: "onCaptionChanged",
+            iconChanged: "onIconChanged"
         });
     }
 }

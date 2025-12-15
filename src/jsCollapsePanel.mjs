@@ -69,8 +69,8 @@ export default class CollapsePanel extends Container {
         super();
         
         const pvt = this.$.#pvt;
-        pvt.registerEvents({
-            "collapsedChanged": pvt.onCollapsedChanged
+        pvt.registerEvents(pvt, {
+            collapsedChanged: "onCollapsedChanged"
         });
     }
 };

@@ -72,10 +72,10 @@ export default class ToolBar extends Container {
 
         const pvt = this.$.#pvt
 
-        pvt.registerEvents({
-            "displaymodeChanged": pvt.onDisplayModeChange,
-            "edgeChanged": pvt.onEdgeChanged,
-            "moveableChanged": pvt.onMoveableChanged
+        pvt.registerEvents(pvt, {
+            displaymodeChanged: "onDisplayModeChange",
+            edgeChanged: "onEdgeChanged",
+            moveableChanged: "onMoveableChanged"
         });
     }
 }
