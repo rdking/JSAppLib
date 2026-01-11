@@ -18,7 +18,7 @@ export default class App extends Base {
             const pvt = this.$.#pvt;
             pvt.renderContent(pvt.make("div", {}, {
                 children: [
-                    pvt.make("slot", { name: "overlay" }),
+                    pvt.make("div", { id: "overlay" }),
                     pvt.make("slot")
                 ]
             }));
@@ -31,9 +31,16 @@ export default class App extends Base {
         }
     });
     
-    #addProperty(name) {
-        if (name != this.id) {
-            Object.defineProperty(this, name, {
+    #components = {};
+
+    get components() {
+        return this.#components;
+    }
+
+    #addProperty(e) {
+        const name = e.detail;
+        if (name && (name != this.id)) {
+            Object.defineProperty(this.#components, name, {
                 enumerable: true,
                 configurable: true,
                 get() { return document.getElementById(name); }
@@ -41,9 +48,10 @@ export default class App extends Base {
         }
     }
 
-    #removeProperty(name) {
-        if (name in this) {
-            delete this[name];
+    #removeProperty(e) {
+        const name = e.detail;
+        if (name in this.#components) {
+            delete this.#components[name];
         }
     }
 
@@ -88,7 +96,7 @@ export default class App extends Base {
         let retval;
 
         if (mgmt) {
-            retval = mgmt.querySelector(pvt.tagTypes(mgrName)[0]);
+            retval = mgmt.querySelector(pvt.tagType(mgrName));
         }
 
         return retval;
@@ -119,11 +127,11 @@ export default class App extends Base {
     }
 
     get overlayShowing() {
-        return this.shadowRoot.querySelector("slot[name=overlay]").classList.contains("visible");
+        return this.$.#pvt.shadowRoot.querySelector("#overlay").classList.contains("visible");
     }
 
     showOverlay(ui) {
-        let overlay = this.shadowRoot.querySelector("slot[name=overlay]");
+        let overlay = this.$.#pvt.shadowRoot.querySelector("#overlay");
         if (!this.overlayShowing) {
             overlay.classList.add("visible");
         }
@@ -131,7 +139,7 @@ export default class App extends Base {
     }
 
     hideOverlay(ui) {
-        const overlay = this.shadowRoot.querySelector("slot[name=overlay]");
+        const overlay = this.$.#pvt.shadowRoot.querySelector("#overlay");
         overlay.removeChild(ui);
         if (overlay.children.length === 0) {
             overlay.classList.remove("visible");

@@ -20,7 +20,6 @@ slot {
     display: flex;
     flex: 1 1 auto;
     flex-direction: row;
-    justify-self: flex-end;
     height: fit-content;
     overflow-x: clip;
     overflow-y: clip;

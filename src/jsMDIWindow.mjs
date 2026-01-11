@@ -6,13 +6,7 @@ export default class MDIWindow extends ControlBase {
 
     static get observedAttributes() {
         return ControlBase.observedAttributes.concat([
-            "maximize", "minimize", "nomaximize", "nominimize", "noclose", "uri"
-        ]);
-    }
-
-    static get observedEvents() {
-        return ControlBase.observedAttributes.concat([
-            "maximizeChanged", "minimizeChanged", "uriChanged"
+            "maximize", "minimize", "nomaximize", "nominimize", "noclose", "uri", "title"
         ]);
     }
 
@@ -23,7 +17,7 @@ export default class MDIWindow extends ControlBase {
         spvt.initAttributeProperties(this, {
             maximize: { isBool: true, caption: "maximized",
                 getter: function getMaximized() {
-                    let tiled = this.shadowRoot.querySelector("#tiled");
+                    let tiled = this.$.#pvt.shadowRoot.querySelector("#tiled");
                     return !tiled.classList.contains("hidden");
                 },
                 setter: function setMaximized(v) {
@@ -44,13 +38,15 @@ export default class MDIWindow extends ControlBase {
                     if (v) {
                         pvt.onMinimizeClick();
                     } else {
-                        pvt.onUnMinimizeClick();
+                        pvt.onUnMinimize();
                     }
                 }
             },
             nomaximize: { isBool: true, readonly: true, caption: "noMaximize" },
             nominimize: { isBool: true, readonly: true, caption: "noMinimize" },
-            noclose: { isBool: true, readonly: true, caption: "noClose" }
+            noclose: { isBool: true, readonly: true, caption: "noClose" },
+            uri: {},
+            title: {}
         });
         this.#spvt.register(this);
     }
@@ -95,6 +91,29 @@ export default class MDIWindow extends ControlBase {
     }
 
     #pvt = share(this, MDIWindow, {
+        validateUri(uri) {
+            let retval = ""
+
+            if ((typeof(uri) == "string") && (uri.length > 0)) {
+                try {
+                    const url = new URL(uri, window.location.href);
+                    
+                    if (['http:', 'https:'].includes(url.protocol)) {
+                        if (url.origin === window.location.origin)
+                            retval = url.href;
+                    } else if (window.location.protocol === 'file:') {
+                        if (url.protocol === 'file:')
+                            retval = url.href;
+                    } else if (url.origin === window.location.origin) {
+                        retval = url.href;
+                    } else {
+                        console.warn(`Blocked loading ${uri}.`);
+                    }
+                } catch (e) {}
+            }
+
+            return retval;
+        },
         render() {
             const pvt = this.$.#pvt;
             pvt.renderContent([
@@ -190,7 +209,8 @@ export default class MDIWindow extends ControlBase {
                                                 pvt.make("slot", null, {
                                                     children: [
                                                         pvt.make("iframe", {
-                                                            sandbox: "allow-scripts allow-modals allow-popups allow-forms allow-same-origin"
+                                                            sandbox: "allow-scripts allow-modals allow-popups allow-forms allow-same-origin",
+                                                            src: pvt.validateUri(this.uri)
                                                         })
                                                     ]
                                                 })
@@ -239,11 +259,9 @@ export default class MDIWindow extends ControlBase {
             let titleArea = pvt.shadowRoot.querySelector("div#titleArea");
             let minimize = pvt.shadowRoot.querySelector("#minimize");
             let maximize = pvt.shadowRoot.querySelector("#maximize");
-            let tiled = this.shadowRoot.querySelector("#tiled");
-            let close = this.shadowRoot.querySelector("#close");
+            let tiled = pvt.shadowRoot.querySelector("#tiled");
+            let close = pvt.shadowRoot.querySelector("#close");
 
-            titleArea.addEventListener("mouseenter", pvt.onMouseEnterTitle);
-            titleArea.addEventListener("mouseleave", pvt.onMouseLeaveTitle)
             titleArea.addEventListener("dblclick", pvt.onDoubleTitleClick);
             titleArea.addEventListener("mousedown", pvt.onStartMoving);
             titleArea.addEventListener("mousemove", pvt.onMoving);
@@ -260,62 +278,64 @@ export default class MDIWindow extends ControlBase {
             });
         },
         onTitleChange(e) {
-            this.$.#pvt.shadowRoot.querySelector("#title").caption = this.title;
-        },
-        onMouseEnterTitle(e) {
-            if (!this.maximized) {
-                this.setAttribute("draggable", true);
+            const pvt = this.$.#pvt;
+            let titleLabel = pvt.shadowRoot.querySelector("#title");
+            if (titleLabel) {
+                titleLabel.innerText = e.detail.newValue;
             }
-        },
-        onMouseLeaveTitle(e) {
-            this.removeAttribute("draggable");
         },
         onStartMoving(e) {
             const pvt = this.$.#pvt;
 
-            if ((e.detail != 2) && (e.buttons == 1)) {
-                console.log("Beginning moving...");
-                this.$.#deltas = {
-                    type: "moving",
-                    x: e.screenX,
-                    y: e.screenY,
-                    edge: parseInt(e.target.getAttribute("data-edge")),
-                    left: parseFloat(this.style.left),
-                    top: parseFloat(this.style.top),
-                    width: parseFloat(this.style.width),
-                    height: parseFloat(this.style.height)
-                };
+            if (!this.maximized && !this.minimized) {
+                if ((e.detail != 2) && (e.buttons == 1)) {
+                    console.log("Beginning moving...");
+                    this.$.#deltas = {
+                        type: "moving",
+                        x: e.screenX,
+                        y: e.screenY,
+                        edge: parseInt(e.target.getAttribute("data-edge")),
+                        left: parseFloat(this.style.left),
+                        top: parseFloat(this.style.top),
+                        width: parseFloat(this.style.width),
+                        height: parseFloat(this.style.height)
+                    };
 
-                this.addEventListener("mousemove", pvt.onMoving);
-                window.addEventListener("mousemove", pvt.onMoving);
-                window.addEventListener("mouseup", pvt.onEndMoving);
-                this.parentElement.fireEvent("startDrag");
+                    window.addEventListener("mousemove", pvt.onMoving);
+                    window.addEventListener("mouseup", pvt.onEndMoving);
+                    this.parentElement.fireEvent("startDrag", this);
+                }
             }
         },
         onMoving(e) {
-            let sz = this.$.#deltas;
-
-            if (sz.type == "moving") {
-                console.log("Still moving...");
-                let delta = {
-                    x: e.screenX - sz.x,
-                    y: e.screenY - sz.y
-                };
-
-                this.style.top = `${sz.top + delta.y}px`;
-                this.style.left = `${sz.left + delta.x}px`;
+            if (!this.maximized && !this.minimized) {
+                let sz = this.$.#deltas;
+                
+                if (sz.type == "moving") {
+                    console.log("Still moving...");
+                    let delta = {
+                        x: e.screenX - sz.x,
+                        y: e.screenY - sz.y
+                    };
+                    
+                    this.style.top = `${Math.max(0, (sz.top || 0) + delta.y)}px`;
+                    this.style.left = `${Math.max(0, (sz.left || 0) + delta.x)}px`;
+                }
             }
         },
         onEndMoving(e) {
             const pvt = this.$.#pvt;
-            let sz = this.$.#deltas;
 
-            if (sz.type == "moving") {
-                console.log("Ending moving...");
-                this.$.#deltas = false;
-                this.parentElement.fireEvent("endDrag");
-                window.removeEventListener("mouseup", pvt.onEndMoving);
-                window.removeEventListener("mousemove", pvt.onMoving);
+            if (!this.maximized && !this.minimized) {
+                let sz = this.$.#deltas;
+                
+                if (sz.type == "moving") {
+                    console.log("Ending moving...");
+                    this.$.#deltas = false;
+                    this.parentElement.fireEvent("endDrag", this);
+                    window.removeEventListener("mouseup", pvt.onEndMoving);
+                    window.removeEventListener("mousemove", pvt.onMoving);
+                }
             }
         },
         onMinimizeClick() {
@@ -323,12 +343,24 @@ export default class MDIWindow extends ControlBase {
             let titleArea = pvt.shadowRoot.querySelector("#titleArea");
             let buttonArea = pvt.shadowRoot.querySelector("div.buttons");
             let body = pvt.shadowRoot.querySelector("div.body");
+            
+            this.$.#oldStatus = {
+                top: this.style.top,
+                left: this.style.left,
+                width: this.style.width,
+                height: this.style.height
+            };
+            this.style.top = "";
+            this.style.left = "";
+            this.style.width = "";
+            this.style.height = "";
+
             this.slot = "minArea";
             buttonArea.classList.add("hidden");
             body.classList.add("hidden");
             titleArea.addEventListener("dblclick", pvt.onUnMinimize);
             this.classList.add("minimized");
-            this.style.position = "revert";
+            this.style.position = "";
             this.$.#disableEdges();
             this.$.setAttribute("minimized", "");
         },
@@ -343,13 +375,22 @@ export default class MDIWindow extends ControlBase {
             this.style.position = "";
             this.classList.remove("minimized");
             this.slot = '';
+
+            if (this.$.#oldStatus) {
+                this.style.top = this.$.#oldStatus.top;
+                this.style.left = this.$.#oldStatus.left;
+                this.style.width = this.$.#oldStatus.width;
+                this.style.height = this.$.#oldStatus.height;
+                this.$.#oldStatus = null;
+            }
+
             this.$.#enableEdges();
             this.$.removeAttribute("minimized");
         },
         onMaximizeClick(e) {
             const pvt = this.$.#pvt;
             const maximize = pvt.shadowRoot.querySelector("#maximize");
-            const tiled = this.shadowRoot.querySelector("#tiled");
+            const tiled = pvt.shadowRoot.querySelector("#tiled");
             maximize.classList.add("hidden");
             tiled.classList.remove("hidden");
             this.classList.add("maximized");
@@ -361,7 +402,7 @@ export default class MDIWindow extends ControlBase {
         onTiledClick(e) {
             const pvt = this.$.#pvt;
             const maximize = pvt.shadowRoot.querySelector("#maximize");
-            const tiled = this.shadowRoot.querySelector("#tiled");
+            const tiled = pvt.shadowRoot.querySelector("#tiled");
             tiled.classList.add("hidden");
             maximize.classList.remove("hidden");
             this.classList.remove("maximized");
@@ -398,7 +439,6 @@ export default class MDIWindow extends ControlBase {
                     height: parseFloat(this.style.height)
                 };
 
-                this.addEventListener("mousemove", this.$.#pvt.onResize);
                 window.addEventListener("mousemove", this.$.#pvt.onResize);
                 window.addEventListener("mouseup", this.$.#pvt.onResizeEnd);
                 this.parentElement.fireEvent("startDrag");
@@ -415,21 +455,21 @@ export default class MDIWindow extends ControlBase {
                 };
 
                 if (sz.edge < 3) {
-                    this.style.top = `${sz.top + delta.y}px`;
-                    this.style.height = `${sz.height - delta.y}px`;
+                    this.style.top = `${Math.max(0, (sz.top || 0) + delta.y)}px`;
+                    this.style.height = `${Math.max(0, (sz.height || 0) - delta.y)}px`;
                 }
 
                 if (sz.edge > 4) {
-                    this.style.height = `${sz.height + delta.y}px`;
+                    this.style.height = `${Math.max(0, (sz.height || 0) + delta.y)}px`;
                 }
 
                 if ([0, 3, 5].includes(sz.edge)) {
-                    this.style.left = `${sz.left + delta.x}px`;
-                    this.style.width = `${sz.width - delta.x}px`;
+                    this.style.left = `${Math.max(0, (sz.left || 0) + delta.x)}px`;
+                    this.style.width = `${Math.max(0, (sz.width || 0) - delta.x)}px`;
                 }
 
                 if ([2, 4, 7].includes(sz.edge)) {
-                    this.style.width = `${sz.width + delta.x}px`;
+                    this.style.width = `${Math.max(0, (sz.width || 0) + delta.x)}px`;
                 }
             }
         },
@@ -439,6 +479,13 @@ export default class MDIWindow extends ControlBase {
             this.parentElement.fireEvent("endDrag");
             window.removeEventListener("mouseup", this.$.#pvt.onResizeEnd);
             window.removeEventListener("mousemove", this.$.#pvt.onResize);
+        },
+        onUriChange(e) {
+            const pvt = this.$.#pvt;
+            const frame = pvt.shadowRoot.querySelector("iframe");
+            if (frame) {
+                frame.src = pvt.validateUri(this.uri);
+            }
         }
     });
 
@@ -447,22 +494,10 @@ export default class MDIWindow extends ControlBase {
 
         const pvt = this.$.#pvt;
         pvt.registerEvents(pvt, {
-            titleChange: pvt.onTitleChange,
-            mousedown: pvt.onWindowClick
+            titleChanged: pvt.onTitleChange,
+            mousedown: pvt.onWindowClick,
+            uriChanged: pvt.onUriChange
         });
-    }
-
-    get title() {
-        const pvt = this.$.#pvt;
-        let titleLabel = pvt.shadowRoot.querySelector("#title");
-        return titleLabel?.innerText;
-    }
-    set title(v) {
-        const pvt = this.$.#pvt;
-        let titleLabel = pvt.shadowRoot.querySelector("#title");
-        if (titleLabel) {
-            titleLabel.innerText = v;
-        }
     }
 
     get browser() {

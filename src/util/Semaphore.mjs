@@ -13,8 +13,11 @@ const Semaphore = final(class Semaphore {
                 throw new TypeError("Expected onSuccess to be a function");
             }
             this.$.#locked = true;
-            onSuccess();
-            this.$.#locked = false;
+            try {
+                onSuccess();
+            } finally {
+                this.$.#locked = false;
+            }
         }
         else if (typeof(onFailure) === "function") {
             onFailure();

@@ -27,14 +27,14 @@ slot {
     overflow: clip;
 }
 
-slot[name="overlay"] {
+div#overlay {
     position: absolute;
     inset: 0;
     display: none;
     z-index: 1000000;
 }
 
-slot.visible[name="overlay"] {
+div#overlay.visible {
     display: flex;
 }
 

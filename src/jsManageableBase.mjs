@@ -10,7 +10,9 @@ const ManageableBase = abstract(class ManageableBase extends Base {
     }
 
     #pvt = share(this, ManageableBase, {
-        render() {}
+        render() {
+            this.$.#pvt.renderContent([]);
+        }
     });
 });
 

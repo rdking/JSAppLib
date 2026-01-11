@@ -1,0 +1,242 @@
+<!doctype html>
+<html>
+    <head>
+        <title>DOM Arkanoid</title>
+        <style>
+            body {
+                background-color: #202020;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                font-family: 'Segoe UI', sans-serif;
+                color: white;
+                user-select: none;
+            }
+            #game-area {
+                position: relative;
+                width: 600px;
+                height: 400px;
+                background-color: #000;
+                border: 4px solid #444;
+                overflow: hidden;
+                cursor: none;
+            }
+            .paddle {
+                position: absolute;
+                bottom: 10px;
+                height: 12px;
+                width: 80px;
+                background-color: #00aaff;
+                border-radius: 4px;
+            }
+            .ball {
+                position: absolute;
+                width: 12px;
+                height: 12px;
+                background-color: #fff;
+                border-radius: 50%;
+            }
+            .brick {
+                position: absolute;
+                box-sizing: border-box;
+                border: 1px solid rgba(0,0,0,0.2);
+                border-radius: 2px;
+            }
+            #score {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                font-size: 16px;
+                z-index: 10;
+                font-weight: bold;
+            }
+            #overlay {
+                position: absolute;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 20;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 18px;
+                cursor: pointer;
+                background: #00aaff;
+                border: none;
+                color: white;
+                border-radius: 4px;
+                margin-top: 20px;
+            }
+            button:hover { background: #0088cc; }
+        </style>
+    </head>
+    <body>
+        <div id="game-area">
+            <div id="score">Score: 0</div>
+            <div id="overlay">
+                <h1 id="title">Arkanoid Clone</h1>
+                <button onclick="startGame()">Start Game</button>
+            </div>
+            <div id="paddle" class="paddle"></div>
+            <div id="ball" class="ball"></div>
+        </div>
+
+        <script>
+            const gameArea = document.getElementById('game-area');
+            const paddle = document.getElementById('paddle');
+            const ball = document.getElementById('ball');
+            const scoreEl = document.getElementById('score');
+            const overlay = document.getElementById('overlay');
+            const title = document.getElementById('title');
+
+            const areaWidth = 600;
+            const areaHeight = 400;
+            const paddleWidth = 80;
+            const ballSize = 12;
+            
+            let paddleX = (areaWidth - paddleWidth) / 2;
+            let ballX = areaWidth / 2;
+            let ballY = areaHeight - 30;
+            let dx = 3;
+            let dy = -3;
+            let score = 0;
+            let isRunning = false;
+            let bricks = [];
+            let animationId;
+
+            // Initialize Paddle
+            paddle.style.left = paddleX + 'px';
+
+            // Mouse movement
+            document.addEventListener('mousemove', (e) => {
+                const rect = gameArea.getBoundingClientRect();
+                const relativeX = e.clientX - rect.left;
+                
+                if(relativeX > 0 && relativeX < areaWidth) {
+                    paddleX = relativeX - paddleWidth / 2;
+                    if (paddleX < 0) paddleX = 0;
+                    if (paddleX + paddleWidth > areaWidth) paddleX = areaWidth - paddleWidth;
+                    paddle.style.left = paddleX + 'px';
+                }
+            });
+
+            function createBricks() {
+                bricks.forEach(b => b.element.remove());
+                bricks = [];
+
+                const rows = 5;
+                const cols = 8;
+                const padding = 8;
+                const offsetTop = 50;
+                const offsetLeft = 35;
+                const brickWidth = 60;
+                const brickHeight = 20;
+                const colors = ['#ff4d4d', '#ff944d', '#ffff4d', '#4dff4d', '#4d4dff'];
+
+                for(let c=0; c<cols; c++) {
+                    for(let r=0; r<rows; r++) {
+                        const bX = (c * (brickWidth + padding)) + offsetLeft;
+                        const bY = (r * (brickHeight + padding)) + offsetTop;
+                        
+                        const brickEl = document.createElement('div');
+                        brickEl.className = 'brick';
+                        brickEl.style.left = bX + 'px';
+                        brickEl.style.top = bY + 'px';
+                        brickEl.style.width = brickWidth + 'px';
+                        brickEl.style.height = brickHeight + 'px';
+                        brickEl.style.backgroundColor = colors[r];
+                        
+                        gameArea.appendChild(brickEl);
+                        bricks.push({ x: bX, y: bY, w: brickWidth, h: brickHeight, status: 1, element: brickEl });
+                    }
+                }
+            }
+
+            function startGame() {
+                if (isRunning) return;
+                createBricks();
+                score = 0;
+                scoreEl.innerText = 'Score: 0';
+                ballX = areaWidth / 2;
+                ballY = areaHeight - 40;
+                dx = 3 * (Math.random() > 0.5 ? 1 : -1);
+                dy = -3;
+                isRunning = true;
+                overlay.style.display = 'none';
+                loop();
+            }
+
+            function gameOver() {
+                isRunning = false;
+                cancelAnimationFrame(animationId);
+                title.innerText = "Game Over";
+                overlay.style.display = 'flex';
+            }
+            
+            function victory() {
+                isRunning = false;
+                cancelAnimationFrame(animationId);
+                title.innerText = "You Win!";
+                overlay.style.display = 'flex';
+            }
+
+            function loop() {
+                if (!isRunning) return;
+
+                ballX += dx;
+                ballY += dy;
+
+                // Wall Collision
+                if (ballX + dx > areaWidth - ballSize || ballX + dx < 0) dx = -dx;
+                if (ballY + dy < 0) dy = -dy;
+                else if (ballY + dy > areaHeight - ballSize) {
+                    gameOver();
+                    return;
+                }
+
+                // Paddle Collision
+                const paddleTop = areaHeight - 22; // 400 - 10(bottom) - 12(height)
+                if (ballY + ballSize >= paddleTop && ballY < paddleTop + 10 && dy > 0) {
+                    if (ballX + ballSize >= paddleX && ballX <= paddleX + paddleWidth) {
+                        dy = -dy;
+                        const center = paddleX + paddleWidth / 2;
+                        const hitPos = (ballX + ballSize/2) - center;
+                        dx = hitPos * 0.15; 
+                    }
+                }
+
+                // Brick Collision
+                let activeBricks = 0;
+                for(let i=0; i<bricks.length; i++) {
+                    let b = bricks[i];
+                    if(b.status === 1) {
+                        activeBricks++;
+                        if (ballX < b.x + b.w && ballX + ballSize > b.x && 
+                            ballY < b.y + b.h && ballY + ballSize > b.y) {
+                            dy = -dy;
+                            b.status = 0;
+                            b.element.style.display = 'none';
+                            score += 10;
+                            scoreEl.innerText = 'Score: ' + score;
+                            activeBricks--;
+                        }
+                    }
+                }
+
+                if (activeBricks === 0) {
+                    victory();
+                    return;
+                }
+
+                ball.style.left = ballX + 'px';
+                ball.style.top = ballY + 'px';
+
+                animationId = requestAnimationFrame(loop);
+            }
+        </script>
+</html>

@@ -7,12 +7,12 @@ export default class ListView extends jsContainer {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
-        return FocusableTag.observedAttributes;
+        return FocusableTag.observedAttributes.concat(["multiselect"]);
     }
     
     static { 
         this.#spvt.initAttributeProperties(this, {
-
+            multiselect: { isBool: true, caption: "multiSelect" }
         });
         this.#spvt.register(this);
     }
@@ -198,7 +198,7 @@ export default class ListView extends jsContainer {
             const pvt = this.$.#pvt;
             let item = e.detail;
 
-            if (item && (item.parentElement === this) && pvt.isTagType(item, pvt.tagType("listitem"))) {
+            if (item && pvt.isTagType(item, pvt.tagType("listitem"))) {
                 item.addEventListener("selectedChanged", pvt.onSelectedChanged);
             }
        },
@@ -206,7 +206,7 @@ export default class ListView extends jsContainer {
             const pvt = this.$.#pvt;
             let item = e.detail;
 
-            if (item && (item.parentElement === this) && pvt.isTagType(item, pvt.tagType("listitem"))) {
+            if (item && pvt.isTagType(item, pvt.tagType("listitem"))) {
                 item.removeEventListener("selectedChanged", pvt.onSelectedChanged);
             }
         },
@@ -241,6 +241,4 @@ export default class ListView extends jsContainer {
 
     get selectedItems() { return this.items.filter(v => v.selected); }
 
-    get multiSelect() { return this.hasAttribute("multiselect"); }
-    set multiSelect(v) { this.$.#pvt.setBoolAttribute("multiselect", v); }
 }

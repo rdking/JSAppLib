@@ -40,7 +40,13 @@ const Base = abstract(class Base extends HTMLElement {
 
             function getAccessors(attr, dflt) {
                 function getter() { return this.getAttribute(attr) ?? dflt; }
-                function setter(v) { this.setAttribute(attr, v); }
+                function setter(v) {
+                    if (v == null) {
+                        this.removeAttribute(attr);
+                    } else {
+                        this.setAttribute(attr, v);
+                    }
+                }
                 return {getter, setter};
             }
 
@@ -67,7 +73,11 @@ const Base = abstract(class Base extends HTMLElement {
                     return retval;
                 }
                 function setter(v) {
-                    this.setAttribute(attr, ["",void 0].includes(v) ? v : enum_t(v).name);
+                    if (v == null) {
+                        this.removeAttribute(attr);
+                    } else {
+                        this.setAttribute(attr, (v === "") ? v : enum_t(v).name);
+                    }
                 }
                 return {getter, setter};
             }
@@ -183,7 +193,8 @@ const Base = abstract(class Base extends HTMLElement {
 
             this.fireEvent("preRender");
 
-            const tm = JSAppLib.app.themeManager;
+            const app = JSAppLib.app;
+            const tm = app ? app.themeManager : null;
             let shadow = target || this.$.#shadowRoot;
             let styles = (!tm || !("ready" in tm)) ? [] : tm.getTagStyle(this, shadow);
 
@@ -195,7 +206,9 @@ const Base = abstract(class Base extends HTMLElement {
             shadow.adoptedStyleSheets = styles;
             for (let element of content) {
                 if (typeof(element) == "string") {
-                    shadow.innerHTML += element;
+                    let temp = document.createElement("template");
+                    temp.innerHTML = element;
+                    shadow.appendChild(temp.content);
                 }
                 else if (element instanceof Node) {
                     shadow.appendChild(element);
@@ -252,7 +265,7 @@ const Base = abstract(class Base extends HTMLElement {
         },
         renderContent(content, target) {
             const app = JSAppLib.app;
-            const tm = app.themeManager;
+            const tm = app ? app.themeManager : null;
 
             if (tm && (!("ready" in tm) || !tm.ready)) {
                 app.fireEvent("wait", {tag: this, method: this.$.#doRenderContent, params:[content, target]});
@@ -298,6 +311,8 @@ const Base = abstract(class Base extends HTMLElement {
                             for (let child of properties.children) {
                                 if (child instanceof Node)
                                     retval.appendChild(child);
+                                else if (typeof(child) === "string")
+                                    retval.appendChild(document.createTextNode(child));
                             }
                             break;
                         case "parent":
@@ -324,11 +339,10 @@ const Base = abstract(class Base extends HTMLElement {
         isTagType(target, type) {
             let retval = false;
             if ((target instanceof HTMLElement) && (typeof type === 'string')) {
-                // For non-library tags, a direct comparison is simple and effective.
-                if (!type.startsWith(`${Base.#prefix}-`)) {
-                    retval = target.tagName.toLowerCase() === type.toLowerCase();
+                if (target.tagName.toLowerCase() === type.toLowerCase()) {
+                    retval = true;
                 }
-                else {
+                else if (type.startsWith(`${Base.#prefix}-`)) {
                     const klass = this.$.#getClassForTag(type);
                     retval = klass ? (target instanceof klass) : false;
                 }
@@ -403,7 +417,7 @@ const Base = abstract(class Base extends HTMLElement {
                 retval = this.$.#pvt.shadowRoot.host;
             }
             else {
-                const shadow = ("$" in retval) ? retval.$.#shadowRoot : null;
+                const shadow = (retval instanceof Base) ? retval.$.#shadowRoot : null;
 
                 if (shadow) {
                     let slotName = this.getAttribute("slot") || "";
@@ -469,13 +483,6 @@ const Base = abstract(class Base extends HTMLElement {
                 { style:"background-color: red; color: yellow; font-weight: bold;" },
                 { innerHTML: "ERROR!" }));
         },
-        callEventHandler(event) {
-            const eventName = `on${event.toLowerCase()}`;
-            const value = this.getAttribute(eventName);
-            if (this.hasAttribute(eventName) && value.trim().length) {
-                Function(value).call();
-            }
-        },
         /**
          * Registers handler functions for each event key in the map.
          * @param {Object} pvt The protected container of the calling class.
@@ -499,9 +506,7 @@ const Base = abstract(class Base extends HTMLElement {
                     this.addEventListener(event, fn);
                 }
                 else if (typeof fn === "string") {
-                    //Seems redundant, but "this" isn't being bound properly without the bind call.
-                    const call = (function (...args) { pvt[fn](...args); }).bind(this);
-                    this.addEventListener(event, call);
+                    this.addEventListener(event, pvt[fn]);
                 }
                 else {
                     throw new AppLibError(`Attempted to register ${fn.toString} as an event handler for "${event}" on ${this.tagName}.`);
@@ -528,19 +533,11 @@ const Base = abstract(class Base extends HTMLElement {
             this.#shadowRoot = this.attachShadow({mode: "closed"});
         }
         pvt.registerEvents(pvt, {
-            render: "render",
-            preRender: "onPreRender",
-            postRender: "onPostRender",
+            render: () => pvt.render(),
+            preRender: () => pvt.onPreRender(),
+            postRender: () => pvt.onPostRender(),
             wait: "onWait"
         });
-
-        //Set up onxxx handlers for the static "observedEvents" array if declared
-        const events = this.cla$$.observedEvents;
-        if (Array.isArray(events)) {
-            for (let event of events) {
-                this.addEventListener(event, () => this.$.#pvt.callEventHandler(event));
-            }
-        }
     }
 
     attributeChangedCallback(attr, oldV, newV) {
@@ -552,7 +549,8 @@ const Base = abstract(class Base extends HTMLElement {
         const app = JSAppLib.app;
 
         if (app && pvt.isTagType(app, pvt.tagType("app"))) {
-            if (this.id && !(this.id in app)) {
+            const container = app.components || app;
+            if (this.id && !(this.id in container)) {
                 app.fireEvent("addComponent", this.id);
             }
         }
@@ -563,8 +561,9 @@ const Base = abstract(class Base extends HTMLElement {
         const pvt = this.$.#pvt;
         const app = JSAppLib.app;
 
-        if (app && pvt.isTagType(app, "app")) {
-            if (this.id in app) {
+        if (app && pvt.isTagType(app, pvt.tagType("app"))) {
+            const container = app.components || app;
+            if (this.id in container) {
                 app.fireEvent("removeComponent", this.id);
             }
         }

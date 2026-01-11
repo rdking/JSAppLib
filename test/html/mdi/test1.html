@@ -1,0 +1,316 @@
+<!doctype html>
+<html>
+    <head>
+    <title>DOM Pacman</title>
+        <style>
+            body {
+                background-color: #111;
+                color: white;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                margin: 0;
+                user-select: none;
+            }
+            #game-wrapper {
+                position: relative;
+            }
+            #game-board {
+                position: relative;
+                background-color: #000;
+                border: 4px solid #222;
+                margin-top: 10px;
+                overflow: hidden;
+            }
+            .wall {
+                position: absolute;
+                background-color: #1919A6;
+                border-radius: 2px;
+                box-sizing: border-box;
+                border: 1px solid #0d0d60;
+            }
+            .dot {
+                position: absolute;
+                background-color: #ffb8ae;
+                border-radius: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 1;
+            }
+            .pacman {
+                position: absolute;
+                background: conic-gradient(from 30deg, #FFD700 0deg 300deg, transparent 300deg 360deg);
+                border-radius: 50%;
+                z-index: 10;
+            }
+            .ghost {
+                position: absolute;
+                border-top-left-radius: 50%;
+                border-top-right-radius: 50%;
+                z-index: 9;
+            }
+            #score-display {
+                font-size: 24px;
+                font-weight: bold;
+            }
+            #overlay {
+                position: absolute;
+                inset: 0px;
+                background: rgba(0,0,0,0.85);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 100;
+            }
+            h1 {
+                white-space: nowrap;
+                padding-bottom: 2em;
+            }
+            button {
+                padding: 10px 20px;
+                font-size: 18px;
+                cursor: pointer;
+                background: #FFD700;
+                border: none;
+                color: #000;
+                border-radius: 4px;
+                margin-top: 20px;
+                font-weight: bold;
+            }
+            button:hover { background: #e6c200; }
+        </style>
+    </head>
+    <body>
+        
+        <div id="score-display">Score: <span id="score">0</span></div>
+        <div id="game-wrapper">
+            <div id="game-board"></div>
+            <div id="overlay">
+                <h1 id="msg">Pacman Clone</h1>
+                <button onclick="startGame()">Start Game</button>
+            </div>
+        </div>
+
+        <script>
+            const board = document.getElementById('game-board');
+            const scoreEl = document.getElementById('score');
+            const overlay = document.getElementById('overlay');
+            const msg = document.getElementById('msg');
+
+            const TILE = 24;
+            const SPEED = 2; // Must divide TILE evenly
+            const MAP_LAYOUT = [
+                "WWWWWWWWWWWWWWWWWWW",
+                "W........W........W",
+                "W.WW.WWW.W.WWW.WW.W",
+                "W.WW.WWW.W.WWW.WW.W",
+                "W.................W",
+                "W.WW.W.WWWWW.W.WW.W",
+                "W....W...W...W....W",
+                "WWWW.WWW W WWW.WWWW",
+                "   W.W       W.W   ",
+                "WWWW.W WW WW W.WWWW",
+                "    .  W G W  .    ",
+                "WWWW.W WWWWW W.WWWW",
+                "   W.W       W.W   ",
+                "WWWW.W WWWWW W.WWWW",
+                "W........W........W",
+                "W.WW.WWW.W.WWW.WW.W",
+                "W..W...........W..W",
+                "WW.W.W.WWWWW.W.W.WW",
+                "W....W...W...W....W",
+                "W.WWWWWW.W.WWWWWW.W",
+                "W.................W",
+                "WWWWWWWWWWWWWWWWWWW"
+            ];
+
+            let score = 0;
+            let gameRunning = false;
+            let animationId;
+            let entities = [];
+            let dots = [];
+            let walls = [];
+            let pacman = null;
+            let nextDir = { x: 0, y: 0 };
+
+            function createBoard() {
+                board.innerHTML = '';
+                walls = [];
+                dots = [];
+                entities = [];
+                
+                const rows = MAP_LAYOUT.length;
+                const cols = MAP_LAYOUT[0].length;
+                
+                board.style.width = (cols * TILE) + 'px';
+                board.style.height = (rows * TILE) + 'px';
+
+                for(let r=0; r<rows; r++) {
+                    for(let c=0; c<cols; c++) {
+                        const char = MAP_LAYOUT[r][c];
+                        const x = c * TILE;
+                        const y = r * TILE;
+
+                        if (char === 'W') {
+                            const w = document.createElement('div');
+                            w.className = 'wall';
+                            w.style.width = TILE + 'px';
+                            w.style.height = TILE + 'px';
+                            w.style.left = x + 'px';
+                            w.style.top = y + 'px';
+                            board.appendChild(w);
+                            walls.push({x, y});
+                        } else if (char === '.') {
+                            const d = document.createElement('div');
+                            d.className = 'dot';
+                            d.style.width = '4px';
+                            d.style.height = '4px';
+                            d.style.left = (x + TILE/2) + 'px';
+                            d.style.top = (y + TILE/2) + 'px';
+                            board.appendChild(d);
+                            dots.push({x, y, el: d, active: true});
+                        }
+                    }
+                }
+
+                // Spawn Entities
+                pacman = createEntity('pacman', 9 * TILE, 15 * TILE, '#FFD700');
+                entities.push(createEntity('ghost', 9 * TILE, 10 * TILE, 'red'));
+                entities.push(createEntity('ghost', 8 * TILE, 10 * TILE, 'cyan'));
+                entities.push(createEntity('ghost', 10 * TILE, 10 * TILE, 'pink'));
+            }
+
+            function createEntity(type, x, y, color) {
+                const el = document.createElement('div');
+                el.className = type;
+                el.style.width = TILE + 'px';
+                el.style.height = TILE + 'px';
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                if (type === 'ghost') el.style.backgroundColor = color;
+                board.appendChild(el);
+                return { type, x, y, dir: {x:0, y:0}, nextDir: {x:0, y:0}, el, speed: SPEED };
+            }
+
+            function isWall(x, y) {
+                const maxW = parseInt(board.style.width);
+                const maxH = parseInt(board.style.height);
+                if (x < 0 || x >= maxW) return false; // Tunnel
+                if (y < 0 || y >= maxH) return true;
+
+                const c = Math.floor((x + TILE/2) / TILE);
+                const r = Math.floor((y + TILE/2) / TILE);
+                
+                if (r >= 0 && r < MAP_LAYOUT.length && c >= 0 && c < MAP_LAYOUT[0].length) {
+                    return MAP_LAYOUT[r][c] === 'W';
+                }
+                return true;
+            }
+
+            function moveEntity(e) {
+                if (e.x % TILE === 0 && e.y % TILE === 0) {
+                    if (e.nextDir.x !== 0 || e.nextDir.y !== 0) {
+                        if (!isWall(e.x + e.nextDir.x * TILE, e.y + e.nextDir.y * TILE)) {
+                            e.dir = {...e.nextDir};
+                            if (e.type === 'pacman') {
+                                let angle = 0;
+                                if (e.dir.x === 1) angle = 0;
+                                if (e.dir.x === -1) angle = 180;
+                                if (e.dir.y === 1) angle = 90;
+                                if (e.dir.y === -1) angle = 270;
+                                e.el.style.transform = `rotate(${angle}deg)`;
+                            }
+                        }
+                    }
+                    
+                    if (e.type === 'ghost') {
+                        const dirs = [{x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}];
+                        const valid = dirs.filter(d => !isWall(e.x + d.x * TILE, e.y + d.y * TILE));
+                        const nonReverse = valid.filter(d => d.x !== -e.dir.x || d.y !== -e.dir.y);
+                        const options = nonReverse.length > 0 ? nonReverse : valid;
+                        if (options.length > 0) e.dir = options[Math.floor(Math.random() * options.length)];
+                    }
+
+                    if (isWall(e.x + e.dir.x * TILE, e.y + e.dir.y * TILE)) e.dir = {x:0, y:0};
+                }
+
+                e.x += e.dir.x * e.speed;
+                e.y += e.dir.y * e.speed;
+                e.el.style.left = e.x + 'px';
+                e.el.style.top = e.y + 'px';
+
+                if (e.x <= -TILE) e.x = parseInt(board.style.width);
+                else if (e.x >= parseInt(board.style.width)) e.x = -TILE;
+            }
+
+            function checkCollisions() {
+                const cx = pacman.x + TILE/2;
+                const cy = pacman.y + TILE/2;
+                
+                dots.forEach(d => {
+                    if (d.active) {
+                        const dx = (d.x + TILE/2) - cx;
+                        const dy = (d.y + TILE/2) - cy;
+                        if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+                            d.active = false;
+                            d.el.style.display = 'none';
+                            score += 10;
+                            scoreEl.innerText = score;
+                        }
+                    }
+                });
+
+                entities.forEach(e => {
+                    if (e.type === 'ghost') {
+                        const dist = Math.hypot(e.x - pacman.x, e.y - pacman.y);
+                        if (dist < TILE - 5) gameOver();
+                    }
+                });
+
+                if (dots.every(d => !d.active)) gameWin();
+            }
+
+            function loop() {
+                if (!gameRunning) return;
+                pacman.nextDir = nextDir;
+                moveEntity(pacman);
+                entities.forEach(e => { if (e.type === 'ghost') moveEntity(e); });
+                checkCollisions();
+                animationId = requestAnimationFrame(loop);
+            }
+
+            function startGame() {
+                createBoard();
+                score = 0;
+                scoreEl.innerText = '0';
+                nextDir = {x:0, y:0};
+                gameRunning = true;
+                overlay.style.display = 'none';
+                loop();
+            }
+
+            function gameOver() {
+                gameRunning = false;
+                msg.innerText = "Game Over";
+                overlay.style.display = 'flex';
+            }
+
+            function gameWin() {
+                gameRunning = false;
+                msg.innerText = "You Win!";
+                overlay.style.display = 'flex';
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (!gameRunning) return;
+                if (e.key === 'ArrowRight') nextDir = {x: 1, y: 0};
+                if (e.key === 'ArrowLeft') nextDir = {x: -1, y: 0};
+                if (e.key === 'ArrowUp') nextDir = {x: 0, y: -1};
+                if (e.key === 'ArrowDown') nextDir = {x: 0, y: 1};
+            });
+        </script>
+    </body>
+</html>

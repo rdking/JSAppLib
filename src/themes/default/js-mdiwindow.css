@@ -12,13 +12,16 @@
     background-color: var(--brush-normal);
     border: 1px solid var(--brush-container-disabled);
     --deselected-pointer-events: none;
+    min-width: 160px;
+    min-height: 120The px;
 }
 
 :host(.minimized.ontop),
 :host(.minimized) {
+    position: relative;
     height: var(--title-size);
     width: 160px;
-    flex: 0 0 0;
+    flex: 0 0 auto;
     margin-right: 2px;
     margin-bottom: 2px;
     box-shadow: none;
@@ -30,7 +33,7 @@
     --deselected-pointer-events: auto;
 }
 
-:host(.maximized) {
+:host(.maximized:not(.minimized)) {
     inset: 0 !important;
     width: unset !important;
 }

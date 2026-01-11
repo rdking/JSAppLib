@@ -71,7 +71,7 @@ export default class MDIPanel extends ControlBase {
             const overlay = this.$.#pvt.getShadowChild("div",".dragoverlay");
             if (e.detail) {
                 overlay.classList.remove("dragging");
-                e.detail.style.zIndex -= 1000000;
+                e.detail.style.zIndex = parseInt(e.detail.style.zIndex) - 1000000;
             } else {
                 overlay.classList.remove("resizing");
             }
@@ -90,14 +90,15 @@ export default class MDIPanel extends ControlBase {
 
     appendChild(child) {
         try {
+            const pvt = this.$.#pvt;
             let index = this.childElementCount;
             super.appendChild(child);
-            this.$.#pvt.validateChildren("js-mdiwindow", "MDIPanel can only hold MDIWindows");
+            pvt.validateChildren(pvt.tagType("mdiwindow"), "MDIPanel can only hold MDIWindows");
             child.style.zIndex = index;
             if (!child.id) {
                 child.id = `mdiwindow${++this.$.#anonId}`;
             }
-    }
+        }
         catch(e) {
             this.removeChild(child);
             throw e;
@@ -105,19 +106,22 @@ export default class MDIPanel extends ControlBase {
     }
 
     moveToTop(lastChild) {
-        let index = parseInt(lastChild.style.zIndex);
+        let index = 0;
 
-        [...this.children].forEach(child => {
-            let val = parseInt(child.style.zIndex);
-            if (val == this.childElementCount - 1) {
+        [...this.children].sort((a, b) => {
+            return parseInt(b.style.zIndex) - parseInt(a.style.zIndex);
+        }).forEach(child => {
+            if (child !== lastChild) {
                 child.classList.remove("ontop");
-            }
-            if (val > index) {
-                child.style.zIndex = val - 1;
+                child.style.zIndex = index++;
             }
         });
         
-        lastChild.style.zIndex = this.childElementCount - 1;
+        if (parseInt(lastChild.style.zIndex) > index) {
+            index += 1000000;
+        }
+
+        lastChild.style.zIndex = index;
         lastChild.classList.add("ontop");
     }
 
