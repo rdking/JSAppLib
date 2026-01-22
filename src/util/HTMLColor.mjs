@@ -1,4 +1,4 @@
-import { saveSelf } from "../../../cfprotected/index.mjs";
+import { saveSelf } from "../../node_modules/cfprotected/index.mjs";
 
 const hexc = /^#(?:[0-9a-fA-F]{2}){3,4}$/;
 const rgba = /^rgb(a)?\(\s*([12]?\d{1,2})\s*,\s*([12]?\d{1,2})\s*,\s*([12]?\d{1,2})\s*(?:,\s*([01]?(?:\.\d+)?)\s*)?\)$/;
@@ -154,20 +154,26 @@ const colorNames = {
     "YellowGreen": "#9ACD32"
 };
 
-for (let name in colorNames) {
+const keys = Object.keys(colorNames);
+for (const name of keys) {
     Object.defineProperty(colorNames, name.toLowerCase(), 
         Object.getOwnPropertyDescriptor(colorNames, name));
 }
 
 export default class HTMLColor {
     static [Symbol.hasInstance](inst) {
-        let retval = false;
         try {
-            retval = inst && (typeof(inst.#parseHex) == "function");
+            // Accessing a private field will succeed only if `inst` is an instance
+            // of this class. We use `inst.$` to robustly handle proxied objects.
+            // A simple access is enough to check for identity; the value is not needed.
+            void inst.$.#red;
+            return true;
         }
-        catch(e) {}
-
-        return retval;
+        catch (e) {
+            // A TypeError will be thrown if `inst` is not an HTMLColor instance
+            // (or a proxy of one), so we can safely return false.
+            return false;
+        }
     }
 
     static {
@@ -224,20 +230,27 @@ export default class HTMLColor {
         r /= 255;
         g /= 255;
         b /= 255;
-        const l = Math.max(r, g, b);
-        const s = l - Math.min(r, g, b);
-        const h = s
-            ? l === r
-                ? (g - b) / s
-                : l === g
-                    ? 2 + (b - r) / s
-                    : 4 + (r - g) / s
-            : 0;
-        return [
-            (60 * h < 0 ? 60 * h + 360 : 60 * h).toFixed(1),
-            (100 * (s ? (l <= 0.5 ? s / (2 * l - s) : s / (2 - (2 * l - s))) : 0)).toFixed(1),
-            ((100 * (2 * l - s)) / 2).toFixed(1)
-        ];
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h = 0, s = 0, l = (max + min) / 2;
+
+        if (max !== min) {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+
+        h = h * 360;
+        s = s * 100;
+        l = l * 100;
+
+        return [h.toFixed(1), s.toFixed(1), l.toFixed(1)];
     }
 
     #parseHSLA(color) {
@@ -262,8 +275,8 @@ export default class HTMLColor {
         if (typeof(color) == "string") {
             color = color.trim();
 
-            if (colorNames.hasOwnProperty(color)) {
-                color = colorNames[color];
+            if (colorNames.hasOwnProperty(color.toLowerCase())) {
+                color = colorNames[color.toLowerCase()];
             }
 
             if (hexc.test(color)) {
@@ -280,38 +293,43 @@ export default class HTMLColor {
             }
         }
         else if (Array.isArray(color)) {
-            function clamp(v, min, max) {
-                return Math.min(max, Math.max(min, v));
+            let [red = 0, green = 0, blue = 0, alpha] = color;
+
+            if (red < 0 || red > 255 || green < 0 || green > 255 || blue < 0 || blue > 255) {
+                throw new TypeError('RGB values must be between 0 and 255.');
             }
-    
-            let [red, green, blue, alpha] = color;
-            this.#red = ~~clamp(parseInt(red) | 0, 0, 255);
-            this.#green = ~~clamp(parseInt(green) | 0, 0, 255);
-            this.#blue = ~~clamp(parseInt(blue) | 0, 0, 255);
-            if (alpha) {
-                this.#alpha = clamp(parseFloat(alpha) | 0, 0, 1);
+            if (alpha !== undefined && (alpha < 0 || alpha > 1)) {
+                throw new TypeError('Alpha value must be between 0 and 1.');
+            }
+
+            this.#red = red;
+            this.#green = green;
+            this.#blue = blue;
+            if (alpha !== undefined) {
+                this.#alpha = ~~(255 * alpha);
             }
         }
     }
 
-    get red() { return this.#red; }
-    get green() { return this.#green; }
-    get blue() { return this.#blue; }
-    get alpha() { return this.#alpha; }
+    get red() { return this.$.#red; }
+    get green() { return this.$.#green; }
+    get blue() { return this.$.#blue; }
+    get alpha() { return this.$.#alpha; }
     get rgbaCode() {
-        let defaultAlpha = this.#alpha == 255;
-        let raw = (defaultAlpha ? 0 : this.#alpha << 24) + (this.#red << 16) + (this.#green << 8) + this.blue;
-        let len = 6 + (defaultAlpha ? 0 : 2);
-        let retval = raw.toString(16);
+        const defaultAlpha = this.$.#alpha == 255;
+        // This logic produces a non-standard #AARRGGBB format to match the original implementation's parser.
+        const raw = (defaultAlpha ? 0 : this.$.#alpha << 24) + (this.$.#red << 16) + (this.$.#green << 8) + this.$.#blue;
+        const len = defaultAlpha ? 6 : 8;
+        
+        // Use >>> 0 to ensure the raw number is treated as unsigned for hex conversion.
+        const hex = (raw >>> 0).toString(16);
 
-        retval = "#" + (Array(len - retval.length + 1).join("0")) + retval;
-        return retval;
+        return "#" + hex.padStart(len, "0");
     }
     get hslCode() {
-        let hsl = this.#RGBtoHSL(this.$.#red, this.$.#green, this.$.#blue);
-        let defaultAlpha = this.#alpha == 255;
+        const hsl = this.#RGBtoHSL(this.$.#red, this.$.#green, this.$.#blue);
+        const defaultAlpha = this.$.#alpha == 255;
 
-        retval = `hsl${defaultAlpha? "": "a"}(${hsl[0]},${hsl[1]}%,${hsl[2]}%${defaultAlpha? "": `,${this.$.#alpha/255}`})`;
-        return retval;
+        return `hsl${defaultAlpha ? "" : "a"}(${hsl[0]},${hsl[1]}%,${hsl[2]}%${defaultAlpha ? "" : `,${this.$.#alpha / 255}`})`;
     }
 }

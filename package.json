@@ -4,7 +4,14 @@
   "description": "HTML Component library for simple, straight-forward web application development.",
   "main": "src/jsAppLib.js",
   "scripts": {
-    "test": "jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "verbose": true,
+    "testMatch": [
+      "**/test/**/*.mjs"
+    ]
   },
   "repository": {
     "type": "git",
@@ -25,7 +32,8 @@
   },
   "homepage": "https://github.com/rdking/JSAppLib#readme",
   "devDependencies": {
-    "jest": "^28.1.0"
+    "jest": "^28.1.3",
+    "jest-environment-jsdom": "^30.2.0"
   },
   "dependencies": {
     "cfprotected": "^1.1.4",

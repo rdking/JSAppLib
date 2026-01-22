@@ -1,27 +1,72 @@
-import { final, saveSelf } from "../../../cfprotected/index.mjs";
+import { final, saveSelf } from "../../node_modules/cfprotected/index.mjs";
 
 const Semaphore = final(class Semaphore {
     #locked = false;
+    #queue = [];
 
     constructor() {
         saveSelf(this, "$");
     }
 
-    lock(onSuccess, onFailure) {
-        if (!this.$.#locked) {
-            if (typeof(onSuccess) !== "function") {
-                throw new TypeError("Expected onSuccess to be a function");
-            }
+    /**
+     * @private
+     * @returns {void}
+     */
+    #dispatch() {
+        if (!this.$.#locked && this.$.#queue.length > 0) {
             this.$.#locked = true;
+            const task = this.$.#queue.shift();
+            
+            // Yield to the event loop before executing the task. This prevents a
+            // long chain of synchronous tasks from blocking the main thread, 
+            // allowing other events (like new calls to lock()) to be processed.
+            setTimeout(() => task(), 0);
+        }
+    }
+    
+    /**
+     * @param {function} callback the callback to run
+     * @returns {void}
+     */
+    lock(callback) {
+        if (typeof callback !== 'function') {
+            throw new TypeError('callback must be a function');
+        }
+        this.$.#queue.push(() => {
             try {
-                onSuccess();
-            } finally {
-                this.$.#locked = false;
+                callback();
             }
+            finally {
+                this.$.#locked = false;
+                this.#dispatch();
+            }
+        });
+        this.#dispatch();
+    }
+
+    /**
+     * @param {function} callback the async callback to run
+     * @returns {Promise<any>}
+     */
+    lockAsync(callback) {
+        if (typeof callback !== 'function') {
+            throw new TypeError('callback must be a function');
         }
-        else if (typeof(onFailure) === "function") {
-            onFailure();
-        }
+        return new Promise((resolve, reject) => {
+            this.$.#queue.push(async () => {
+                try {
+                    const result = await callback();
+                    resolve(result);
+                } catch(e) {
+                    reject(e);
+                }
+                finally {
+                    this.$.#locked = false;
+                    this.#dispatch();
+                }
+            });
+            this.#dispatch();
+        });
     }
 });
 

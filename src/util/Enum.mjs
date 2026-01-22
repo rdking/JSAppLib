@@ -49,23 +49,25 @@ class EnumBase extends BoundFunction {
 }
 
 export default class Enum extends EnumBase {
-    #keys = [];
-    #values = [];
+    #keys = new Set();
+    #valueMap = new Map(); // Maps value -> key
 
     static #EnumType(kv) {
         let retval;
         if (kv instanceof this) {
             retval = this[kv.name];
         }
-        else if (this.#keys.includes(kv)) {
+        // O(1) lookup
+        else if (this.#keys.has(kv)) {
             retval = this[kv];
         }
-        else if (this.#values.includes(kv)) {
-            let index = this.#values.indexOf(kv);
-            retval = this[this.#keys[index]];
+        // O(1) lookup
+        else if (this.#valueMap.has(kv)) {
+            const key = this.#valueMap.get(kv);
+            retval = this[key];
         }
         else {
-            throw new TypeError('No matching enum value found');
+            throw new TypeError(`No matching enum value found for '${kv}' in enum '${this.name}'`);
         }
         
         return retval;
@@ -75,8 +77,10 @@ export default class Enum extends EnumBase {
         return inst && (typeof(inst) == "object") 
             && ("name" in inst) && ("value" in inst)
             && (Object.getPrototypeOf(inst) == null)
-            && this.pvt.#keys.includes(inst.name)
-            && this.pvt.#values.includes(inst.value)
+            // O(1) check
+            && this.pvt.#keys.has(inst.name)
+            // O(1) check
+            && this.pvt.#valueMap.has(inst.value)
             && (this.pvt[inst.name].value === inst.value);
     }
 
@@ -97,13 +101,17 @@ export default class Enum extends EnumBase {
 
         for (let key in values) {
             const value = values[key];
-            this.#keys.push(key);
-            this.#values.push(value);
+            this.#keys.add(key);
+            // Only map the first key found for a given value to preserve original logic.
+            if (!this.#valueMap.has(value)) {
+                this.#valueMap.set(value, key);
+            }
             this[key] = new this(key, value);
         }
 
         let bound = this.bound;
         delete this.bound;
+        Object.defineProperty(this, "name", { value: name, enumerable: false, configurable: false, writable: false});
         Object.freeze(bound);
         Object.freeze(this);
         Object.freeze(this.prototype);
