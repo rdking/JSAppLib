@@ -1,4 +1,4 @@
-import HTMLColor from '../../src/util/HTMLColor.mjs';
+import HTMLColor from '../../../src/util/HTMLColor.mjs';
 
 describe('HTMLColor', () => {
     describe('Construction from String', () => {

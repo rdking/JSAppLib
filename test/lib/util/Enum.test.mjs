@@ -1,4 +1,4 @@
-import Enum from '../../src/util/Enum.mjs';
+import Enum from '../../../src/util/Enum.mjs';
 
 describe('Enum', () => {
   const Colors = new Enum('Colors', {

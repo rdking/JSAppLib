@@ -1,4 +1,4 @@
-import Semaphore from '../../src/util/Semaphore.mjs';
+import Semaphore from '../../../src/util/Semaphore.mjs';
 import { jest } from '@jest/globals';
 
 describe('Semaphore', () => {

@@ -48,6 +48,12 @@ class EnumBase extends BoundFunction {
     }
 }
 
+/**
+ * An enumeration creation class. Each Enum instance is itself an enum function
+ * with the given members as direct members of the function. The function itself
+ * can convert a non-enum value into the matching enum value for that type if 
+ * the name or value matches.
+ */
 export default class Enum extends EnumBase {
     #keys = new Set();
     #valueMap = new Map(); // Maps value -> key
@@ -84,6 +90,12 @@ export default class Enum extends EnumBase {
             && (this.pvt[inst.name].value === inst.value);
     }
 
+    /**
+     * Creates a new enum object of the given name using the object or array as members.
+     * @param {String} name The name of this enum type.
+     * @param {Array|Object} values An array of strings or an object of key/value pairs representing the enum members.
+     * @returns {function} A new enum function.
+     */
     constructor(name, values) {
         if (!(values && (typeof(values) == "object"))) {
             throw new TypeError("Values must be supplied by either an object or an array");

@@ -1,5 +1,5 @@
 import { describe, expect, test, beforeEach, afterEach, jest } from '@jest/globals';
-import WaitBox from '../../src/util/WaitBox.mjs';
+import WaitBox from '../../../src/util/WaitBox.mjs';
 
 describe('WaitBox', () => {
     let waitBox;
