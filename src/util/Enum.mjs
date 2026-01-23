@@ -44,6 +44,8 @@ class EnumBase extends BoundFunction {
     constructor(name, initfn) {
         let fn = EnumBase.#create.toString();
         fn = fn.substring(fn.indexOf("{") + 1, fn.lastIndexOf("}")).trim();
+        // Remove code coverage artifacts
+        fn = fn.replace(/cov_[a-z0-9]+(\(\))?\.[a-z](\[\d+\])+\+\+;?/gi, "");
         super(name, initfn, "initfn", "name", "value", fn);
     }
 }

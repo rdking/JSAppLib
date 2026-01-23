@@ -4,7 +4,8 @@
   "description": "HTML Component library for simple, straight-forward web application development.",
   "main": "src/jsAppLib.js",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },
   "jest": {
     "testEnvironment": "jsdom",
