@@ -1,4 +1,4 @@
-import { share } from "../../cfprotected/index.mjs";
+import { share } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
 
 export default class ListItem extends Container {

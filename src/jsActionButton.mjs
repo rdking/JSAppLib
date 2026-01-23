@@ -1,4 +1,4 @@
-import { share } from "../../cfprotected/index.mjs";
+import { share } from "../node_modules/cfprotected/index.mjs";
 import ActionControlBase from "./jsActionControlBase.mjs";
 import Enum from "./util/Enum.mjs";
 

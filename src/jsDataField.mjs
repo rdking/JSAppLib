@@ -1,14 +1,14 @@
-import { share, saveSelf, accessor, abstract, final } from "../../cfprotected/index.mjs";
-import Base from "./jsBase.mjs";
+import { share, saveSelf, accessor, abstract, final } from "../node_modules/cfprotected/index.mjs";
+import ManageableBase from "./jsManageableBase.mjs";
 
-export default class DataField extends Base {
+export default class DataField extends ManageableBase {
     static #spvt = share(this, {});
 
     static #DataType = new Enum("DataType", [ "array", "number", "string", "json" ]);
     static get DataType() { return this.$.#DataType; }
 
     static get observedAttributes() {
-        return [ "datatype", "name" ];
+        return ManageableBase.observedAttributes.concat([ "name", "type", "size", "precision", "validator" ]);
     }
 
     static {
@@ -16,8 +16,11 @@ export default class DataField extends Base {
         saveSelf(this, "$");
 
         spvt.initAttributeProperties(this, {
-            datatype: { readonly: true, enumType: this.#DataType },
-            name: { readonly: true }
+            name: { readonly: true },
+            type: { readonly: true, enumType: this.#DataType },
+            size: { readonly: true, number: { range: [ 0, 100 ], step: 1 } },
+            precision: { readonly: true },
+            validator: { readonly: true }
         });
         spvt.register(this);
     }

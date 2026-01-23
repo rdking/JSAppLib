@@ -1,4 +1,4 @@
-import { share } from "../../cfprotected/index.mjs";
+import { share } from "../node_modules/cfprotected/index.mjs";
 import Base from "./jsBase.mjs";
 
 export default class StatusBar extends Base {

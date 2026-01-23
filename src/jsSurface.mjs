@@ -1,4 +1,4 @@
-import { share, accessor, abstract, final } from "../../cfprotected/index.mjs";
+import { share, accessor, abstract, final } from "../node_modules/cfprotected/index.mjs";
 import Base from "./jsBase.mjs";
 import HTMLColor from "./util/HTMLColor.mjs";
 import Enum from "./util/Enum.mjs";

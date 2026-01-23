@@ -1,4 +1,4 @@
-import { share, abstract, define } from "../../cfprotected/index.mjs";
+import { share, abstract, define } from "../node_modules/cfprotected/index.mjs";
 import Base from "./jsBase.mjs"
 
 export default abstract(class DataHandlerBase extends Base {

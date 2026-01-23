@@ -1,4 +1,4 @@
-import { share, define, accessor } from "../../cfprotected/index.mjs";
+import { share, define, accessor } from "../node_modules/cfprotected/index.mjs";
 import ListItem from "./jsListItem.mjs"
 
 export default class TreeLeaf extends ListItem {

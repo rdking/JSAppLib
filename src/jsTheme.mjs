@@ -1,4 +1,4 @@
-import { share, final } from "../../cfprotected/index.mjs";
+import { share, final } from "../node_modules/cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
 import ManageableBase from "./jsManageableBase.mjs";
 

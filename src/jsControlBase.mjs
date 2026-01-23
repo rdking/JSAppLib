@@ -1,4 +1,4 @@
-import { share, accessor, abstract, final } from "../../cfprotected/index.mjs";
+import { share, accessor, abstract, final } from "../node_modules/cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
 import Base from "./jsBase.mjs";
 

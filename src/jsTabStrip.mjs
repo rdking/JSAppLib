@@ -1,4 +1,4 @@
-import { share, saveSelf, accessor, abstract, final } from "../../cfprotected/index.mjs";
+import { share, saveSelf, accessor, abstract, final } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
 
 export default class TabStrip extends Container {

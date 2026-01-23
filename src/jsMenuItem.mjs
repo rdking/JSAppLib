@@ -1,4 +1,4 @@
-import { share, saveSelf, accessor } from "../../cfprotected/index.mjs";
+import { share, saveSelf, accessor } from "../node_modules/cfprotected/index.mjs";
 import ActionControlBase from "./jsActionControlBase.mjs";
 import Action from "./jsAction.mjs";
 

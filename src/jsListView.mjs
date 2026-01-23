@@ -1,4 +1,4 @@
-import { share, accessor } from "../../cfprotected/index.mjs";
+import { share, accessor } from "../node_modules/cfprotected/index.mjs";
 import FocusableTag from "./jsFocusableTag.mjs";
 import jsContainer from "./jsContainer.mjs";
 import Semaphore from "./util/Semaphore.mjs";

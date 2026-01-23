@@ -1,4 +1,4 @@
-import { share, abstract } from "../../cfprotected/index.mjs";
+import { share, abstract } from "../node_modules/cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
 import FocusableTag from "./jsFocusableTag.mjs";
 

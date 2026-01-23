@@ -1,4 +1,4 @@
-import { share, abstract } from "../../cfprotected/index.mjs";
+import { share, abstract } from "../node_modules/cfprotected/index.mjs";
 import Base from "./jsBase.mjs";
 
 const ManageableBase = abstract(class ManageableBase extends Base {

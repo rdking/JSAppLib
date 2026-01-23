@@ -1,4 +1,4 @@
-import { share } from "../../cfprotected/index.mjs";
+import { share } from "../node_modules/cfprotected/index.mjs";
 import ManageableBase from "./jsManageableBase.mjs";
 
 export default class DataFormat extends ManageableBase {

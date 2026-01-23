@@ -1,4 +1,4 @@
-import { share, abstract } from "../../cfprotected/index.mjs";
+import { share, abstract } from "../node_modules/cfprotected/index.mjs";
 import ControlBase from "./jsControlBase.mjs";
 
 const FocusableTag = abstract(class FocusableTag extends ControlBase {

@@ -1,11 +1,11 @@
-import { share, saveSelf, accessor, abstract, final } from "../../cfprotected/index.mjs";
-import Base from "./jsBase.mjs";
+import { share, saveSelf, accessor, abstract, final } from "../node_modules/cfprotected/index.mjs";
+import DataRecord from "./jsDataRecord.mjs";
 
-export default class DataSchema extends Base {
+export default class DataSchema extends DataRecord {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
-        return [];
+        return DataRecord.observedAttributes.concat(["tablename", "indexfield"]);
     }
 
     static {
@@ -17,11 +17,6 @@ export default class DataSchema extends Base {
     }
 
     #pvt = share(this, DataSchema, {
-        render() {
-            const pvt = this.$.#pvt;
-
-            pvt.make("slot");
-        }
     });
 
     constructor() {

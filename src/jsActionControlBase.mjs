@@ -1,4 +1,4 @@
-import { share, abstract } from "../../cfprotected/index.mjs";
+import { share, abstract } from "../node_modules/cfprotected/index.mjs";
 import Enum from "./util/Enum.mjs";
 import ControlBase from "./jsControlBase.mjs";
 

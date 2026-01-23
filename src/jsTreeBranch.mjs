@@ -1,4 +1,4 @@
-import { share, define } from "../../cfprotected/index.mjs";
+import { share, define } from "../node_modules/cfprotected/index.mjs";
 import TreeLeaf from "./jsTreeLeaf.mjs";
 import Semaphore from "./util/Semaphore.mjs";
 
@@ -32,7 +32,7 @@ export default class TreeBranch extends TreeLeaf {
                     const pvt = this.$.#pvt;
                     const cpanel = pvt.getShadowChild("collapsepanel");
                     const caption = pvt.getChild("treeleaf", "[iscaption]")
-                    cpanel.collapsed = !!v;
+                    cpanel[`${!!v? "set": "remove"}Attribute`]("collapsed", "");
                     caption.fireEvent("updateMarker");
                 }
             },
@@ -115,7 +115,10 @@ export default class TreeBranch extends TreeLeaf {
         },
         onCollapsibleChanged(e) {
             if (!this.collapsible) {
-                this.setBoolAttribute("collapsed", false);
+                if (this.isRendered)
+                    this.collapsed = false;
+                else
+                    this.removeAttribute("collapsed");
             }
         }
     });

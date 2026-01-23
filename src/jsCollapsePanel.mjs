@@ -1,4 +1,4 @@
-import { share } from "../../cfprotected/index.mjs";
+import { share } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
 
 export default class CollapsePanel extends Container {
@@ -21,10 +21,11 @@ export default class CollapsePanel extends Container {
     #pvt = share(this, CollapsePanel, {
         render() {
             const pvt = this.$.#pvt;
+            let header;
 
             pvt.renderContent(pvt.make("div", {}, {
                 children: [
-                    pvt.make("div", {
+                    header = pvt.make("div", {
                         class: "header"
                     }, {
                         children: [
@@ -43,7 +44,6 @@ export default class CollapsePanel extends Container {
                 ]
             }));
 
-            let header = pvt.shadowRoot.querySelector("div.header");
             header.addEventListener("click", pvt.onHeaderClick);
         },
         onHeaderClick(e) {

@@ -1,10 +1,15 @@
-import { share, saveSelf, accessor, abstract } from "../../cfprotected/index.mjs";
+import { share, saveSelf, accessor, abstract } from "../node_modules/cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
 import WaitBox from "./util/WaitBox.mjs";
 
 const Base = abstract(class Base extends HTMLElement {
     static get #prefix() { return "js"; }
 
+    /**
+     * @summary Gets the component's registered HTML tag name.
+     * @returns {string} The HTML tag name as a string (e.g., 'js-app').
+     * @readonly
+     */
     static get tagName() { return Base.$.#tagNames.get(this); }
 
     static #tagNames = new Map();
@@ -53,7 +58,7 @@ const Base = abstract(class Base extends HTMLElement {
             function getBAccessors(attr) {
                 function getter() {
                     return this.hasAttribute(attr) &&
-                        !["no", "false", "0"].includes(this.getAttribute(attr).toLowerCase().trim());
+                        !["no", "false", "0", "null", ""].includes(this.getAttribute(attr).toLowerCase().trim());
                 }
                 function setter(v) {
                     if (v) {
@@ -82,6 +87,21 @@ const Base = abstract(class Base extends HTMLElement {
                 return {getter, setter};
             }
 
+            function getNAccessors(attr, range, step, dflt) {
+                const [min, max] = range;
+                function getter() {
+                    return Number(this.getAttribute(attr) || dflt || 0);
+                }
+                function setter(v) {
+                    const val = Number(v);
+                    if (isNaN(val) || ((typeof min == "number") && (val < min)) || ((typeof max == "number") && (val > max))){
+                        throw new AppLibError(`"${v}" is not a valid numeric value for attribute "${attr}`);
+                    }
+                    this.setAttribute(attr, val);
+                }
+                return {getter, setter};
+            }
+
             function getDef(val, access) {
                 let retval = { enumerable: true };
                 if (!val.writeonly) {
@@ -103,6 +123,10 @@ const Base = abstract(class Base extends HTMLElement {
                         else if (val.isBool) {
                             let name = val.caption || "is" + attr.substring(0,1 ).toUpperCase() + attr.substring(1);
                             Object.defineProperty(proto, name, getDef(val, getBAccessors(attr.toLocaleLowerCase())));
+                        }
+                        else if (val.number && typeof(val.number) == "object") {
+                            const { range, step } = val.number;
+                            Object.defineProperty(proto, val.caption || attr, getDef(val, getNAccessors(attr.toLocaleLowerCase(), range, step, val.default)));
                         }
                         else {
                             Object.defineProperty(proto, val.caption || attr, getDef(val, getAccessors(attr.toLocaleLowerCase(), val.default)));
@@ -128,6 +152,14 @@ const Base = abstract(class Base extends HTMLElement {
             // This method now only collects the class and its tag name.
             // The actual registration is handled by registerElements().
         },
+        /**
+         * @summary Defines all queued custom elements.
+         * @description Iterates through all component classes gathered by the `register` method
+         * and officially defines them with the browser's `customElements.define()` API.
+         * This ensures that all components are registered at a controlled time.
+         * This method is intended to be called by `jsApp.ready()` after all library modules are loaded.
+         * @protected
+         */
         registerElements() {
             const iter = Base.$.#tagClasses[Symbol.iterator]();
             for (const [tag, klass] of iter) {
@@ -178,10 +210,7 @@ const Base = abstract(class Base extends HTMLElement {
         return [ "action", "theme", "style", "class" ];
     }
 
-    //Needed as the base of the concatenation chain.
-    static get observedEvents() {
-        return [];
-    }
+
 
     #rendering = false;
     #shadowRoot;

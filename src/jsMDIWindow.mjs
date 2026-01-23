@@ -1,4 +1,4 @@
-import { share, saveSelf } from "../../cfprotected/index.mjs";
+import { share, saveSelf } from "../node_modules/cfprotected/index.mjs";
 import ControlBase from "./jsControlBase.mjs";
 
 export default class MDIWindow extends ControlBase {

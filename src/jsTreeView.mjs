@@ -1,4 +1,4 @@
-import { share, accessor } from "../../cfprotected/index.mjs";
+import { share, accessor } from "../node_modules/cfprotected/index.mjs";
 import ListView from "./jsListView.mjs";
 
 export default class TreeView extends ListView {

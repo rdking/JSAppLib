@@ -1,4 +1,4 @@
-import { share } from "../../cfprotected/index.mjs";
+import { share } from "../node_modules/cfprotected/index.mjs";
 import ManagerBase from "./jsManagerBase.mjs";
 import AppLibError from "./errors/AppLibError.mjs"
 
@@ -22,7 +22,7 @@ export default class DataManager extends ManagerBase {
         spvt.register(this); 
     }
 
-    #pvt = share(this, DataFormatManager, {
+    #pvt = share(this, DataManager, {
         onPostRender() {
             const pvt = this.$.#pvt;
             pvt.validateChildren(pvt.tagType("datasource"), 

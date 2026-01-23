@@ -1,4 +1,4 @@
-import { share, saveSelf } from "../../cfprotected/index.mjs";
+import { share, saveSelf } from "../node_modules/cfprotected/index.mjs";
 import ActionControlBase from "./jsActionControlBase.mjs";
 import Container from "./jsContainer.mjs";
 import SCSPanel from "./jsSCSPanel.mjs";

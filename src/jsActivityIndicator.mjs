@@ -1,4 +1,4 @@
-import { share, final } from "../../cfprotected/index.mjs";
+import { share, final } from "../node_modules/cfprotected/index.mjs";
 import ControlBase from "./jsControlBase.mjs";
 
 const ActivityIndicator = final(class ActivityIndicator extends ControlBase {

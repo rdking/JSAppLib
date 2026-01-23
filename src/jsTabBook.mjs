@@ -1,4 +1,4 @@
-import { share, accessor, abstract, final, saveSelf } from "../../cfprotected/index.mjs";
+import { share, accessor, abstract, final, saveSelf } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
 import Enum from "./util/Enum.mjs";
 

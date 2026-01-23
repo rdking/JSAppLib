@@ -1,4 +1,4 @@
-import { share, accessor } from "../../cfprotected/index.mjs";
+import { share, accessor } from "../node_modules/cfprotected/index.mjs";
 import SplitPanel from "./jsSplitPanel.mjs";
 
 export default class VSplitPanel extends SplitPanel {

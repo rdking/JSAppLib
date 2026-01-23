@@ -1,4 +1,4 @@
-import { share, abstract, accessor } from "../../cfprotected/index.mjs";
+import { share, abstract, accessor } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
 
 const SplitPanel = abstract(class SplitPanel extends Container {

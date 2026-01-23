@@ -1,4 +1,4 @@
-import { share, accessor } from "../../cfprotected/index.mjs";
+import { share, accessor } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
 
 export default class Menu extends Container {
