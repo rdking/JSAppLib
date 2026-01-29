@@ -15,7 +15,7 @@ export default class Menu extends Container {
                 caption: "showIcons",
                 getter: function showIconsGetter() {
                     const parent = this.parentElement.parentElement;
-                    let retval = this.showIcons;
+                    let retval = this.hasAttribute("showicons");
 
                     if (parent instanceof Menu) {
                         retval |= parent.showIcons;
