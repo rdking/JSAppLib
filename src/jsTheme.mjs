@@ -181,9 +181,9 @@ const Theme = final(class Theme extends ManageableBase {
     componentLink(tag, shadow) {
         const sheets = this.$.#componentSheets;
         const tagName = tag.localName;
-        let retval = [];
+        let retval = [].concat(this.$.#componentColors);
         if (sheets && (tagName in sheets)) {
-            retval = this.$.#componentColors.concat(sheets[tagName]);
+            retval = retval.concat(sheets[tagName]);
         }
         else {
             console.warn(`Could not find style for ${tagName}...`);
