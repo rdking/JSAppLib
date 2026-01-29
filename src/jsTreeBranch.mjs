@@ -94,7 +94,9 @@ export default class TreeBranch extends TreeLeaf {
         onPostRender() {
             const pvt = this.$.#pvt;
             for (let child of this.children) {
-                child.fireEvent("render");
+                if ("fireEvent" in child) {
+                    child.fireEvent("render");
+                }
 
                 if (pvt.isTagType(child, "treeleaf") && child.isCaption) {
                     child.slot = "caption";
