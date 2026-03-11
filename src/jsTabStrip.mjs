@@ -1,11 +1,67 @@
 import { share, saveSelf, accessor, abstract, final } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class TabStrip extends Container {
     static #spvt= share(this, {});
 
     static get observedAttributes() {
         return Container.observedAttributes.concat(["flip", "reverse"]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    DEFS: {
+                        noTabBorderBottom: "1px solid var(--brush-overlay)",
+                        noTabBorderTop: "unset"
+                    },
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "row",
+                    margin: "2px -1px -2px",
+                    paddingTop: "2px",
+                    paddingLeft: "2px",
+                    overflow: "hidden"
+                }],
+                [[CSS.HOST(CSS.ATTR("flip"))], {
+                    DEFS: {
+                        noTabBorderBottom: "unset",
+                        noTabBorderTop: "1px solid var(--brush-overlay)"
+                    }
+                }],
+                [[CSS.HOST.CHILD(CSS.NTH_CHILD(1))], {
+                    paddingLeft: "2px"
+                }],
+                [[CSS.CLASS("tabstrip")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "row"
+                }],
+                [[CSS.HOST(CSS.ATTR("reverse")).DESCENDANT(CSS.CLASS("tabstrip"))], {
+                    flexDirection: "row-reverse"
+                }],
+                [[CSS.CLASS("notab")], {
+                    display: "flex",
+                    flex: "1",
+                    border: "none",
+                    borderBottom: "var(--no-tab-border-bottom)",
+                    borderTop: "var(--no-tab-border-top)"
+                }]
+            ],
+            [
+                ...skin,
+                [[CSS.HOST], {
+                    backgroundColor: "var(--brush-normal)"
+                }]
+            ]
+        ];
     }
 
     static {
@@ -24,8 +80,7 @@ export default class TabStrip extends Container {
 
             pvt.renderContent([
                 pvt.make("div", {
-                    class: "tabstrip",
-                    style: this.reverse ? "flex-direction: row-reverse;" : ""
+                    class: "tabstrip"
                 }, {
                     children: [
                         pvt.make("slot"),

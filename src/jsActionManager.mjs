@@ -1,12 +1,27 @@
 import { share } from "../node_modules/cfprotected/index.mjs";
 import ManagerBase from "./jsManagerBase.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class ActionManager extends ManagerBase {
     static #spvt = share(this, {});
 
     static {
         this.#spvt.register(this);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        return [
+            [
+                [[CSS.TAG("slot")], {
+                    display: "none"
+                }]
+            ],
+            []
+        ];
     }
 
     #keyMap = {};

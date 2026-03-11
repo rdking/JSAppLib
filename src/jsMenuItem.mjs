@@ -1,6 +1,7 @@
 import { share, saveSelf, accessor } from "../node_modules/cfprotected/index.mjs";
 import ActionControlBase from "./jsActionControlBase.mjs";
 import Action from "./jsAction.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class MenuItem extends ActionControlBase {
     static #spvt = share(this, {});
@@ -17,6 +18,101 @@ export default class MenuItem extends ActionControlBase {
     static get observedAttributes() {
         return ActionControlBase.observedAttributes
             .concat([ "highlighted", "parentmenu", "separator" ]); 
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        return [
+            [
+                [[CSS.HOST], {
+                    display: "flex",
+                    flex: "0 0 auto",
+                    flexDirection: "row",
+                    flexWrap: "nowrap",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "2px 7px"
+                }],
+                [[CSS.HOST_CONTEXT(CSS.TAG("js-popupmenu"))], {
+                    flex: "2 0 auto"
+                }],
+                [[CSS.CLASS("hidden")], {
+                    visibility: "hidden"
+                }],
+                [[CSS.CLASS("iconcol").CLASS("hidden")], {
+                    display: "none",
+                    visibility: "inherit"
+                }],
+                [[CSS.CLASS("itemgrid")], {
+                    display: "flex",
+                    flex: "1",
+                    flexWrap: "nowrap"
+                }],
+                [[CSS.ID("check")], {
+                    display: "flex",
+                    flex: "0 0 10px",
+                    justifyContent: "flex-start",
+                    width: "10px"
+                }],
+                [[CSS.CLASS("iconcol")], {
+                    display: "flex",
+                    flex: "0 0 20px",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginRight: "2px"
+                }],
+                [[CSS.ID("icon")], {
+                    width: "18px",
+                    height: "18px"
+                }],
+                [[CSS.CLASS("captioncol")], {
+                    display: "flex",
+                    flex: "0 1 auto",
+                    justifyContent: "flex-start",
+                    alignItems: "center",
+                    paddingRight: "16px",
+                    whiteSpace: "nowrap"
+                }],
+                [[CSS.CLASS("endblock")], {
+                    display: "flex",
+                    flex: "1 1 auto",
+                    justifyContent: "end"
+                }],
+                [[CSS.CLASS("hotkeycol")], {
+                    display: "flex",
+                    flex: "0 0 auto",
+                    justifyContent: "flex-end",
+                    alignItems: "center"
+                }],
+                [[CSS.CLASS("markcol")], {
+                    display: "flex",
+                    flex: "0 0 10px",
+                    justifyContent: "end",
+                    margin: "0px 4px",
+                    width: "10px"
+                }],
+                [[CSS.TAG("hr")], {
+                    width: "100%",
+                    margin: "2px 0"
+                }]
+            ],
+            [
+                [[CSS.HOST], {
+                    backgroundColor: "transparent",
+                    color: "var(--pen-normal)"
+                }],
+                [[CSS.HOST(CSS.HOVER.NOT(CSS.ATTR("disabled")).NOT(CSS.ATTR("separator"))), 
+                  CSS.HOST(CSS.ATTR("highlighted").NOT(CSS.ATTR("disabled")).NOT(CSS.ATTR("separator")))], {
+                    backgroundColor: "var(--brush-selected)",
+                    color: "var(--pen-selected)"
+                }],
+                [[CSS.HOST(CSS.ATTR("disabled"))], {
+                    filter: "opacity(33%)"
+                }]
+            ]
+        ];
     }
 
     #hasPopup() {

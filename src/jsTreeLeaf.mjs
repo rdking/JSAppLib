@@ -1,5 +1,6 @@
 import { share, define, accessor } from "../node_modules/cfprotected/index.mjs";
 import ListItem from "./jsListItem.mjs"
+import CSS from "./util/Selectors.mjs";
 
 export default class TreeLeaf extends ListItem {
     static #spvt = share(this, {});
@@ -8,6 +9,54 @@ export default class TreeLeaf extends ListItem {
         return ListItem.observedAttributes.concat([
             "openchar", "closechar", "selected"
         ]); 
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    display: "flex",
+                    flexDirection: "column",
+                    flexWrap: "nowrap",
+                    justifyContent: "space-between"
+                }],
+                [[CSS.CLASS("leaf")], {
+                    display: "flex",
+                    flexFlow: "row nowrap",
+                    alignItems: "center"
+                }],
+                [[CSS.CLASS("marker")], {
+                    display: "inline-block",
+                    marginRight: "4px",
+                    fontWeight: "bold",
+                    fontFamily: "monospace",
+                    fontSize: "16pt",
+                    whiteSpace: "pre"
+                }]
+            ],
+            [
+                ...skin,
+                [[CSS.HOST], {
+                    color: "var(--pen-input)",
+                    margin: "0px",
+                    padding: "0px"
+                }],
+                [[CSS.CLASS("listitem").HOVER], {
+                    backgroundColor: "unset"
+                }],
+                [[CSS.CLASS("marker")], {
+                    color: "var(--pen-input-disabled)"
+                }],
+                [[CSS.CLASS("listitem")], {
+                    padding: "0px"
+                }]
+            ]
+        ];
     }
 
     static {
@@ -54,9 +103,13 @@ export default class TreeLeaf extends ListItem {
                 ]
             });
 
-            content.querySelector(".marker").addEventListener("click", pvt.onMarkerClicked);
             
             return content;
+        },
+        onPostRender() {
+            const pvt = this.$.#pvt;
+            const marker = pvt.getShadowChild("div", ".marker");
+            marker.addEventListener("click", pvt.onMarkerClicked);
         },
         getParentType() {
             return this.$.#pvt.tagTypes([ "treebranch", "treeview" ]) ;
@@ -66,14 +119,14 @@ export default class TreeLeaf extends ListItem {
         },
         onMarkerClicked(e) {
             const pvt = this.$.#pvt;
-            if (this.isCaption && pvt.isTagType(this.parentElement, "treebranch")) {
+            if (this.isCaption && pvt.isTagType(this.parentElement, pvt.tagType("treebranch"))) {
                 this.parentElement.collapsed = !this.parentElement.collapsed;
                 e.cancelBubble = true;
             }
         },
         onUpdateMarker(e) {
             const pvt = this.$.#pvt;
-            if (pvt.isTagType(this.parentElement, "treebranch")) {
+            if (pvt.isTagType(this, "treebranch") || pvt.isTagType(this.parentElement, "treebranch")) {
                 const marker = pvt.getShadowChild("", ".marker");
                 if (marker) {
                     marker.innerHTML = this.$.getMarker();

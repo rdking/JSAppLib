@@ -1,11 +1,45 @@
 import { share, accessor } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class Menu extends Container {
     static #spvt = share(Menu, {});
 
     static get observedAttributes() {
         return Container.observedAttributes.concat([ "showicons" ]); 
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    display: "flex",
+                    flexDirection: "row",
+                    flex: "1 0 auto"
+                }],
+                [[CSS.CLASS("menu")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    alignItems: "center",
+                    paddingTop: "0.125em",
+                    paddingBottom: "0.125em",
+                    minHeight: "24px"
+                }]
+            ],
+            [
+                ...skin,
+                [[CSS.HOST], {
+                    backgroundColor: "var(--brush-container-normal)",
+                    color: "var(--pen-container-normal)",
+                    borderBottom: "1px solid var(--brush-shadow)"
+                }]
+            ]
+        ];
     }
 
     static {
@@ -122,9 +156,7 @@ export default class Menu extends Container {
         super();
 
         const pvt = this.#pvt;
-        if ((this.localName === pvt.tagType("menu")) && !this.slot) {
-            this.slot = "first";
-        }
+
         pvt.registerEvents(pvt, {
             showiconsChanged: "onShowIconsChanged",
             itemClicked: "onItemClicked",
@@ -132,6 +164,15 @@ export default class Menu extends Container {
             itemLeft: "onItemLeft",
             closeMenu: "onCloseMenu"
         });
+    }
+
+    connectedCallback() {
+        const pvt = this.#pvt;
+        if ((this.localName === pvt.tagType("menu")) && !this.slot) {
+            this.setAttribute("slot", "first");
+        }
+
+        super.connectedCallback();
     }
 
     get currentMenuItem() { return this.$.#currentMenuItem; }

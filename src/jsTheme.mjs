@@ -1,17 +1,13 @@
-import { share, final } from "../node_modules/cfprotected/index.mjs";
+import { share, final, saveSelf, accessor } from "../node_modules/cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
 import ManageableBase from "./jsManageableBase.mjs";
 
 const Theme = final(class Theme extends ManageableBase {
-    
-    static #spvt= share(this, {});
-    
-    static get observedAttributes() {
-        return ManageableBase.observedAttributes.concat([ "themename", "themepath" ]);
-    }
+    static #spvt = share(this, {});
 
     static {
-        const spvt = this.#spvt;
+        saveSelf(this, "$");
+        const spvt = this.$.#spvt;
         spvt.initAttributeProperties(this, {
             themename: { readonly: true, caption: "themeName" },
             themepath: { readonly: true, caption: "themePath" }
@@ -19,12 +15,13 @@ const Theme = final(class Theme extends ManageableBase {
         spvt.register(this);
     }
 
-    #globalStyleSheet = null;
-    #componentColors = null;
-    #componentSheets = null;
+    #globalStyles = [];
+    #colorStyles = [];
+    #componentStyles = {};
     #attributeChanging = false;
     #loaded = false;
     #loading = false;
+
 
     async #loadTheme() {
         try {
@@ -39,10 +36,13 @@ const Theme = final(class Theme extends ManageableBase {
                     let stack = [];
                     let components;
 
-                    this.$.#globalStyleSheet = [];
-                    this.$.#componentColors = [];
+                    this.$.#globalStyles = [];
+                    this.$.#colorStyles = [];
+                    this.$.#componentStyles = {};
 
+                    let safety = 0;
                     do {
+                        if (safety++ > 10) throw new Error("Theme inheritance depth exceeded");
                         const themeJsonUrl = new URL("theme.json", baseUrl.href);
                         let themeFile = await fetch(themeJsonUrl.href);
                         let info = JSON.parse(await themeFile.text());
@@ -50,7 +50,6 @@ const Theme = final(class Theme extends ManageableBase {
                         
                         if (components.inherits) {
                             stack.push([baseUrl, components]);
-                            // Resolve the inherited path relative to the current theme's URL
                             baseUrl = new URL(components.inherits, baseUrl.href);
                             if (!baseUrl.href.endsWith("/")) {
                                 baseUrl = new URL(baseUrl.href + "/");
@@ -59,7 +58,9 @@ const Theme = final(class Theme extends ManageableBase {
                     } while (components.inherits);
 
                     let prefix;
+                    let innerSafety = 0;
                     do {
+                        if (innerSafety++ > 10) throw new Error("Theme composition depth exceeded");
                         prefix = baseUrl.href;
                         let list = [];
                         list.push(components.global
@@ -68,34 +69,24 @@ const Theme = final(class Theme extends ManageableBase {
                         list.push(components.color
                             ? fetch(prefix + components.color)
                             : new Promise((resolve) => { resolve({ text() { return ""; } }) }));
-                        let css = await Promise.all(list);
-                        let globalStyle = new CSSStyleSheet();
-                        let colorStyle = new CSSStyleSheet();
-                        const gsText = await css[0].text();
-                        const csText = await css[1].text();
+                        
+                        let cssResponses = await Promise.all(list);
+                        const gsText = await cssResponses[0].text();
+                        const csText = await cssResponses[1].text();
 
-                        globalStyle.replaceSync(gsText);
-                        colorStyle.replaceSync(csText);
-                        this.$.#globalStyleSheet.push(globalStyle);
-                        this.$.#componentColors.push(colorStyle);
+                        if (gsText) this.$.#globalStyles.push(gsText);
+                        if (csText) this.$.#colorStyles.push(csText);
                         
                         if (Array.isArray(components.tags)) {
-                            if (!this.$.#componentSheets) {
-                                this.$.#componentSheets = {};
-                            }
-
                             let sheets = await Promise.all(components.tags.map(name => fetch(prefix + name + ".css")));
                             sheets = await Promise.all(sheets.map(sheet => sheet.text()));
-                            sheets = await Promise.all(sheets.map(sheet => {
-                                let retval = new CSSStyleSheet();
-                                return retval.replace(sheet);
-                            }));
 
-                            sheets.forEach((style, index) => {
-                                const componentSheets = this.$.#componentSheets;
+                            sheets.forEach((cssText, index) => {
                                 let name = components.tags[index];
-                                const isArray = Array.isArray(componentSheets[name]);
-                                isArray ? componentSheets[name].push(style) : componentSheets[name] = [ style ];
+                                if (!this.$.#componentStyles[name]) {
+                                    this.$.#componentStyles[name] = [];
+                                }
+                                this.$.#componentStyles[name].push(cssText);
                             });
                         }
 
@@ -111,7 +102,14 @@ const Theme = final(class Theme extends ManageableBase {
                     
                     this.$.#loaded = true;
                     console.log(`Loaded ${this.themeName} theme...`);
-                    this.fireEvent("loaded");
+                    
+                    const styles = {
+                        "global": [...this.$.#globalStyles, ...this.$.#colorStyles],
+                        ...this.$.#componentStyles
+                    };
+
+                    this.$.#pvt.themeCache.registerTheme(this.themeName, styles);
+
                 } finally {
                     this.$.#loading = false;
                 }
@@ -122,7 +120,7 @@ const Theme = final(class Theme extends ManageableBase {
         }
     }
 
-    #pvt= share(this, Theme, {
+    #pvt = share(this, Theme, {
         onPostRender() {
             const pvt = this.$.#pvt;
             pvt.validateParent(pvt.tagType("thememanager"), "Themes can only be declared in a ThemeManager.");
@@ -132,8 +130,6 @@ const Theme = final(class Theme extends ManageableBase {
                 let {oldValue: oldVal, newValue: newVal} = e.detail;
                 try {
                     this.$.#attributeChanging = true;
-
-                    //If the name has already been set, don't allow it to be changed.
                     if (oldVal !== null) {
                         if (oldVal !== newVal) {
                             this.setAttribute("themename", oldVal);
@@ -152,7 +148,6 @@ const Theme = final(class Theme extends ManageableBase {
                 let {oldValue: oldVal, newValue: newVal} = e.detail;
                 try {
                     this.$.#attributeChanging = true;
-
                     if (oldVal !== null) {
                         if (oldVal !== newVal) {
                             this.setAttribute("themepath", oldVal);
@@ -165,42 +160,37 @@ const Theme = final(class Theme extends ManageableBase {
                     this.$.#attributeChanging = false;
                 }
             }
+        },
+        
+        loaded: accessor({
+            get() { return this.$.#loaded; }
+        }),
+        
+        load: async (cb) => {
+            if (!this.$.#loaded) {
+                await this.$.#loadTheme();
+            }
+            if (cb) cb();
         }
     });
 
     constructor() {
-        super();   
+        super();
+        //saveSelf(this, "$");
 
-        const pvt = this.$.#pvt;
+        const pvt = this.#pvt;
         pvt.registerEvents(pvt, {
             themenameChanged: "onNameChange",
             themepathChanged: "onPathChange"
         });
     }
 
-    componentLink(tag, shadow) {
-        const sheets = this.$.#componentSheets;
-        const tagName = tag.localName;
-        let retval = [].concat(this.$.#componentColors);
-        if (sheets && (tagName in sheets)) {
-            retval = retval.concat(sheets[tagName]);
-        }
-        else {
-            console.warn(`Could not find style for ${tagName}...`);
-        }
-        return retval;
+    get loaded() { 
+        return this.$.#pvt.loaded; 
     }
-
-    get globalLink() {
-        return this.$.#componentColors.concat(this.$.#globalStyleSheet);
-    }
-
-    get loaded() { return this.$.#loaded; }
 
     async load(cb) {
-        if (!this.$.#loaded) {
-            await this.$.#loadTheme();
-        }
+        return this.$.#pvt.load(cb);
     }
 });
 

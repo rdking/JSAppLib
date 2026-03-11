@@ -5,6 +5,13 @@ import FocusableTag from "./jsFocusableTag.mjs";
 const Container = abstract(class Container extends FocusableTag {
     static #spvt = share(this, {});
 
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        return super.getDefaultStyleSheet();
+    }
+
     static {
         const spvt = this.#spvt;
 

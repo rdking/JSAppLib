@@ -1,6 +1,7 @@
 import { share } from "../node_modules/cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
 import Base from "./jsBase.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class Action extends Base {
     static #spvt = share(this, {});
@@ -10,6 +11,20 @@ export default class Action extends Base {
             "caption", "description", "disabled", "hotkey", "icon", "name",
             "toggle", "selected"
         ]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        return [
+            [
+                [[CSS.TAG("slot")], {
+                    display: "none"
+                }]
+            ],
+            []
+        ];
     }
 
     static {

@@ -1,11 +1,64 @@
 import { share, accessor } from "../node_modules/cfprotected/index.mjs";
 import ListView from "./jsListView.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class TreeView extends ListView {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
         return ListView.observedAttributes.concat(["collapsible"]); 
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "row",
+                    margin: "4px",
+                    padding: "0px",
+                    minWidth: "5em",
+                    minHeight: "1em",
+                    overflow: "auto",
+                    contain: "strict"
+                }],
+                [[CSS.TAG("slot")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexFlow: "column nowrap",
+                    justifyContent: "flex-start",
+                    padding: "0px" // Overriding ListView's 0.3333em
+                }],
+                [[CSS.CLASS("focusable")], {
+                    display: "flex",
+                    flex: "0 0 auto",
+                    flexDirection: "inherit",
+                    padding: "2px"
+                }]
+            ],
+            [
+                ...skin,
+                [[CSS.HOST], {
+                    backgroundColor: "var(--brush-input-normal)",
+                    color: "var(--pen-input-normal)",
+                    border: "0px"
+                }],
+                [[CSS.HOST.FOCUS], {
+                    border: "2px solid black",
+                    borderRadius: "4px"
+                }],
+                [[CSS.CLASS("focusable")], {
+                    backgroundColor: "var(--brush-input-normal)",
+                    color: "var(--pen-input-normal)"
+                }]
+            ]
+        ];
     }
 
     static {

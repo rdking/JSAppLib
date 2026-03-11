@@ -2,12 +2,69 @@ import { share, accessor } from "../node_modules/cfprotected/index.mjs";
 import FocusableTag from "./jsFocusableTag.mjs";
 import jsContainer from "./jsContainer.mjs";
 import Semaphore from "./util/Semaphore.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class ListView extends jsContainer {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
         return FocusableTag.observedAttributes.concat(["multiselect"]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "row",
+                    margin: "2px",
+                    padding: "0px",
+                    overflowY: "auto",
+                    overflowX: "auto",
+                    minWidth: "5em",
+                    minHeight: "1em"
+                }],
+                [[CSS.TAG("slot")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexFlow: "column nowrap",
+                    justifyContent: "flex-start",
+                    padding: "0.3333em"
+                }],
+                [[CSS.TAG("div").FOCUS], {
+                    outline: "none"
+                }],
+                [[CSS.CLASS("focusable")], {
+                    display: "flex",
+                    flex: "auto",
+                    flexDirection: "inherit",
+                    margin: "2px",
+                    padding: "0px"
+                }]
+            ],
+            [
+                ...skin,
+                [[CSS.HOST], {
+                    backgroundColor: "var(--brush-container-normal)",
+                    color: "var(--pen-container-normal)",
+                    border: "2px solid transparent"
+                }],
+                [[CSS.HOST.FOCUS], {
+                    border: "2px solid black",
+                    borderRadius: "4px"
+                }],
+                [[CSS.TAG("slot")], {
+                    backgroundColor: "var(--brush-input-normal)",
+                    color: "var(--pen-input-normal)"
+                }]
+            ]
+        ];
     }
     
     static { 

@@ -1,5 +1,6 @@
 import { share, saveSelf } from "../node_modules/cfprotected/index.mjs";
 import ControlBase from "./jsControlBase.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class MDIWindow extends ControlBase {
     static #spvt = share(this, {});
@@ -10,6 +11,143 @@ export default class MDIWindow extends ControlBase {
         ]);
     }
 
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        return [
+            [
+                [[CSS.HOST], {
+                    position: "absolute",
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: "1 0 auto",
+                    top: "0px",
+                    left: "0px",
+                    padding: "0px",
+                    minWidth: "160px",
+                    minHeight: "var(--title-size)",
+                    zIndex: "0"
+                }],
+                [[CSS.HOST.CLASS("minimized")], {
+                    position: "relative",
+                    height: "var(--title-size)",
+                    width: "160px",
+                    flex: "0 0 auto",
+                    marginRight: "2px",
+                    marginBottom: "2px"
+                }],
+                [[CSS.HOST.CLASS("maximized").NOT(CSS.CLASS("minimized"))], {
+                    inset: "0 !important",
+                    width: "unset !important",
+                    height: "unset !important"
+                }],
+                [[CSS.CLASS("header")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "row",
+                    justifyItems: "flex-start",
+                    alignItems: "center",
+                    fontSize: "1.1em",
+                    height: "var(--title-size)"
+                }],
+                [[CSS.ID("titleArea")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    alignSelf: "stretch"
+                }],
+                [[CSS.ID("title")], {
+                    paddingLeft: "0.5em",
+                    fontWeight: "bold"
+                }],
+                [[CSS.CLASS("buttons")], {
+                    display: "flex",
+                    flex: "0 1 auto",
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    alignContent: "center",
+                    height: "var(--title-size)"
+                }],
+                [[CSS.TAG("button")], {
+                    width: "var(--title-size)",
+                    height: "var(--title-size)",
+                    border: "none",
+                    margin: "0px"
+                }],
+                [[CSS.CLASS("hidden")], {
+                    display: "none"
+                }],
+                [[CSS.CLASS("dragging")], {
+                    display: "none"
+                }],
+                [[CSS.CLASS("body")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    minHeight: "120px"
+                }],
+                [[CSS.CLASS("edgecorner")], {
+                    height: "4px",
+                    width: "32px",
+                    padding: "0px",
+                    margin: "0px"
+                }],
+                [[CSS.CLASS("edgecenter")], {
+                    flex: "1 0 auto",
+                    height: "4px",
+                    padding: "0px",
+                    margin: "0px"
+                }],
+                [[CSS.TAG("iframe")], {
+                    flex: "1 0 auto",
+                    border: "none",
+                    padding: "0px",
+                    margin: "0px",
+                    pointerEvents: "var(--deselected-pointer-events)"
+                }],
+                [[CSS.CLASS("nsarrow")], { cursor: "ns-resize" }],
+                [[CSS.CLASS("ewarrow")], { cursor: "ew-resize" }],
+                [[CSS.CLASS("neswarrow")], { cursor: "nesw-resize" }],
+                [[CSS.CLASS("nwsearrow")], { cursor: "nwse-resize" }]
+            ],
+            [
+                [[CSS.HOST], {
+                    "--title-size": "calc(1.5em + 8px)",
+                    "--deselected-pointer-events": "none",
+                    backgroundColor: "var(--brush-normal)",
+                    border: "1px solid var(--brush-container-disabled)"
+                }],
+                [[CSS.HOST.CLASS("ontop")], {
+                    boxShadow: "0px 0px 8px 4px var(--brush-overlay)",
+                    border: "1px solid var(--brush-container-selected)",
+                    "--deselected-pointer-events": "auto"
+                }],
+                [[CSS.HOST.CLASS("minimized")], {
+                    boxShadow: "none"
+                }],
+                [[CSS.CLASS("header")], {
+                    backgroundColor: "var(--brush-shadow)",
+                    color: "var(--pen-normal)"
+                }],
+                [[CSS.TAG("button")], {
+                    backgroundColor: "transparent"
+                }],
+                [[CSS.TAG("button").HOVER], {
+                    backgroundColor: "var(--brush-highlight)"
+                }],
+                [[CSS.TAG("button").ACTIVE], {
+                    backgroundColor: "var(--brush-overlay)"
+                }],
+                [[CSS.ID("close").HOVER, CSS.ID("close").ACTIVE], {
+                    backgroundColor: "var(--brush-selected)",
+                    color: "var(--pen-selected)"
+                }]
+            ]
+        ];
+    }
+
     static { 
         saveSelf(this, "$");
 
@@ -18,13 +156,15 @@ export default class MDIWindow extends ControlBase {
             maximize: { isBool: true, caption: "maximized",
                 getter: function getMaximized() {
                     let tiled = this.$.#pvt.shadowRoot.querySelector("#tiled");
-                    return !tiled.classList.contains("hidden");
+                    return tiled ? !tiled.classList.contains("hidden") : false;
                 },
                 setter: function setMaximized(v) {
                     const pvt = this.$.#pvt;
                     if (v) {
+                        this.setAttribute("maximize", "");
                         pvt.onMaximizeClick();
                     } else {
+                        this.removeAttribute("maximize");
                         pvt.onTiledClick();
                     }
                 }
@@ -36,8 +176,10 @@ export default class MDIWindow extends ControlBase {
                 setter: function setMinimized(v) {
                     const pvt = this.$.#pvt;
                     if (v) {
+                        this.setAttribute("minimize", "");
                         pvt.onMinimizeClick();
                     } else {
+                        this.removeAttribute("minimize");
                         pvt.onUnMinimize();
                     }
                 }
@@ -52,7 +194,6 @@ export default class MDIWindow extends ControlBase {
     }
 
     #oldHeight = null;
-    #dragOffsets = null;
     #oldStatus = null;
     #deltas = false;
 
@@ -71,7 +212,7 @@ export default class MDIWindow extends ControlBase {
 
         for (let edge of edges) {
             for (let part of edge) {
-                fn(part);
+                if (part) fn(part);
             }
         }
     }
@@ -289,7 +430,6 @@ export default class MDIWindow extends ControlBase {
 
             if (!this.maximized && !this.minimized) {
                 if ((e.detail != 2) && (e.buttons == 1)) {
-                    console.log("Beginning moving...");
                     this.$.#deltas = {
                         type: "moving",
                         x: e.screenX,
@@ -312,7 +452,6 @@ export default class MDIWindow extends ControlBase {
                 let sz = this.$.#deltas;
                 
                 if (sz.type == "moving") {
-                    console.log("Still moving...");
                     let delta = {
                         x: e.screenX - sz.x,
                         y: e.screenY - sz.y
@@ -330,7 +469,6 @@ export default class MDIWindow extends ControlBase {
                 let sz = this.$.#deltas;
                 
                 if (sz.type == "moving") {
-                    console.log("Ending moving...");
                     this.$.#deltas = false;
                     this.parentElement.fireEvent("endDrag", this);
                     window.removeEventListener("mouseup", pvt.onEndMoving);
@@ -362,7 +500,7 @@ export default class MDIWindow extends ControlBase {
             this.classList.add("minimized");
             this.style.position = "";
             this.$.#disableEdges();
-            this.$.setAttribute("minimized", "");
+            this.setAttribute("minimized", "");
         },
         onUnMinimize() {
             const pvt = this.$.#pvt;
@@ -385,7 +523,7 @@ export default class MDIWindow extends ControlBase {
             }
 
             this.$.#enableEdges();
-            this.$.removeAttribute("minimized");
+            this.removeAttribute("minimized");
         },
         onMaximizeClick(e) {
             const pvt = this.$.#pvt;
@@ -397,7 +535,7 @@ export default class MDIWindow extends ControlBase {
             this.$.#oldHeight = this.style.height;
             this.style.height = '';
             this.$.#disableEdges();
-            this.$.setAttribute("maximized", "");
+            this.setAttribute("maximized", "");
         },
         onTiledClick(e) {
             const pvt = this.$.#pvt;
@@ -408,7 +546,7 @@ export default class MDIWindow extends ControlBase {
             this.classList.remove("maximized");
             this.style.height = this.$.#oldHeight;
             this.$.#enableEdges();
-            this.$.removeAttribute("maximized");
+            this.removeAttribute("maximized");
         },
         onCloseClick() {
             let response = { canClose: true };
@@ -420,14 +558,13 @@ export default class MDIWindow extends ControlBase {
         },
         onDoubleTitleClick(e) {
             const pvt = this.$.#pvt;
-            this.$.maximized ? pvt.onTiledClick(e) : pvt.onMaximizeClick(e);
+            this.maximized ? pvt.onTiledClick(e) : pvt.onMaximizeClick(e);
         },
         onWindowClick(e) {
             this.focus();
         },
         onResizeStart(e) {
             if (e.buttons == 1) {
-                console.log("Beginning resizing...");
                 this.$.#deltas = {
                     type: "resizing",
                     x: e.screenX,
@@ -448,7 +585,6 @@ export default class MDIWindow extends ControlBase {
             let sz = this.$.#deltas;
 
             if (sz.type == "resizing") {
-                console.log("Still resizing...");
                 let delta = {
                     x: e.screenX - sz.x,
                     y: e.screenY - sz.y
@@ -474,7 +610,6 @@ export default class MDIWindow extends ControlBase {
             }
         },
         onResizeEnd(e) {
-            console.log("Ending resizing...");
             this.$.#deltas = false;
             this.parentElement.fireEvent("endDrag");
             window.removeEventListener("mouseup", this.$.#pvt.onResizeEnd);
@@ -500,6 +635,10 @@ export default class MDIWindow extends ControlBase {
         });
     }
 
+    focus() {
+        this.parentElement.moveToTop(this);
+    }
+
     get browser() {
         return this.$.#pvt.getShadowChild("iframe");
     }
@@ -510,9 +649,5 @@ export default class MDIWindow extends ControlBase {
 
     get context() {
         return this.$.browser.contentWindow;
-    }
-
-    focus() {
-        this.parentElement.moveToTop(this);
     }
 }

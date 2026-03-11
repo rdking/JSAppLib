@@ -1,11 +1,50 @@
 import { share, saveSelf } from "../node_modules/cfprotected/index.mjs";
 import Menu from "./jsMenu.mjs";
 import MenuItem from "./jsMenuItem.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class PopupMenu extends Menu {
     static #spvt= share(this, {});
     static get observedAttributes() {
         return Menu.observedAttributes; 
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        return [
+            [
+                [[CSS.HOST], {
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: "1 0 auto",
+                    position: "absolute"
+                }],
+                [[CSS.TAG("slot")], {
+                    display: "flex",
+                    flexDirection: "column"
+                }],
+                [[CSS.CLASS("background")], {
+                    position: "absolute",
+                    border: "1px solid var(--brush-shadow)",
+                    boxShadow: "4px 4px 4px 0px var(--brush-shadow)",
+                    zIndex: "1000"
+                }],
+                [[CSS.CLASS("hidden")], {
+                    display: "none"
+                }],
+                [[CSS.CLASS("showing")], {
+                    display: "block"
+                }]
+            ],
+            [
+                [[CSS.TAG("slot")], {
+                    backgroundColor: "var(--brush-container-normal)",
+                    color: "var(--pen-container-normal)"
+                }]
+            ]
+        ];
     }
 
     static #openPopups = [];

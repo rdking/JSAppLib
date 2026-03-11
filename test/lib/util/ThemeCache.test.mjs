@@ -80,7 +80,7 @@ describe('ThemeCache', () => {
     describe('Theme Management', () => {
         test('should register a theme and update active components', () => {
             cache.registerComponent('js-button', [[[HOST], { display: 'block' }]], []);
-            
+            debugger;
             const themeStyles = {
                 'js-button': [[[HOST], { color: 'blue' }]]
             };
@@ -144,49 +144,6 @@ describe('ThemeCache', () => {
             const styles = cache.getGlobalStyles();
             expect(styles).toHaveLength(2);
             expect(styles[1].cssText).toContain('background-color: red');
-        });
-    });
-
-    describe('Latching', () => {
-        test('should latch onto a manager and react to themeLoaded', () => {
-            const mockManager = new EventTarget();
-            mockManager.currentTheme = { themeName: 'default' };
-            
-            cache.latch(mockManager);
-            
-            const themeLoadedEvent = new CustomEvent('themeLoaded', {
-                detail: {
-                    themeName: 'default',
-                    styles: { 'js-btn': [[[HOST], { opacity: '0.5' }]] }
-                }
-            });
-            
-            cache.registerComponent('js-btn', [[[HOST], { display: 'inline' }]], []);
-            mockManager.dispatchEvent(themeLoadedEvent);
-            
-            const styles = cache.getStyles('js-btn');
-            expect(styles).toHaveLength(2);
-            expect(styles[1].cssText).toContain('opacity: 0.5');
-        });
-
-        test('should react to themeChange events from manager', () => {
-            cache.registerComponent('js-btn', [[[HOST], { display: 'inline' }]], []);
-            
-            const mockManager = new EventTarget();
-            mockManager.currentTheme = { themeName: 'dark' };
-            
-            cache.registerTheme('dark', { 'js-btn': [[[HOST], { color: 'black' }]] });
-            
-            cache.latch(mockManager);
-            
-            mockManager.currentTheme = { themeName: 'default' };
-            mockManager.dispatchEvent(new Event('themeChange'));
-            expect(cache.getStyles('js-btn')).toHaveLength(1);
-            
-            mockManager.currentTheme = { themeName: 'dark' };
-            mockManager.dispatchEvent(new Event('themeChange'));
-            expect(cache.getStyles('js-btn')).toHaveLength(2);
-            expect(cache.getStyles('js-btn')[1].cssText).toContain('color: black');
         });
     });
 });

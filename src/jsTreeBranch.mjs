@@ -1,6 +1,7 @@
 import { share, define } from "../node_modules/cfprotected/index.mjs";
 import TreeLeaf from "./jsTreeLeaf.mjs";
 import Semaphore from "./util/Semaphore.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class TreeBranch extends TreeLeaf {
     static #spvt = share(this, {});
@@ -9,6 +10,58 @@ export default class TreeBranch extends TreeLeaf {
         return TreeLeaf.observedAttributes.concat([
             "collapsible", "collapsed"
         ]); 
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    display: "flex",
+                    flexDirection: "column",
+                    flexWrap: "nowrap",
+                    justifyContent: "space-between"
+                }],
+                [[CSS.TAG("slot").ATTR("name", "=", "caption")], {
+                    display: "flex",
+                    flexFlow: "row nowrap",
+                    justifyContent: "flex-start",
+                    alignItems: "center"
+                }],
+                [[CSS.CLASS("listitem")], {
+                    display: "flex",
+                    flexFlow: "column nowrap",
+                    alignItems: "flex-start"
+                }],
+                [[CSS.CLASS("items")], {
+                    display: "flex",
+                    flexFlow: "column nowrap",
+                    justifyContent: "flex-start"
+                }],
+                [[CSS.CLASS("focusable")], {
+                    overflow: "auto"
+                }]
+            ],
+            [
+                ...skin,
+                [[CSS.HOST], {
+                    color: "var(--pen-input)"
+                }],
+                [[CSS.TAG("slot").ATTR("name", "=", "caption")], {
+                    backgroundColor: "transparent",
+                    color: "var(--pen-input)"
+                }],
+                [[CSS.CLASS("listitem").CLASS("selected").CHILD(CSS.TAG("slot").ATTR("name", "=", "caption"))], {
+                    backgroundColor: "var(--brush-selected)"
+                }],
+                [[CSS.HOST(CSS.ATTR("selected"))], {
+                    backgroundColor: "var(--brush-input-normal)"
+                }]           ]
+        ];
     }
 
     static {
@@ -51,7 +104,9 @@ export default class TreeBranch extends TreeLeaf {
     #pvt = share(this, TreeBranch, {
         getTemplate() {
             let pvt = this.$.#pvt;
-            let content = pvt.make(pvt.tagType("collapsepanel"), {}, {
+            let content = pvt.make(pvt.tagType("collapsepanel"), {
+                manual: true
+            }, {
                 children: [
                     pvt.make("slot", {
                         name: "caption",
@@ -67,7 +122,6 @@ export default class TreeBranch extends TreeLeaf {
                 ]
             });
 
-            content.addEventListener("headerClicked", pvt.onHeaderClicked);
             return content;
         },
         getParentType() {
@@ -76,10 +130,6 @@ export default class TreeBranch extends TreeLeaf {
         },
         getParentMessage() {
             return "TreeBranch elements can only be placed in a TreeView or another TreeBranch";
-        },
-        onHeaderClicked(e) {
-            e.detail.canToggleCollapse = false;
-            e.cancelbubble = true;
         },
         onClick(e) {
             e.cancelBubble = true;
@@ -98,14 +148,14 @@ export default class TreeBranch extends TreeLeaf {
                     child.fireEvent("render");
                 }
 
-                if (pvt.isTagType(child, "treeleaf") && child.isCaption) {
+                if (pvt.isTagType(child, pvt.tagType("treeleaf")) && child.isCaption) {
                     child.slot = "caption";
                 }
                 else if (child.slot == "caption") {
                     child.removeAttribute("slot");
                 }
             }
-
+            pvt.getShadowChild("collapsepanel").addEventListener("collapsedChanged", pvt.onCollapsedChanged);
         },
         onSelectedChange(e) {
             this.$.#section.lock(() => {
@@ -114,6 +164,7 @@ export default class TreeBranch extends TreeLeaf {
         },
         onCollapsedChanged(e) {
             this.$.#pvt.onUpdateMarker();
+            this.fireEvent("collapsedChanged", e.detail);
         },
         onCollapsibleChanged(e) {
             if (!this.collapsible) {
@@ -130,7 +181,6 @@ export default class TreeBranch extends TreeLeaf {
 
         const pvt = this.$.#pvt;
         pvt.registerEvents(pvt, {
-            collapsedChanged: "onCollapsedChanged",
             collapsibleChanged: "onCollapsibleChanged"
         });
     }

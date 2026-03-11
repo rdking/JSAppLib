@@ -1,5 +1,6 @@
 import { share } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class ListItem extends Container {
     static #spvt = share(this, {});
@@ -8,6 +9,42 @@ export default class ListItem extends Container {
         return Container.observedAttributes.concat([
             "items", "selected", "type"
         ]); 
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    display: "flex",
+                    flexDirection: "column",
+                    flexWrap: "nowrap",
+                    justifyContent: "space-between",
+                    margin: "0.125em"
+                }],
+                [[CSS.CLASS("listitem")], {
+                    display: "flex",
+                    flexWrap: "nowrap",
+                    padding: "0.33333em"
+                }]
+            ],
+            [
+                ...skin,
+                [[CSS.HOST], {
+                    color: "var(--pen-input)"
+                }],
+                [[CSS.HOST(CSS.ATTR("selected"))], {
+                    backgroundColor: "var(--brush-input-selected)"
+                }],
+                [[CSS.CLASS("listitem").HOVER], {
+                    backgroundColor: "var(--brush-shadow)"
+                }]
+            ]
+        ];
     }
 
     static { 
@@ -90,7 +127,6 @@ export default class ListItem extends Container {
 
     constructor() {
         super();
-        this.type = this.type || "json";
 
         const pvt = this.$.#pvt;
         pvt.registerEvents(pvt, {
@@ -102,6 +138,7 @@ export default class ListItem extends Container {
     }
 
     connectedCallback() {
+        this.type = this.type || "json";
         const parent = this.parentElement;
         const box = this.$.#pvt.waitbox;
 

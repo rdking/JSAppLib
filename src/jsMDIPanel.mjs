@@ -1,8 +1,63 @@
 import { share, saveSelf } from "../node_modules/cfprotected/index.mjs";
 import ControlBase from "./jsControlBase.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class MDIPanel extends ControlBase {
     static #spvt = share(this, {});
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        return [
+            [
+                [[CSS.HOST], {
+                    position: "relative",
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "column",
+                    justifySelf: "stretch",
+                    alignSelf: "stretch"
+                }],
+                [[CSS.TAG("slot")], {
+                    display: "flex",
+                    flex: "10000000 0 auto",
+                    position: "relative",
+                    overflow: "auto"
+                }],
+                [[CSS.ID("minArea")], {
+                    display: "flex",
+                    flex: "1 1 auto",
+                    flexDirection: "row",
+                    height: "fit-content",
+                    overflow: "clip",
+                    maxHeight: "40px"
+                }],
+                [[CSS.CLASS("dragoverlay")], {
+                    display: "none",
+                    position: "absolute",
+                    backgroundColor: "transparent",
+                    inset: "0",
+                    margin: "0px",
+                    padding: "0px",
+                    zIndex: "1000000"
+                }],
+                [[CSS.CLASS("dragging")], {
+                    display: "block !important",
+                    backgroundColor: "transparent !important"
+                }],
+                [[CSS.CLASS("resizing")], {
+                    display: "block !important",
+                    backgroundColor: "transparent !important"
+                }]
+            ],
+            [
+                [[CSS.TAG("slot")], {
+                    backgroundColor: "var(--brush-shadow)"
+                }]
+            ]
+        ];
+    }
 
     static { 
         saveSelf(this, "$");

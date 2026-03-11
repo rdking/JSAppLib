@@ -1,5 +1,6 @@
 import { share, abstract, accessor } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
+import CSS from "./util/Selectors.mjs";
 
 const SplitPanel = abstract(class SplitPanel extends Container {
     static #spvt = share(this, {});
@@ -8,6 +9,50 @@ const SplitPanel = abstract(class SplitPanel extends Container {
         return Container.observedAttributes.concat([
             "minfirstwidth", "minlastwidth", "splitpos", "favorlast"
         ]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    justifyContent: "stretch",
+                    alignItems: "stretch",
+                    contain: "strict"
+                }],
+                [[CSS.CLASS("container")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    justifyContent: "stretch",
+                    contain: "strict"
+                }],
+                [[CSS.TAG("slot")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    justifyContent: "flex-start",
+                    justifySelf: "stretch",
+                    alignContent: "stretch",
+                    minWidth: "16px",
+                    minHeight: "16px",
+                    overflow: "hidden"
+                }],
+                [[CSS.TAG("slot").CLASS("last")], {
+                    flex: "1 1 auto"
+                }],
+                [[CSS.TAG("div").ATTR("draggable")], {
+                    border: "2px inset var(--brush-shadow)",
+                    margin: "3px",
+                    padding: "0px"
+                }]
+            ],
+            skin
+        ];
     }
 
     static {
@@ -207,9 +252,12 @@ const SplitPanel = abstract(class SplitPanel extends Container {
             splitposChanged: "onSplitPosChanged",
             parentResized: "onResized"
         });
+    }
 
+    connectedCallback() {
         this.minfirstwidth = (!this.minfirstwidth && (this.minfirstwidth !== 0)) ? 32 : this.minfirstwidth;
         this.minlastwidth = (!this.minlastwidth && (this.minlastwidth !== 0)) ? 32 : this.minlastwidth;
+        super.connectedCallback();
     }
 });
 

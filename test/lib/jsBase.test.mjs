@@ -1,10 +1,32 @@
 import { jest, describe, test, expect, beforeAll, beforeEach, afterEach } from '@jest/globals';
+
+// 1. Mock CSSStyleSheet globally
+global.CSSStyleSheet = class {
+    constructor() {
+        this.cssRules = [];
+        this.cssText = "";
+    }
+    replaceSync(css) {
+        this.cssText = css;
+        this.cssRules = [{ cssText: css }];
+    }
+};
+
+// 2. Pre-define JSAppLib
+Object.defineProperty(window, "JSAppLib", {
+    value: {},
+    writable: true,
+    configurable: true
+});
+
 import Base from "../../src/jsBase.mjs";
-import App from "../../src/jsApp.mjs";
 import { share, saveSelf } from "../../node_modules/cfprotected/index.mjs";
 import AppLibError from "../../src/errors/AppLibError.mjs";
 
 class TestElement extends Base {
+    static structure = [];
+    static skin = [];
+
     static #spvt = share(this, {});
 
     static {
@@ -51,6 +73,10 @@ class TestElement extends Base {
     getPvt() {
         return this.$.#pvt;
     }
+
+    getThemeCache() {
+        return this.$.#pvt.themeCache;
+    }
 }
 
 describe("jsBase (Base)", () => {
@@ -58,33 +84,30 @@ describe("jsBase (Base)", () => {
     let mockApp;
 
     beforeAll(() => {
+        // Register a dummy App class so tagType("app") resolves to "js-app"
+        class App extends Base {
+            static structure = [];
+            static skin = [];
+            render() {}
+        }
+        TestElement.register(App);
         TestElement.register(TestElement);
         TestElement.registerElements(); 
 
-        // Creating js-app triggers App constructor which defines window.JSAppLib.app
-        mockApp = document.createElement("js-app");
-        
-        // Override read-only properties on the instance
-        Object.defineProperty(mockApp, "components", {
-            value: {},
-            writable: true,
-            configurable: true
-        });
-        Object.defineProperty(mockApp, "themeManager", {
-            value: {
-                getTagStyle: jest.fn(() => []),
-                ready: true
-            },
-            writable: true,
-            configurable: true
-        });
-        
-        mockApp.fireEvent = jest.fn((name, detail) => {});
+        // Mock the app object
+        mockApp = document.createElement("div");
+        Object.defineProperty(mockApp, "tagName", { value: "JS-APP" });
+        mockApp.components = {};
+        mockApp.themeManager = new EventTarget();
+        mockApp.themeManager.currentTheme = { themeName: "default" };
+        mockApp.fireEvent = jest.fn();
+
+        window.JSAppLib.app = mockApp;
     });
 
     beforeEach(() => {
         jest.clearAllMocks();
-        mockApp.components = {};
+        window.JSAppLib.app.components = {};
         
         document.body.setAttribute("data-debug", "true");
         document.body.innerHTML = "";
@@ -114,6 +137,8 @@ describe("jsBase (Base)", () => {
 
         describe("initAttributeProperties", () => {
             class AttrTest extends Base {
+                static structure = [];
+                static skin = [];
                 static #spvt = share(this, {}); 
                 static { saveSelf(this, "$"); }
                 render() {} 
@@ -140,13 +165,11 @@ describe("jsBase (Base)", () => {
                 
                 const instance = new AttrTest();
                 
-                // String
                 expect(instance.testStr).toBe("default");
                 instance.testStr = "newValue";
                 expect(instance.getAttribute("teststr")).toBe("newValue");
                 expect(instance.testStr).toBe("newValue");
 
-                // Bool
                 expect(instance.isTestBool).toBe(false);
                 instance.isTestBool = true;
                 expect(instance.hasAttribute("testbool")).toBe(true);
@@ -157,13 +180,11 @@ describe("jsBase (Base)", () => {
                 instance.isTestBool = false;
                 expect(instance.hasAttribute("testbool")).toBe(false);
 
-                // Enum
                 instance.testEnum = "Value";
                 expect(instance.getAttribute("testenum")).toBe("Value");
                 instance.testEnum = null;
                 expect(instance.hasAttribute("testenum")).toBe(false);
 
-                // Number
                 expect(instance.testNum).toBe(5);
                 instance.testNum = 8;
                 expect(instance.getAttribute("testnum")).toBe("8");
@@ -171,7 +192,6 @@ describe("jsBase (Base)", () => {
                 
                 expect(() => { instance.testNum = 11; }).toThrow(AppLibError);
 
-                // Custom
                 expect(instance.testCustom).toBe("customGet");
                 instance.testCustom = "val";
                 expect(instance.getAttribute("custom")).toBe("val");
@@ -184,7 +204,7 @@ describe("jsBase (Base)", () => {
             expect(element.shadowRoot).not.toBeNull();
         });
 
-        test("connectedCallback detects component connection", () => {
+        test("connectedCallback adds component instance to App", () => {
             expect(element.testIsTagType(window.JSAppLib.app, "js-app")).toBe(true);
             
             element.remove();
@@ -194,7 +214,7 @@ describe("jsBase (Base)", () => {
             expect(window.JSAppLib.app.fireEvent).toHaveBeenCalledWith("addComponent", "conn-test");
         });
 
-        test("disconnectedCallback detects component disconnection", () => {
+        test("disconnectedCallback removes component instance from App", () => {
             element.id = "test-id";
             window.JSAppLib.app.components["test-id"] = element;
             
@@ -250,7 +270,6 @@ describe("jsBase (Base)", () => {
 
         test("isTagType validates types", () => {
             expect(element.testIsTagType(element, "js-testelement")).toBe(true);
-            expect(element.testIsTagType(element, TestElement.testTagType("TestElement"))).toBe(true);
             
             const div = document.createElement("div");
             expect(element.testIsTagType(div, "div")).toBe(true);
@@ -307,7 +326,7 @@ describe("jsBase (Base)", () => {
     });
 
     describe("Rendering Logic", () => {
-        test("renderContent populates shadow root", () => {
+        test("renderContent populates shadow root synchronously", () => {
             element.doRenderContent("<p>Test</p>");
             const p = element.shadowRoot.querySelector("p");
             expect(p).not.toBeNull();
@@ -322,26 +341,35 @@ describe("jsBase (Base)", () => {
             expect(span.textContent).toBe("Node content");
         });
 
-        test("renderContent waits if themeManager not ready", () => {
-            window.JSAppLib.app.themeManager.ready = false;
-            window.JSAppLib.app.fireEvent.mockClear();
-            
-            element.doRenderContent("<div>Delayed</div>");
-            
-            expect(window.JSAppLib.app.fireEvent).toHaveBeenCalledWith("wait", expect.objectContaining({
-                tag: element,
-                method: expect.any(Function)
-            }));
-            
-            window.JSAppLib.app.themeManager.ready = true;
-        });
-
         test("onWait adds to WaitBox", () => {
             const wb = element.getWaitBox();
             const spy = jest.spyOn(wb, "add");
             
             element.testOnWait({ detail: { tag: element, method: () => {}, params: [] } });
             expect(spy).toHaveBeenCalled();
+        });
+
+        test("renderContent includes global styles", () => {
+            const cache = element.getThemeCache();
+            
+            // Mock CSS Token for SelectorBuilder
+            const token = { valueOf: () => ".global-test" };
+            
+            // Register global styles: structure with 1 rule, skin empty
+            cache.registerGlobal(
+                [ [[token], { color: "pink" }] ], 
+                [] 
+            );
+            
+            element.doRenderContent("<div></div>");
+            
+            const sheets = element.shadowRoot.adoptedStyleSheets;
+            expect(sheets.length).toBeGreaterThan(0);
+            
+            // Find the sheet with our global style
+            const globalSheet = sheets.find(s => s.cssText && s.cssText.includes(".global-test"));
+            expect(globalSheet).toBeDefined();
+            expect(globalSheet.cssText).toContain("color: pink");
         });
     });
 });

@@ -1,6 +1,7 @@
 import { share } from "../node_modules/cfprotected/index.mjs";
 import ActionControlBase from "./jsActionControlBase.mjs";
 import Enum from "./util/Enum.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class ActionButton extends ActionControlBase {
     static #spvt = share(this, {});
@@ -9,6 +10,51 @@ export default class ActionButton extends ActionControlBase {
         return ActionControlBase.observedAttributes.concat([ "buttonmode", "toggle" ]); 
     }
     
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        return [
+            [
+                [[CSS.TAG("button")], {
+                    border: "none",
+                    minWidth: "28px",
+                    minHeight: "28px",
+                    backgroundColor: "transparent",
+                    color: "inherit",
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-evenly"
+                }],
+                [[CSS.CLASS("hidden")], {
+                    display: "none"
+                }],
+                [[CSS.TAG("img")], {
+                    width: "18px",
+                    height: "18px"
+                }],
+                [[CSS.TAG("button").CHILD(CSS.NTH_CHILD(2))], {
+                    paddingLeft: "4px"
+                }]
+            ],
+            [
+                [[CSS.HOST(CSS.NOT(CSS.ATTR("disabled"))).DESCENDANT(CSS.TAG("button").HOVER),
+                  CSS.HOST(CSS.NOT(CSS.ATTR("disabled"))).DESCENDANT(CSS.TAG("button").ACTIVE)], {
+                    backgroundColor: "var(--brush-shadow)",
+                    color: "var(--pen-selected)"
+                }],
+                [[CSS.HOST(CSS.NOT(CSS.ATTR("disabled")).CLASS("selected"))], {
+                    backgroundColor: "var(--brush-selected)",
+                    color: "var(--pen-selected)"
+                }],
+                [[CSS.HOST(CSS.ATTR("disabled"))], {
+                    filter: "opacity(33%)"
+                }]
+            ]
+        ];
+    }
+
     static {
         const spvt = this.#spvt;
         const BM = this.ButtonModes;
@@ -49,8 +95,8 @@ export default class ActionButton extends ActionControlBase {
         onCaptionChanged(e) {
             const pvt = this.$.#pvt;
             if (pvt.shadowRoot.innerHTML) {
-                const label = pvt.shadowRoot.querySelector("img");
-                label.innerHTML = this.caption.replace("_", "");
+                const label = pvt.shadowRoot.querySelector("label");
+                label.innerHTML = (this.caption || "").replace("_", "");
             }
         },
         onButtonModeChanged(e) {

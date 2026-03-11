@@ -1,0 +1,24 @@
+# Session Notes
+
+## Completed Tasks
+- **Protocol Establishment**: Reinforced the "Understand -> Plan -> Verify -> Implement" workflow.
+- **Functional CSS DSL (SelectorBuilder & Selectors)**:
+    - Completely refactored the CSS DSL to be functional and type-aware.
+    - Replaced tagged template literals with functional composition (e.g., `CSS.HOST(CSS.CLASS("light"))`).
+    - Implemented "Smart Wrapping" for Type 3 (Attributes) and Type 4 (Conditions) tokens.
+    - Added Matcher tokens (EQUALS, STARTSWITH, etc.) for more readable attribute selectors.
+    - Verified via `test/lib/util/SelectorBuilder.test.mjs`.
+- **Component Style Migration**:
+    - Migrated `jsApp.mjs`, `jsSCSPanel.mjs`, `jsMenu.mjs`, `jsMenuItem.mjs`, and `jsPopupMenu.mjs` to the new functional DSL.
+    - Verified via updated test suites for each component.
+- **Spec Compliance**:
+    - Refactored `jsMenu.mjs` to move attribute-setting logic from the constructor to `connectedCallback` to comply with Custom Element standards and resolve JSDOM `NotSupportedError`.
+
+## Next Steps
+- **Continue Component Migration**: Migrate remaining components (e.g., `jsSplitPanel`, `jsCollapsePanel`, `jsTreeView`, `jsListView`, etc.) to the new functional styling DSL.
+- **Global Styles Migration**: Identify remaining global styles in legacy CSS files and integrate them into `App.getGlobalStyleSheet()`.
+- **Cleanup**: Remove legacy `.css` files once migration is complete.
+
+## Context
+- The `Selectors` DSL is now fully functional and type-aware. Use uppercase methods: `ATTR()`, `CLASS()`, `TAG()`, `IS()`, `NOT()`, etc.
+- Always use `super.IS()` in the `Selector` class getters in `src/util/Selectors.mjs` to avoid recursion with the public `IS()` method.

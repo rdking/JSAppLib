@@ -1,69 +1,92 @@
-import { share, accessor, abstract, final } from "../node_modules/cfprotected/index.mjs";
+import { share, accessor, abstract, final, saveSelf } from "../node_modules/cfprotected/index.mjs";
 import Base from "./jsBase.mjs";
 import HTMLColor from "./util/HTMLColor.mjs";
 import Enum from "./util/Enum.mjs";
+import CSS from "./util/Selectors.mjs";
 
-const scss = `
-<style>
-    :host {
-        flex: 1;
-        overflow: auto;
-        position: relative;
-    }
-
-    canvas {
-        position: absolute;
-        overflow: visible;
-        left: calc(50% - 160px);
-        top: calc(50% - 120px);
-        width: 320px;
-        height: 240px;
-        background-color: black;
-    }
-</style>
-`;
-
+/**
+ * @summary A high-level graphics surface for 2D drawing and pixel manipulation.
+ * @description Provides a simplified, all-in-one interface for common graphics
+ * tasks, while still allowing direct access to the underlying 2D context.
+ */
 export default class Surface extends Base {
-    static observedAttributes = ["surfacewidth", "surfaceheight", "width", "height"];
-    static #Plane = new Enum("Planes", ["FRONT", "BACK", "SCRATCH"]);
-    static get Plane() { return this.$.#Plane; }
+    static #spvt = share(this, {});
 
-    //Pulls in shared private functions
-    static #spvt= share(this, {});
+    /**
+     * @inheritdoc
+     */
+    static get observedAttributes() {
+        return Base.observedAttributes.concat([
+            "surfacewidth", "surfaceheight", "width", "height"
+        ]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        return [
+            [
+                [[CSS.HOST], {
+                    flex: "1 1 auto",
+                    overflow: "auto",
+                    position: "relative"
+                }],
+                [[CSS.TAG("canvas")], {
+                    position: "absolute",
+                    overflow: "visible",
+                    left: "calc(50% - (var(--surface-width, 320px) / 2))",
+                    top: "calc(50% - (var(--surface-height, 240px) / 2))",
+                    width: "var(--surface-width, 320px)",
+                    height: "var(--surface-height, 240px)"
+                }]
+            ],
+            [
+                [[CSS.TAG("canvas")], {
+                    backgroundColor: "black"
+                }]
+            ]
+        ];
+    }
+
+    static #Plane = new Enum("Planes", ["FRONT", "BACK", "SCRATCH"]);
+    static get Plane() { return Surface.#Plane; }
 
     static {
-        this.#spvt.initAttributeProperties(this, {
+        saveSelf(this, "$");
+        const spvt = this.$.#spvt;
+
+        spvt.initAttributeProperties(this, {
             width: { },
             height: { },
             surfacewidth: { unbound: true },
             surfaceheight: { unbound: true }
         });
-        this.#spvt.register(this);
+
+        spvt.register(this);
     }
 
-    #planes;
+    #planes = [];
     #updating = [false, false, false];
     #target = 0;
     #resizing = 0;
 
-    #pvt= share(this, Surface, {
+    #pvt = share(this, Surface, {
         render() {
-            let front = this.#pvt.make("canvas");
-            let back = this.#pvt.make("canvas");
-            let scratch = this.#pvt.make("canvas");
-    
-            front.id = "front";
-            front.width = 320;
-            front.height = 240;
-            back.width = 320;
-            back.height = 240;
-            scratch.width = 320;
-            scratch.height = 240;
-    
-            this.$.#pvt.shadowRoot.innerHTML = scss;
-            this.$.#pvt.shadowRoot.append(front);
-    
-            this.#planes = [{
+            const pvt = this.$.#pvt;
+            const width = parseInt(this.width) || 320;
+            const height = parseInt(this.height) || 240;
+
+            const front = pvt.make("canvas", { id: "front" });
+            const back = pvt.make("canvas", { id: "back" });
+            const scratch = pvt.make("canvas", { id: "scratch" });
+
+            front.width = back.width = scratch.width = width;
+            front.height = back.height = scratch.height = height;
+
+            pvt.renderContent(front);
+
+            this.$.#planes = [{
                 canvas: front,
                 context: front.getContext("2d", { willReadFrequently: true })
             }, {
@@ -73,281 +96,274 @@ export default class Surface extends Base {
                 canvas: scratch,
                 context: scratch.getContext("2d", { willReadFrequently: true })
             }];
+
+            this.$.#updateSurfaceCSS();
         },
         onWidthChanged(e) {
+            const pvt = this.$.#pvt;
             if (!this.$.#resizing) {
                 let { newValue } = e.detail;
-                newValue = Math.max(1, newValue);
-                this.$.#resize(newValue, this.height);
+                newValue = Math.max(1, parseInt(newValue) || 1);
+                pvt.resize(newValue, this.height);
             }
         },
         onHeightChanged(e) {
+            const pvt = this.$.#pvt;
             if (!this.$.#resizing) {
                 let { newValue } = e.detail;
-                newValue = Math.max(1, newValue);
-                this.$.#resize(this.width, newValue);
+                newValue = Math.max(1, parseInt(newValue) || 1);
+                pvt.resize(this.width, newValue);
             }
         },
         onSurfaceWidthChanged(e) {
-            let { newValue } = e.detail;
-            let canvas = this.$.#planes[0].canvas; 
-            let style = canvas.style;
-            let scrollLeft = canvas.Left + (canvas.scrollWidth - canvas.scrollLeft)/2;
-            let factor = newValue/canvas.clientWidth;
-            style.width = newValue + "px";
-            if (newValue > this.clientWidth) {
-                style.left = "0px";
-                canvas.scrollLeft = scrollLeft * factor;
-            }
-            else {
-                style.left = `calc(50% - ${newValue/2}px)`;
-            }
+            this.$.#updateSurfaceCSS();
         },
         onSurfaceHeightChanged(e) {
-            let { newValue } = e.detail;
-            let canvas = this.$.#planes[0].canvas; 
-            let style = canvas.style;
-            let scrollTop = canvas.scrollTop + (canvas.scrollHeight - canvas.scrollTop)/2;
-            let factor = newValue/canvas.clientHeight;
-            style.height = newValue + "px";
-            if (newValue > this.clientWidth) {
-                style.top = "0px";
-                canvas.scrollTop = scrollTop * factor;
-            }
-            else {
-                style.top = `calc(50% - ${newValue/2}px)`;
-            }
+            this.$.#updateSurfaceCSS();
+        },
+        resize(width, height) {
+            const pvt = this.$.#pvt;
+            const planes = this.$.#planes;
+            if (!planes.length) return;
+
+            let front = planes[0];
+            let back = planes[1];
+            let scratch = planes[2];
+
+            // Use scratch to hold current image
+            scratch.canvas.width = width;
+            scratch.canvas.height = height;
+            scratch.context.drawImage(front.canvas, 0, 0, front.canvas.width, front.canvas.height, 0, 0, width, height);
+
+            // Resize front and back
+            front.canvas.width = width;
+            front.canvas.height = height;
+            front.context.drawImage(scratch.canvas, 0, 0);
+
+            back.canvas.width = width;
+            back.canvas.height = height;
+            back.context.drawImage(scratch.canvas, 0, 0);
+
+            this.$.#resizing++;
+            this.setAttribute("width", width);
+            this.setAttribute("height", height);
+            this.$.#resizing--;
+            
+            this.$.#updateSurfaceCSS();
         }
     });
 
-    #resize(width, height) {
-        const planes = this.$.#planes;
-        let front = planes[0];
-        let back = planes[1];
-        let scratch = planes[2];
-        scratch.canvas.setAttribute("width", width);
-        scratch.canvas.setAttribute("height", height);
-        scratch.context.drawImage(front.canvas, 0, 0, front.canvas.width, front.canvas.height, 0, 0, width, height);
-        front.canvas.setAttribute("width", width);
-        front.canvas.setAttribute("height", height);
-        front.context.drawImage(scratch.canvas, 0, 0);
-        back.canvas.setAttribute("width", width);
-        back.canvas.setAttribute("height", height);
-        back.context.drawImage(scratch.canvas, 0, 0);
-        ++this.$.#resizing;
-        this.setAttribute("width", width);
-        this.setAttribute("height", height);
-        --this.$.#resizing;
+    #updateSurfaceCSS() {
+        const sw = parseInt(this.surfaceWidth) || parseInt(this.width) || 320;
+        const sh = parseInt(this.surfaceHeight) || parseInt(this.height) || 240;
+        this.style.setProperty("--surface-width", `${sw}px`);
+        this.style.setProperty("--surface-height", `${sh}px`);
     }
 
     #parseColor(color) {
-        let retval = color;
+        if (color instanceof HTMLColor) return color;
         try {
-            if (!(color instanceof HTMLColor)) {
-                retval = new HTMLColor(color);
-            }
+            return new HTMLColor(color);
+        } catch (e) {
+            return color;
         }
-        catch(e) {
-            retval = color;
-        }
-
-        return retval;
     }
 
     constructor() {
         super();
+
+        const pvt = this.$.#pvt;
+        pvt.registerEvents(pvt, {
+            render: "render",
+            widthChanged: "onWidthChanged",
+            heightChanged: "onHeightChanged",
+            surfacewidthChanged: "onSurfaceWidthChanged",
+            surfaceheightChanged: "onSurfaceHeightChanged"
+        });
     }
 
     connectedCallback() {
-        this.addEventListener("render", this.$.#pvt.render);
-        this.addEventListener("widthChanged", this.$.#pvt.onWidthChanged);
-        this.addEventListener("heightChanged", this.$.#pvt.onHeightChanged);
-        this.addEventListener("surfacewidthChanged", this.$.#pvt.onSurfaceWidthChanged);
-        this.addEventListener("surfaceheightChanged", this.$.#pvt.onSurfaceHeightChanged);
         super.connectedCallback();
+        this.$.#updateSurfaceCSS();
     }
 
     setTargetLayer(layer) {
-        layer = Surface.Plane(layer);
-        this.$.#target = layer.value;
+        this.$.#target = Surface.Plane(layer).value;
     }
 
-    /**
-     * Enables pixel editing mode.
-     */
-    beginPixelUpdate(layer) {
-        if (layer == void 0) {
-            layer = this.$.#target;
-        }
-        layer = Surface.Plane(layer);
-
-        const target = layer.value;
-        let retval;
+    beginPixelUpdate(layer = this.$.#target) {
+        const target = Surface.Plane(layer).value;
         if (!this.$.#updating[target]) {
             const plane = this.$.#planes[target];
-            const { width, height } = plane.canvas;
-            plane.image = plane.context.getImageData(0, 0, width, height);
-            
+            plane.image = plane.context.getImageData(0, 0, plane.canvas.width, plane.canvas.height);
             this.$.#updating[target] = true;
-            retval = plane.image;
+            return plane.image;
         }
-        return retval;
+        return this.$.#planes[target].image;
     }
 
-    /**
-     * Ends pixel editing mode.
-     */
-    endPixelUpdate(layer) {
-        if (layer == void 0) {
-            layer = this.$.#target;
-        }
-        layer = Surface.Plane(layer);
-
-        const target = layer.value;
+    endPixelUpdate(layer = this.$.#target) {
+        const target = Surface.Plane(layer).value;
         if (this.$.#updating[target]) {
             const plane = this.$.#planes[target];
             plane.context.putImageData(plane.image, 0, 0);
             plane.image = null;
-            
             this.$.#updating[target] = false;
         }
     }
 
-    /**
-     * Retrieves the color of a selected pixel.
-     * @param {Number} x Horizontal coordinate
-     * @param {Number} y Vertical coordinate
-     * @returns HTMLColor corresponding to the selected pixel.
-     */
     getPixel(x, y) {
-        let retval = null;
         const target = this.$.#target;
+        if (!this.$.#updating[target]) {
+            throw new Error(`Cannot read pixels before calling "beginPixelUpdate" on the current layer.`);
+        }
+
         const plane = this.$.#planes[target];
-        const image = plane.image;
-        const context = plane.context;
-        const canvas = plane.canvas;
-
-        if (!this.#updating[target]) {
-            throw new Error(`Cannot read pixels on the surface before calling "beginUpdate" on the current layer.`);
+        if (x >= 0 && y >= 0 && x < plane.canvas.width && y < plane.canvas.height) {
+            const index = 4 * (y * plane.canvas.width + x);
+            const d = plane.image.data;
+            return new HTMLColor([d[index], d[index + 1], d[index + 2], d[index + 3] / 255]);
         }
-
-        if ((x >= 0) && (y >= 0) && (canvas.width > x) && (canvas.height > y)) {
-            const canvas = context.canvas;
-            const index = 4 * (y * canvas.width + x);
-
-            retval = new HTMLColor([image.data[index], image.data[index+1], image.data[index+2], image.data[index+3]/255]);
-        }
-        else {
-            throw new Error(`Requested pixel position (${x}, ${y}) is outside the surface.`);
-        }
-
-        return retval;
+        throw new Error(`Pixel (${x}, ${y}) is outside the surface.`);
     }
 
-    /**
-     * Sets a selected pixel to the given color.
-     * @param {Number} x Horizontal coordinate
-     * @param {Number} y Vertical coordinate
-     * @param {HTMLColor} color Color to apply
-     */
     setPixel(x, y, color) {
         const target = this.$.#target;
+        if (!this.$.#updating[target]) {
+            throw new Error(`Cannot write pixels before calling "beginPixelUpdate" on the current layer.`);
+        }
+
         const plane = this.$.#planes[target];
-        const canvas = plane.canvas;
-
-        if (!this.#updating[target]) {
-            throw new Error(`Cannot write pixels on the surface before calling "beginUpdate" on the current layer.`);
-        }
-
-        if ((x >= 0) && (y >= 0) && (canvas.width > x) && (canvas.height > y)) {
-            const image = plane.image;
-            const index = 4 * (y * canvas.width + x);
-            color = this.$.#parseColor(color);  
-            image.data[index + 0] = color.red;
-            image.data[index + 1] = color.green;
-            image.data[index + 2] = color.blue;
-            image.data[index + 3] = color.alpha;
+        if (x >= 0 && y >= 0 && x < plane.canvas.width && y < plane.canvas.height) {
+            const index = 4 * (y * plane.canvas.width + x);
+            const c = this.$.#parseColor(color);
+            const d = plane.image.data;
+            d[index] = c.red;
+            d[index + 1] = c.green;
+            d[index + 2] = c.blue;
+            d[index + 3] = c.alpha;
         }
     }
 
-    /**
-     * Proportionately scales the Surface to the desired dimensions.
-     * @param {Number} factor Multiplier requred to reach the new size.
-     */
-    scale(factorX, factorY) {
-        if (this.isPixelEditing) {
-            new Error("Cannot scale a surface while in Pixel Editing mode.");
-        }
-
-        let newWidth = ~~(this.width * factorX);
-        let newHeight = ~~(this.height * factorY);
-        this.$.#resize(newWidth, newHeight);
-    }
-
-    /**
-     * Blanks all layers of the canvas.
-     */
     clear() {
-        if (!this.isPixelEditing) {
-            for (let plane of this.$.#planes) {
-                plane.context.clearRect(0, 0, plane.canvas.width, plane.canvas.height);
-            }
+        if (this.isPixelEditing) return;
+        for (const plane of this.$.#planes) {
+            plane.context.clearRect(0, 0, plane.canvas.width, plane.canvas.height);
         }
     }
 
-    /**
-     * Fills a selected layer with the given color.
-     * @param {Surface.Plane} layer Plane to be cleared
-     * @param {HTMLColor} color Color to fill the plane
-     */
     clearLayer(layer, color) {
-        if (!this.isPixelEditing) {
-            let plane = this.$.#planes[Surface.Plane(layer).value];
-            let canvas = plane.canvas;
-            let context = plane.context;
-            color = this.$.#parseColor(color);
-            context.save();
-            context.fillStyle = color.rgbaCode;
-            context.fillRect(0, 0, canvas.width, canvas.height);
-            context.restore();
-        }
+        if (this.isPixelEditing) return;
+        const plane = this.$.#planes[Surface.Plane(layer).value];
+        const ctx = plane.context;
+        const c = this.$.#parseColor(color);
+        ctx.save();
+        ctx.fillStyle = c.rgbaCode || c;
+        ctx.fillRect(0, 0, plane.canvas.width, plane.canvas.height);
+        ctx.restore();
     }
 
-    /**
-     * Copies the image data from one layer to another.
-     * @param {Surface.Plane} from Source plane
-     * @param {Surface.Plane} to Destination plane
-     */
     copyLayer(from, to) {
-        from = Surface.Plane(from);
-        to = Surface.Plane(to);
-
-        const fPlane = this.$.#planes[from.value];
-        const tPlane = this.$.#planes[to.value];
-        if (this.isPixelEditing) {
-            throw new Error("Cannot copy surface layers while in Pixel Editing mode.");
-        }
+        if (this.isPixelEditing) throw new Error("Cannot copy layers while pixel editing.");
+        const fPlane = this.$.#planes[Surface.Plane(from).value];
+        const tPlane = this.$.#planes[Surface.Plane(to).value];
+        tPlane.context.clearRect(0, 0, tPlane.canvas.width, tPlane.canvas.height);
         tPlane.context.drawImage(fPlane.canvas, 0, 0);
     }
 
+    scale(factorX, factorY) {
+        if (this.isPixelEditing) throw new Error("Cannot scale while pixel editing.");
+        this.$.#pvt.resize(~~(this.width * factorX), ~~(this.height * factorY));
+    }
+
+    // High-level Drawing API
+    drawLine(x1, y1, x2, y2, color, width = 1) {
+        const ctx = this.context;
+        const c = this.$.#parseColor(color);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = c.rgbaCode || c;
+        ctx.lineWidth = width;
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    drawRect(x, y, w, h, color, fill = false) {
+        const ctx = this.context;
+        const c = this.$.#parseColor(color);
+        ctx.save();
+        if (fill) {
+            ctx.fillStyle = c.rgbaCode || c;
+            ctx.fillRect(x, y, w, h);
+        } else {
+            ctx.strokeStyle = c.rgbaCode || c;
+            ctx.strokeRect(x, y, w, h);
+        }
+        ctx.restore();
+    }
+
+    drawCircle(x, y, r, color, fill = false) {
+        const ctx = this.context;
+        const c = this.$.#parseColor(color);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        if (fill) {
+            ctx.fillStyle = c.rgbaCode || c;
+            ctx.fill();
+        } else {
+            ctx.strokeStyle = c.rgbaCode || c;
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    drawText(text, x, y, font = "12px sans-serif", color = "white") {
+        const ctx = this.context;
+        const c = this.$.#parseColor(color);
+        ctx.save();
+        ctx.font = font;
+        ctx.fillStyle = c.rgbaCode || c;
+        ctx.fillText(text, x, y);
+        ctx.restore();
+    }
+
+    drawImage(img, x, y, w, h) {
+        const ctx = this.context;
+        if (w !== undefined && h !== undefined) {
+            ctx.drawImage(img, x, y, w, h);
+        } else {
+            ctx.drawImage(img, x, y);
+        }
+    }
+
+    snapshot(type = "image/png", quality = 1.0) {
+        return this.$.#planes[0].canvas.toDataURL(type, quality);
+    }
+
+    get context() {
+        return this.$.#planes[this.$.#target].context;
+    }
+
     get isPixelEditing() {
-        const updating = this.$.#updating;
-        return (updating[0] || updating[1] || updating[2]);
+        return this.$.#updating.some(v => v);
     }
 
     get surfaceWidth() {
-        return this.$.#planes[0].canvas.clientWidth;
+        return this.hasAttribute("surfacewidth") ? this.getAttribute("surfacewidth") : this.width;
     }
 
     set surfaceWidth(v) {
-        this.$.#pvt.onSurfaceWidthChanged({detail: {newValue: v}});
+        this.setAttribute("surfacewidth", v);
     }
 
     get surfaceHeight() {
-        return this.$.#planes[0].canvas.clientHeight;
+        return this.hasAttribute("surfaceheight") ? this.getAttribute("surfaceheight") : this.height;
     }
 
     set surfaceHeight(v) {
-        this.$.#pvt.onSurfaceHeightChanged({detail: {newValue: v}});
+        this.setAttribute("surfaceheight", v);
     }
 }

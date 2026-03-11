@@ -1,6 +1,8 @@
 import { share, saveSelf, accessor, abstract } from "../node_modules/cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
 import WaitBox from "./util/WaitBox.mjs";
+import ThemeCache from "./util/ThemeCache.mjs";
+import CSS from "./util/Selectors.mjs";
 
 const Base = abstract(class Base extends HTMLElement {
     static get #prefix() { return "js"; }
@@ -15,30 +17,16 @@ const Base = abstract(class Base extends HTMLElement {
     static #tagNames = new Map();
     static #tagClasses = new Map();
     static #tagsRegistered = new Set();
+    static #themeCache = new ThemeCache(Base.#prefix);
 
     static #spvt = share(this, {
         /**
-         * AttributeDef is used to define attributes for Base::initAttributeProperties.
-         * @typedef AttributeDef
-         * @type object
-         * @property {Enum} enumType Property generated must be of the given enum type.  
-         * @property {bool} isBool Property generated will be similar to "is<attrName>" if true.
-         * @property {bool} readonly No setter will be defined if true.
-         * @property {bool} writeonly No getter will be defined if true
-         * @property {bool} unbound Skip creating getters & setters.
-         * @property {function} getter Custom "get" function for the new property
-         * @property {function} setter Custom "set" function for the new property
-         * @property {string} caption Overrides default property naming.
-         * @property {*} default The value to return if the attribute is not there.
+         * @returns {ThemeCache} The shared ThemeCache instance.
          */
+        get themeCache() { return Base.#themeCache; },
 
         /**
-         * Generates properties on the class prototype for each specified attribute. Must be
-         * called before reegister() if used. This will ensure that appropriate properties
-         * are set when the class instance is recognized during the custom elements definition
-         * process.
-         * @param {class} klass The constructor of the target class.
-         * @param {object} attributes A dictionary of attribute name keys and {@link AttributeDef} values.
+         * Generates properties on the class prototype for each specified attribute.
          */
         initAttributeProperties(klass, attributes) {
             let proto = klass.prototype;
@@ -58,7 +46,7 @@ const Base = abstract(class Base extends HTMLElement {
             function getBAccessors(attr) {
                 function getter() {
                     return this.hasAttribute(attr) &&
-                        !["no", "false", "0", "null", ""].includes(this.getAttribute(attr).toLowerCase().trim());
+                        !["no", "false", "0", "null"].includes(this.getAttribute(attr).toLowerCase().trim());
                 }
                 function setter(v) {
                     if (v) {
@@ -136,11 +124,8 @@ const Base = abstract(class Base extends HTMLElement {
             }
         },
         /**
-         * Creates and registeres a new HTML tag based on the class name, the prefix in this
-         * base class, and the class itself. Also signals to this library when the App class
-         * has been loaded to trigger various things that can only happen after App has been
-         * loaded.
-         * @param {class} klass The new HTMLElement class being registered as a "Custom Element".
+         * Creates and registeres a new HTML tag based on the class name.
+         * @param {class} klass The new HTMLElement class being registered.
          */
         register(klass) {
             saveSelf(klass, "$");
@@ -148,17 +133,9 @@ const Base = abstract(class Base extends HTMLElement {
             const tag = `${this.$.#prefix}-${className.toLowerCase()}`;
             Base.$.#tagNames.set(klass, tag);
             Base.$.#tagClasses.set(tag, klass);
-
-            // This method now only collects the class and its tag name.
-            // The actual registration is handled by registerElements().
         },
         /**
          * @summary Defines all queued custom elements.
-         * @description Iterates through all component classes gathered by the `register` method
-         * and officially defines them with the browser's `customElements.define()` API.
-         * This ensures that all components are registered at a controlled time.
-         * This method is intended to be called by `jsApp.ready()` after all library modules are loaded.
-         * @protected
          */
         registerElements() {
             const iter = Base.$.#tagClasses[Symbol.iterator]();
@@ -173,16 +150,12 @@ const Base = abstract(class Base extends HTMLElement {
         },
         /**
          * Calculates and returns the corresponding tag name for the given class name.
-         * @param {String} name Name of the class to retrieve the corresponding tag name.
-         * @returns {String} The corresponding tag name for the supplied name.
          */
         tagType(name) {
             return this.$.#spvt.tagTypes(name)[0];
         },
         /**
          * Calculates and returns the corresponding tag names for the given class names.
-         * @param {[String]]} names Array of class names to retrieve the corresponding tag names.
-         * @returns {[String]} Array of corresponding tag names for the given class names.
          */
         tagTypes(names) {
             let retval = [];
@@ -204,17 +177,27 @@ const Base = abstract(class Base extends HTMLElement {
     static {
         saveSelf(this, "$");
         Base.$.#tagNames.set(this, "");
+        CSS.tagTransformer = (name) => Base.#spvt.tagType(name);
+    }
+
+    /**
+     * Returns the default style configuration for this component.
+     * Override this in subclasses to provide specific structural and skin styles.
+     * @returns {Array<Array>} A tuple [[structure], [skin]] containing DSL rule arrays.
+     * @protected
+     */
+    static getDefaultStyleSheet() {
+        return [[], []];
     }
 
     static get observedAttributes() { 
         return [ "action", "theme", "style", "class" ];
     }
 
-
-
     #rendering = false;
     #shadowRoot;
     #waitbox = new WaitBox();
+    #styleHandler = null;
 
     #doRenderContent(content, target) {
         if (!this.$.#rendering) try {
@@ -222,17 +205,21 @@ const Base = abstract(class Base extends HTMLElement {
 
             this.fireEvent("preRender");
 
-            const app = JSAppLib.app;
-            const tm = app ? app.themeManager : null;
             let shadow = target || this.$.#shadowRoot;
-            let styles = (!tm || !("ready" in tm)) ? [] : tm.getTagStyle(this, shadow);
+            
+            // Apply styles from ThemeCache
+            const tagName = this.tagName.toLowerCase();
+            const styles = [
+                ...Base.#themeCache.getGlobalStyles(),
+                ...Base.#themeCache.getStyles(tagName)
+            ];
+            shadow.adoptedStyleSheets = styles;
 
             if (!Array.isArray(content)) {
                 content = [content];
             }
 
             shadow.innerHTML = "";
-            shadow.adoptedStyleSheets = styles;
             for (let element of content) {
                 if (typeof(element) == "string") {
                     let temp = document.createElement("template");
@@ -251,26 +238,24 @@ const Base = abstract(class Base extends HTMLElement {
     }
 
     /**
-     * Retrieves the class constructor for a given tag name, caching it for future use.
-     * @param {string} type The full tag name (e.g., 'js-app', 'div').
-     * @returns {Function|null} The constructor for the tag, or null if not found.
-     * @private
+     * Retrieves the class constructor for a given tag name.
      */
     #getClassForTag(type) {
         let klass = Base.$.#tagClasses.get(type);
         if (!klass) {
-            // For built-in elements, check if it's a known element constructor.
             const potentialClass = window[`HTML${type.charAt(0).toUpperCase() + type.slice(1)}Element`];
             if (typeof potentialClass === 'function' && /\[native code\]/.test(potentialClass.toString())) {
                 Base.$.#tagClasses.set(type, potentialClass);
                 klass = potentialClass;
             }
         }
-
         return klass;
     }
 
     #pvt= share(this, Base, {
+        themeCache: accessor({
+            get() { return Base.#themeCache; }
+        }),
         shadowRoot: accessor({
             get() { return this.$.#shadowRoot; }
         }),
@@ -280,28 +265,25 @@ const Base = abstract(class Base extends HTMLElement {
         render() {
             throw new TypeError(`The protected "render" method must be overridden`);
         },
-        onPreRender() {
-            /**
-             * NOP Function
-             * Override to handle the preRender event.
-             */
-        },
-        onPostRender() {
-            /**
-             * NOP Function
-             * Override to handle the postRender event.
-             */
-        },
+        onPreRender() { },
+        onPostRender() { },
+        
         renderContent(content, target) {
-            const app = JSAppLib.app;
-            const tm = app ? app.themeManager : null;
-
-            if (tm && (!("ready" in tm) || !tm.ready)) {
-                app.fireEvent("wait", {tag: this, method: this.$.#doRenderContent, params:[content, target]});
-            } else {
-                this.$.#doRenderContent(content, target);
+            this.$.#doRenderContent(content, target);
+        },
+        
+        updateStyles(e) {
+            const affectedTags = e.detail;
+            if (!affectedTags || affectedTags.includes(this.tagName.toLowerCase())) {
+                const shadow = this.$.#shadowRoot;
+                const styles = [
+                    ...Base.#themeCache.getGlobalStyles(),
+                    ...Base.#themeCache.getStyles(this.tagName.toLowerCase())
+                ];
+                shadow.adoptedStyleSheets = styles;
             }
         },
+
         getShadowChild(type, selector) { 
             const s = (type ? this.$.#pvt.tagType(type) : "") + (selector || "") ;
             return this.$.#pvt.shadowRoot.querySelector(s);
@@ -310,19 +292,9 @@ const Base = abstract(class Base extends HTMLElement {
             const s = (type ? this.$.#pvt.tagType(type) : "") + (selector || "") ;
             return this.$.#pvt.shadowRoot.querySelectorAll(s);
         },
-        /**
-         * Calculates and returns the corresponding tag name for the given class name.
-         * @param {String} name Name of the class to retrieve the corresponding tag name.
-         * @returns {String} The corresponding tag name for the supplied name.
-         */
         tagType(name) {
             return Base.#spvt.tagTypes([name])[0];
         },
-        /**
-         * Calculates and returns the corresponding tag names for the given class names.
-         * @param {[String]]} names Array of class names to retrieve the corresponding tag names.
-         * @returns {[String]} Array of corresponding tag names for the given class names.
-         */
         tagTypes(names) {
             return Base.#spvt.tagTypes(names);
         },
@@ -354,20 +326,11 @@ const Base = abstract(class Base extends HTMLElement {
             }
             return retval;
         },
-        /**
-         * Checks to see if the given tag is or inherits from the type specified by its name.
-         * Unlike many of the other type managing functions, this one DOES NOT automatically
-         * assume that the tag type passed in is a member of this library. As such, it can
-         * be used to check the type of any element passed in. However, you must remember to
-         * specify the full tag name (preferably using "tagType('name')) when querying for a
-         * tag from this library.
-         * @param {HTMLElement} target The tag to check.
-         * @param {String} The complete name of tag type expected.
-         * @returns true if the tag is or inherits from the given type name. Otherwise false.
-         */
         isTagType(target, type) {
             let retval = false;
+
             if ((target instanceof HTMLElement) && (typeof type === 'string')) {
+                type = this.$.#pvt.tagType(type);
                 if (target.tagName.toLowerCase() === type.toLowerCase()) {
                     retval = true;
                 }
@@ -381,18 +344,14 @@ const Base = abstract(class Base extends HTMLElement {
         },
         validateParent(type, message) {
             const pvt = this.$.#pvt;
-
-            if (!Array.isArray(type)) {
-                type = [type];
-            }
+            if (!Array.isArray(type)) type = [type];
 
             let parent = this.parentElement;
             let found = false;
             for (let t of type) {
                 if (typeof(t) == "string") {
                     found = pvt.isTagType(parent, pvt.tagType(t));
-                }
-                else if (typeof(t) == "function") {
+                } else if (typeof(t) == "function") {
                     found = (parent instanceof t);
                 }
                 if (found) break;
@@ -405,9 +364,7 @@ const Base = abstract(class Base extends HTMLElement {
         },
         validateChildren(type, message) {
             const pvt = this.$.#pvt;
-            if (!Array.isArray(type)) {
-                type = [type];
-            }
+            if (!Array.isArray(type)) type = [type];
 
             for (let child of this.children) {
                 let found = false;
@@ -417,67 +374,41 @@ const Base = abstract(class Base extends HTMLElement {
                             found = true;
                             break;
                         }
-                    }
-                    else if (typeof(t) == "function") {
+                    } else if (typeof(t) == "function") {
                         if (child instanceof t) {
                             found = true;
                             break;
                         }
                     }
                 }
-
                 if (!found) {
                     pvt.tagError();
                     throw new TypeError(message);
                 }
             }
         },
-        /**
-         * Finds the HTMLSlotElement in the shadowRoot of a given tag that 
-         * actually contains this element in the display.
-         * @param {Base} parent The HTMLElement with a shadowRoot to probe for
-         * the slot that contains the current object,
-         * @returns parent | HTMLSlotElement
-         */
         getShadowParent(parent) {
             let retval = parent;
-
             if (!retval) {
                 retval = this.$.#pvt.shadowRoot.host;
-            }
-            else {
+            } else {
                 const shadow = (retval instanceof Base) ? retval.$.#shadowRoot : null;
-
                 if (shadow) {
                     let slotName = this.getAttribute("slot") || "";
                     let slot = slotName ? `[name=${slotName}]` : ":not([name])";
                     retval = shadow.querySelector(`slot${slot}`);
                 }
             }
-
             return retval;
         },
-        /**
-         * Throws a TypeError if the specified tag is not an ancestor of the
-         * current tag. Setting "not" to true causes the exception to be thrown
-         * if the specified tag is an ancestor.
-         * @param {string|Array} type Name or list of names of the tag(s) to look for.
-         * @param {boolean} not Negates the search result.
-         * @param {string} message The error message thrown on failure.
-         * @param {boolean} noerr If true, tagError will not be called
-         */
         validateAncestry(type, not, message, noerr) {
             const pvt = this.$.#pvt;
-
             if (typeof not === "string") {
                 noerr = message;
                 message = not;
                 not = false;
             }
-
-            if (!Array.isArray(type)) {
-                type = [type];
-            }
+            if (!Array.isArray(type)) type = [type];
 
             let parent = this.parentElement;
             let found = false;
@@ -489,8 +420,7 @@ const Base = abstract(class Base extends HTMLElement {
                             found = true;
                             break;
                         }
-                    }
-                    else if (typeof(t) == "function") {
+                    } else if (typeof(t) == "function") {
                         if (parent instanceof t) {
                             found = true;
                             break;
@@ -512,32 +442,20 @@ const Base = abstract(class Base extends HTMLElement {
                 { style:"background-color: red; color: yellow; font-weight: bold;" },
                 { innerHTML: "ERROR!" }));
         },
-        /**
-         * Registers handler functions for each event key in the map.
-         * @param {Object} pvt The protected container of the calling class.
-         * @param {Object} map Key:value pairs where the key is the event name, and the value is either a function or name of a protected member function.
-         */
         registerEvents(pvt, map) {
-            if (!map) {
-                throw new AppLibError("Must provide a map of event handlers.");
-            }
-            if (!pvt) {
-                throw new AppLibError("Must provide the class instance's protected container.");
-            }
+            if (!map) throw new AppLibError("Must provide a map of event handlers.");
+            if (!pvt) throw new AppLibError("Must provide the class instance's protected container.");
 
             for (let event in map) {
                 let fn = map[event];
-
                 if ((typeof fn !== "function") && !pvt[fn]) {
                     throw new AppLibError(`Cannot register non-existent event handler for "${event}" on ${this.tagName}`);
                 }
                 if (typeof fn === "function") {
                     this.addEventListener(event, fn);
-                }
-                else if (typeof fn === "string") {
+                } else if (typeof fn === "string") {
                     this.addEventListener(event, pvt[fn]);
-                }
-                else {
+                } else {
                     throw new AppLibError(`Attempted to register ${fn.toString} as an event handler for "${event}" on ${this.tagName}.`);
                 }
             }
@@ -554,13 +472,19 @@ const Base = abstract(class Base extends HTMLElement {
 
         const pvt = this.#pvt;
 
-        //Set up the shadow DOM
         if (document.body.hasAttribute("data-debug")) {
             this.#shadowRoot = this.attachShadow({mode: "open"});
-        }
-        else {
+        } else {
             this.#shadowRoot = this.attachShadow({mode: "closed"});
         }
+        
+        // Lazy style registration
+        const tag = this.tagName.toLowerCase();
+        if (!Base.#themeCache.has(tag)) {
+            const [structure, skin] = this.constructor.getDefaultStyleSheet();
+            Base.#themeCache.registerComponent(tag, structure, skin);
+        }
+
         pvt.registerEvents(pvt, {
             render: () => pvt.render(),
             preRender: () => pvt.onPreRender(),
@@ -583,6 +507,10 @@ const Base = abstract(class Base extends HTMLElement {
                 app.fireEvent("addComponent", this.id);
             }
         }
+
+        //pvt.updateStyles({details: [ this.tagName.toLowerCase()]});
+        Base.#themeCache.addEventListener("styleUpdate", pvt.updateStyles);
+        
         this.fireEvent("render");
     }
 
@@ -596,11 +524,12 @@ const Base = abstract(class Base extends HTMLElement {
                 app.fireEvent("removeComponent", this.id);
             }
         }
+        
+        Base.#themeCache.removeEventListener("styleUpdate", pvt.updateStyles);
     }
 
     fireEvent(name, obj) {
         let event = new CustomEvent(name, { detail: obj });
-
         this.dispatchEvent(event);
     }
 

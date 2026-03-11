@@ -1,6 +1,7 @@
 import { share, accessor, abstract, final, saveSelf } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
 import Enum from "./util/Enum.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class TabBook extends Container {
     static #spvt= share(this, {});
@@ -9,6 +10,38 @@ export default class TabBook extends Container {
 
     static get observedAttributes() {
         return Container.observedAttributes.concat([ "tabside" ]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: "1",
+                    padding: "0px",
+                    margin: "0px"
+                }],
+                [[CSS.TAG("slot")], {
+                    display: "flex",
+                    flex: "1",
+                    position: "relative",
+                    margin: "0px",
+                    padding: "0px"
+                }],
+                [[CSS.ID("tabs")], {
+                    display: "flex",
+                    marginBottom: "0px",
+                    minHeight: "24px"
+                }]
+            ],
+            skin
+        ];
     }
 
     static {

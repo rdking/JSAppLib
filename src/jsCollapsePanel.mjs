@@ -1,19 +1,51 @@
 import { share } from "../node_modules/cfprotected/index.mjs";
 import Container from "./jsContainer.mjs";
+import CSS from "./util/Selectors.mjs";
 
 export default class CollapsePanel extends Container {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
         return Container.observedAttributes.concat([
-            "collapsed"
+            "collapsed", "manual"
         ]); 
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.TAG("div").CLASS("body")], {
+                    display: "block"
+                }],
+                [[CSS.TAG("div").CLASS("body").CLASS("collapsed")], {
+                    display: "none"
+                }]
+            ],
+            [
+                ...skin,
+                [[CSS.TAG("div").CLASS("collapseheader")], {
+                    display: "flex",
+                    flexDirection: "column",
+                    flex: "1 0 auto"
+                }],
+                [[CSS.TAG("slot").CLASS("collapseheader")], {
+                    display: "flex",
+                    flex: "1 0 auto"
+                }]
+            ]
+        ];
     }
     
     static {
         const spvt = this.#spvt;
         spvt.initAttributeProperties(this, {
-            collapsed: { isBool: true, caption: "collapsed" }
+            collapsed: { isBool: true, caption: "collapsed" },
+            manual: { isBool: true, caption: "manual" }
         });
         spvt.register(this);
     }
@@ -26,11 +58,12 @@ export default class CollapsePanel extends Container {
             pvt.renderContent(pvt.make("div", {}, {
                 children: [
                     header = pvt.make("div", {
-                        class: "header"
+                        class: "collapseheader"
                     }, {
                         children: [
                             pvt.make("slot", {
-                                name: "header" 
+                                name: "header",
+                                class: "collapseheader"
                             })
                         ]
                     }),
@@ -47,10 +80,12 @@ export default class CollapsePanel extends Container {
             header.addEventListener("click", pvt.onHeaderClick);
         },
         onHeaderClick(e) {
-            let detail = {canToggleCollapse: true, clickEvent: e};
-            this.fireEvent("headerClicked", detail);
-            if (detail.canToggleCollapse) {
-                this.collapsed = !this.collapsed;
+            if (!this.manual) {
+                let detail = {canToggleCollapse: true, clickEvent: e};
+                this.fireEvent("headerClicked", detail);
+                if (detail.canToggleCollapse) {
+                    this.collapsed = !this.collapsed;
+                }
             }
         },
         onCollapsedChanged() {
@@ -62,7 +97,7 @@ export default class CollapsePanel extends Container {
                     div.classList.remove("collapsed");
                 }
             }
-        }
+        },
     });
 
     constructor() {

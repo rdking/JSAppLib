@@ -1,6 +1,7 @@
 import { share, saveSelf, accessor, abstract, final } from "../node_modules/cfprotected/index.mjs";
 import Enum from "./util/Enum.mjs";
 import Container from "./jsContainer.mjs";
+import CSS from "./util/Selectors.mjs";
 
 /**
  * Slot/Content/Slot Panel
@@ -28,6 +29,106 @@ export default class SCSPanel extends Container {
             nolast: { isBool: true, caption: "nolast" }
         });
         spvt.register(this);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    static getDefaultStyleSheet() {
+        const [structure, skin] = super.getDefaultStyleSheet();
+        return [
+            [
+                ...structure,
+                [[CSS.HOST], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    alignItems: "stretch",
+                    contain: "strict",
+                    inset: "0px",
+                    overflow: "hidden",
+                    padding: "0px",
+                    margin: "0px",
+                    "--layout-container-rotation": "rotate(0deg)",
+                    "--layout-content-rotation": "rotate(0deg)",
+                    "--layout-last-rotation": "rotate(0deg)",
+                    "--layout-min-width": "unset",
+                    "--layout-min-height": "2px"
+                }],
+                [[CSS.HOST(CSS.ATTR("horizontal"))], {
+                    flexDirection: "column",
+                    transition: "transform 10s",
+                    "--layout-container-rotation": "rotate(-90deg)",
+                    "--layout-content-rotation": "rotate(90deg)",
+                    "--layout-last-rotation": "rotate(180deg)",
+                    "--layout-min-width": "2px",
+                    "--layout-min-height": "unset"
+                }],
+                [[CSS.CLASS("focusable")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "column"
+                }],
+                [[CSS.CLASS("container")], {
+                    position: "absolute",
+                    inset: "0px",
+                    display: "flex",
+                    flex: "1 0 auto",
+                    flexDirection: "column",
+                    alignSelf: "stretch",
+                    justifySelf: "stretch",
+                    padding: "0px",
+                    margin: "0px",
+                    transform: "var(--layout-container-rotation)"
+                }],
+                [[CSS.CLASS("content")], {
+                    display: "flex",
+                    flex: "1 0 auto",
+                    padding: "0px",
+                    margin: "0px",
+                    contain: "strict"
+                }],
+                [[CSS.TAG("slot")], {
+                    position: "relative",
+                    display: "flex",
+                    flexDirection: "row",
+                    flex: "1 0 auto",
+                    justifyContent: "flex-start",
+                    margin: "0px",
+                    padding: "0px",
+                    minHeight: "var(--layout-min-height)",
+                    minWidth: "var(--layout-min-width)"
+                }],
+                [[CSS.TAG("slot").NOT(CSS.ATTR("name"))], {
+                    // transition: "transform 10s",
+                    flex: "0 0 auto !important",
+                    width: "100%",
+                    height: "100%",
+                    transform: "var(--layout-content-rotation)",
+                    overflow: "clip",
+                    contain: "content"
+                }],
+                [[CSS.TAG("slot").ATTR("name")], {
+                    flex: "0 0 auto"
+                }],
+                [[CSS.TAG("slot").ATTR("name", "=", "last")], {
+                    justifySelf: "flex-end",
+                    // transition: "transform 10s",
+                    transform: "var(--layout-last-rotation)"
+                }],
+                [[CSS.CLASS("gone")], {
+                    display: "none !important"
+                }]
+            ],
+            [
+                ...skin,
+                [[CSS.HOST], {
+                    backgroundColor: "transparent",
+                    color: "inherit"
+                }]
+            ]
+        ];
     }
 
     #pvt= share(this, SCSPanel, {
@@ -67,8 +168,9 @@ export default class SCSPanel extends Container {
             let content = this.$.#pvt.getShadowChild("", "slot:not([name])");
             if (content) {
                 let oHeight = e.target.offsetHeight;
-                let mTop = e.target.computedStyleMap["margin-top"] || "0px";
-                let mBottom = e.target.computedStyleMap["margin-bottom"] || "0px";
+                const style = getComputedStyle(e.target);
+                let mTop = style.marginTop || "0px";
+                let mBottom = style.marginBottom || "0px";
     
                 if (e.target == content.previousElementSibling) {
                     content.style.bottom = `calc(${oHeight}px + ${mTop} + ${mBottom})`;

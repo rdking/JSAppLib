@@ -5,7 +5,7 @@ import { share, saveSelf, abstract, accessor } from "../../node_modules/cfprotec
  * @description Just a super basic way to assure that your function class is 
  * bound to itself so calls to the core function have access to `this`.
  */
-const BoundFunction = abstract(class _BoundFunction extends Function{
+const BoundFunction = abstract(class _BoundFunction extends Function {
     static {
         saveSelf(this, "$");
     }
@@ -13,12 +13,12 @@ const BoundFunction = abstract(class _BoundFunction extends Function{
     constructor(fn) {
         super("", "");
         let retval = fn.bind(fn);
-        Object.defineProperty(fn, "_", {value: retval});
-        
+        Object.defineProperty(fn, "_", { value: retval });
+
         const proto = Object.getPrototypeOf(this);
         Object.defineProperty(retval, "prototype", { value: new.target.prototype });
         Object.setPrototypeOf(retval, proto);
-        //saveSelf(retval, "$");
+        
         if (!retval.cla$$) throw "Dah, which way did it go, George?!!!!";
         return retval;
     }
@@ -27,11 +27,14 @@ const BoundFunction = abstract(class _BoundFunction extends Function{
 /**
  * @summary A functional CSS selector builder.
  * @description This class enables a DSL for defining CSS selectors using 
- * tagged template literals and fluent method chaining. Instances are 
- * callable functions that return new instances with appended selector segments.
+ * function calls and fluent method chaining. Instances are callable 
+ * functions that return new instances with appended or wrapped selector segments.
  */
 const SelectorBuilder = abstract(class SelectorBuilder extends BoundFunction {
     #value = "";
+    #wrapPrefix = "";
+    #wrapSuffix = "";
+    #transformer = null;
 
     static {
         saveSelf(this, "$");
@@ -46,37 +49,50 @@ const SelectorBuilder = abstract(class SelectorBuilder extends BoundFunction {
 
     /**
      * @param {string} initialValue The starting CSS selector string.
+     * @param {string} wrapPrefix Optional prefix for wrapping function call arguments.
+     * @param {string} wrapSuffix Optional suffix for wrapping function call arguments.
+     * @param {Function} transformer Optional function to transform arguments before wrapping.
      */
-    constructor(initialValue = "") {
-        // let fnBody = SelectorBuilder.#cssTag.toString();
-        // fnBody = fnBody.substring(fnBody.indexOf("{") + 1, fnBody.lastIndexOf("}")).trim();
-        // // Clean coverage artifacts
-        // fnBody = fnBody.replace(/cov_[a-z0-9]+(\(\))?\.[a-z](\[\d+\])+\+\+;?/gi, "");
-        // super('strings', '...values', fnBody);
-
+    constructor(initialValue = "", wrapPrefix = "", wrapSuffix = "", transformer = null) {
         /**
-         * @summary The function logic used for the tag function implementation.
-         * @param {Array<string>} strings 
+         * @summary The function logic used for instance calls.
+         * @param {Array<string>|string} strings 
          * @param  {...any} values 
          * @returns {SelectorBuilder}
          * @private
          */
-        function cssTag(strings, ...values) {
+        function callHandler(strings, ...values) {
             const self = this._;
-            let segment = strings;
+            let segment = "";
+
             if (Array.isArray(strings) && Array.isArray(strings.raw)) {
+                // Tagged Template mode
                 segment = strings.reduce((acc, str, i) => {
                     return acc + str + (values[i] ?? "");
                 }, "");
+            } else {
+                // Standard function mode
+                segment = [strings, ...values].join("");
+            }
+
+            if (self.#transformer) {
+                segment = self.#transformer(segment);
+            }
+
+            if (self.#wrapPrefix) {
+                segment = self.#wrapPrefix + segment + self.#wrapSuffix;
             }
 
             return new self.cla$$(self.valueOf() + segment);
-        };
+        }
 
-        super(cssTag);
+        super(callHandler);
         saveSelf(this, "$");
 
         this.#value = initialValue;
+        this.#wrapPrefix = wrapPrefix;
+        this.#wrapSuffix = wrapSuffix;
+        this.#transformer = transformer;
     }
 
     /**
@@ -87,21 +103,29 @@ const SelectorBuilder = abstract(class SelectorBuilder extends BoundFunction {
     }
 
     /**
+     * @returns {string} The accumulated CSS selector string.
+     */
+    toString() {
+        return this.$.#value;
+    }
+
+    /**
      * Adds a pseudo-class or pseudo-element.
      * @param {string|SelectorBuilder} selector 
      * @returns {SelectorBuilder}
      */
-    Is(selector) {
-        return new this.cla$$(this.valueOf() + selector.valueOf());
+    IS(selector) {
+        const other = (typeof selector === 'string') ? new this.cla$$(selector) : selector;
+        return new this.cla$$(this.valueOf() + other.valueOf(), other.#wrapPrefix, other.#wrapSuffix);
     }
 
     /**
-     * Alias for Is()
+     * Alias for IS()
      * @param {string|SelectorBuilder} selector
      * @returns {SelectorBuilder}
      */
-    Where(selector) {
-        return this.Is(selector);
+    WHERE(selector) {
+        return this.IS(selector);
     }
 
     /**
@@ -109,9 +133,10 @@ const SelectorBuilder = abstract(class SelectorBuilder extends BoundFunction {
      * @param {string|SelectorBuilder} selector 
      * @returns {SelectorBuilder}
      */
-    Child(selector) {
-        const val = selector?.valueOf() ?? "";
-        return new this.cla$$(`${this.valueOf()} > ${val}`.trim());
+    CHILD(selector) {
+        const other = (typeof selector === 'string') ? new this.cla$$(selector) : selector;
+        const segment = (this.valueOf() ? " > " : ">") + other.valueOf();
+        return new this.cla$$(this.valueOf() + segment, other.#wrapPrefix, other.#wrapSuffix);
     }
 
     /**
@@ -119,9 +144,10 @@ const SelectorBuilder = abstract(class SelectorBuilder extends BoundFunction {
      * @param {string|SelectorBuilder} selector 
      * @returns {SelectorBuilder}
      */
-    Descendant(selector) {
-        const val = selector?.valueOf() ?? "";
-        return new this.cla$$(`${this.valueOf()} ${val}`.trim());
+    DESCENDANT(selector) {
+        const other = (typeof selector === 'string') ? new this.cla$$(selector) : selector;
+        const segment = (this.valueOf() ? " " : "") + other.valueOf();
+        return new this.cla$$(this.valueOf() + segment, other.#wrapPrefix, other.#wrapSuffix);
     }
 
     /**
@@ -129,9 +155,10 @@ const SelectorBuilder = abstract(class SelectorBuilder extends BoundFunction {
      * @param {string|SelectorBuilder} selector 
      * @returns {SelectorBuilder}
      */
-    Sibling(selector) {
-        const val = selector?.valueOf() ?? "";
-        return new this.cla$$(`${this.valueOf()} ~ ${val}`.trim());
+    SIBLING(selector) {
+        const other = (typeof selector === 'string') ? new this.cla$$(selector) : selector;
+        const segment = (this.valueOf() ? " ~ " : "~") + other.valueOf();
+        return new this.cla$$(this.valueOf() + segment, other.#wrapPrefix, other.#wrapSuffix);
     }
 
     /**
@@ -139,25 +166,29 @@ const SelectorBuilder = abstract(class SelectorBuilder extends BoundFunction {
      * @param {string|SelectorBuilder} selector 
      * @returns {SelectorBuilder}
      */
-    Adjacent(selector) {
-        const val = selector?.valueOf() ?? "";
-        return new this.cla$$(`${this.valueOf()} + ${val}`.trim());
+    ADJACENT(selector) {
+        const other = (typeof selector === 'string') ? new this.cla$$(selector) : selector;
+        const segment = (this.valueOf() ? " + " : "+") + other.valueOf();
+        return new this.cla$$(this.valueOf() + segment, other.#wrapPrefix, other.#wrapSuffix);
     }
 
     /**
      * Adds an attribute selector.
      * @param {string} name 
-     * @param {string} [op]
+     * @param {string|SelectorBuilder} [op]
      * @param {string} [value] 
      * @returns {SelectorBuilder}
      */
-    Attr(name, op, value) {
-        let attr = `[${name}`;
-        if (op && value !== undefined) {
-            attr += `${op}"${value}"`;
+    ATTR(name, op, value) {
+        let segment = name;
+        if (op) {
+            if (typeof op === 'string' && value !== undefined) {
+                segment += `${op}"${value}"`;
+            } else {
+                segment += op.toString();
+            }
         }
-        attr += "]";
-        return new this.cla$$(this.valueOf() + attr);
+        return new this.cla$$(this.valueOf() + `[${segment}]`);
     }
 });
 
