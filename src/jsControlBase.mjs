@@ -35,7 +35,7 @@ const ControlBase = abstract(class ControlBase extends Base {
                 width += marginLeft + marginRight;
                 height += marginTop + marginBottom;
             }
-    
+
             // Using Math.round() is generally safer than the bitwise ~~ operator for rounding.
             return { top: Math.round(top), left: Math.round(left), width: Math.round(width), height: Math.round(height) };
         },
@@ -48,7 +48,7 @@ const ControlBase = abstract(class ControlBase extends Base {
             const pvt = this.$.#pvt;
             const parent = pvt.getShadowParent(this.parentElement);
             let retval;
-            
+
             if (parent.nodeName.toLowerCase() == "slot") {
                 retval = parent.assignedElements();
             } else {
@@ -82,7 +82,7 @@ const ControlBase = abstract(class ControlBase extends Base {
     connectedCallback() {
         const pvt = this.$.#pvt;
         this.$.#resizeObserver = new ResizeObserver(pvt.onResized);
-        
+
         super.connectedCallback();
     }
 
@@ -111,6 +111,14 @@ const ControlBase = abstract(class ControlBase extends Base {
             return thisRect.left - appRect.left;
         }
         return 0; // Or handle the "not in-app" case as needed
+    }
+
+    /**
+     * Returns all slots of this element whether in the light DOM or shadow DOM.
+     * @returns {string[]}
+     */
+    get slots() {
+        return this.#pvt.shadowRoot.querySelectorAll("slot").map(s => s.getAttribute("name"));
     }
 });
 
