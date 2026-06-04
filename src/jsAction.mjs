@@ -1,13 +1,13 @@
 import { share } from "../node_modules/cfprotected/index.mjs";
 import AppLibError from "./errors/AppLibError.mjs";
-import Base from "./jsBase.mjs";
+import ManageableBase from "./jsManageableBase.mjs";
 import CSS from "./util/Selectors.mjs";
 
-export default class Action extends Base {
+export default class Action extends ManageableBase {
     static #spvt = share(this, {});
 
     static get observedAttributes() {
-        return Base.observedAttributes.concat([
+        return ManageableBase.observedAttributes.concat([
             "caption", "description", "disabled", "hotkey", "icon", "name",
             "toggle", "selected"
         ]);
