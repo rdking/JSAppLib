@@ -40,7 +40,7 @@ const Base = abstract(class Base extends HTMLElement {
                         this.setAttribute(attr, v);
                     }
                 }
-                return {getter, setter};
+                return { getter, setter };
             }
 
             function getBAccessors(attr) {
@@ -56,13 +56,13 @@ const Base = abstract(class Base extends HTMLElement {
                         this.removeAttribute(attr);
                     }
                 }
-                return {getter, setter};
+                return { getter, setter };
             }
 
             function getEAccessors(attr, enum_t, dflt) {
                 function getter() {
                     const value = this.getAttribute(attr) || dflt;
-                    let retval = value ? enum_t(value) : void 0; 
+                    let retval = value ? enum_t(value) : void 0;
                     return retval;
                 }
                 function setter(v) {
@@ -72,7 +72,7 @@ const Base = abstract(class Base extends HTMLElement {
                         this.setAttribute(attr, (v === "") ? v : enum_t(v).name);
                     }
                 }
-                return {getter, setter};
+                return { getter, setter };
             }
 
             function getNAccessors(attr, range, step, dflt) {
@@ -82,12 +82,12 @@ const Base = abstract(class Base extends HTMLElement {
                 }
                 function setter(v) {
                     const val = Number(v);
-                    if (isNaN(val) || ((typeof min == "number") && (val < min)) || ((typeof max == "number") && (val > max))){
+                    if (isNaN(val) || ((typeof min == "number") && (val < min)) || ((typeof max == "number") && (val > max))) {
                         throw new AppLibError(`"${v}" is not a valid numeric value for attribute "${attr}`);
                     }
                     this.setAttribute(attr, val);
                 }
-                return {getter, setter};
+                return { getter, setter };
             }
 
             function getDef(val, access) {
@@ -101,7 +101,7 @@ const Base = abstract(class Base extends HTMLElement {
                 return retval;
             }
 
-            if (attributes && (typeof(attributes) == "object")) {
+            if (attributes && (typeof (attributes) == "object")) {
                 for (let attr in attributes) {
                     let val = attributes[attr];
                     if (!val.unbound) {
@@ -109,10 +109,10 @@ const Base = abstract(class Base extends HTMLElement {
                             Object.defineProperty(proto, val.caption || attr, getDef(val, getEAccessors(attr.toLocaleLowerCase(), val.enumType, val.default)));
                         }
                         else if (val.isBool) {
-                            let name = val.caption || "is" + attr.substring(0,1 ).toUpperCase() + attr.substring(1);
+                            let name = val.caption || "is" + attr.substring(0, 1).toUpperCase() + attr.substring(1);
                             Object.defineProperty(proto, name, getDef(val, getBAccessors(attr.toLocaleLowerCase())));
                         }
-                        else if (val.number && typeof(val.number) == "object") {
+                        else if (val.number && typeof (val.number) == "object") {
                             const { range, step } = val.number;
                             Object.defineProperty(proto, val.caption || attr, getDef(val, getNAccessors(attr.toLocaleLowerCase(), range, step, val.default)));
                         }
@@ -159,7 +159,7 @@ const Base = abstract(class Base extends HTMLElement {
          */
         tagTypes(names) {
             let retval = [];
-            
+
             if (!Array.isArray(names)) {
                 names = [names];
             }
@@ -190,8 +190,8 @@ const Base = abstract(class Base extends HTMLElement {
         return [[], []];
     }
 
-    static get observedAttributes() { 
-        return [ "action", "theme", "style", "class" ];
+    static get observedAttributes() {
+        return ["action", "theme", "style", "class"];
     }
 
     #rendering = false;
@@ -206,7 +206,7 @@ const Base = abstract(class Base extends HTMLElement {
             this.fireEvent("preRender");
 
             let shadow = target || this.$.#shadowRoot;
-            
+
             // Apply styles from ThemeCache
             const tagName = this.tagName.toLowerCase();
             const styles = [
@@ -221,7 +221,7 @@ const Base = abstract(class Base extends HTMLElement {
 
             shadow.innerHTML = "";
             for (let element of content) {
-                if (typeof(element) == "string") {
+                if (typeof (element) == "string") {
                     let temp = document.createElement("template");
                     temp.innerHTML = element;
                     shadow.appendChild(temp.content);
@@ -252,7 +252,7 @@ const Base = abstract(class Base extends HTMLElement {
         return klass;
     }
 
-    #pvt= share(this, Base, {
+    #pvt = share(this, Base, {
         themeCache: accessor({
             get() { return Base.#themeCache; }
         }),
@@ -267,11 +267,11 @@ const Base = abstract(class Base extends HTMLElement {
         },
         onPreRender() { },
         onPostRender() { },
-        
+
         renderContent(content, target) {
             this.$.#doRenderContent(content, target);
         },
-        
+
         updateStyles(e) {
             const affectedTags = e.detail;
             if (!affectedTags || affectedTags.includes(this.tagName.toLowerCase())) {
@@ -284,12 +284,12 @@ const Base = abstract(class Base extends HTMLElement {
             }
         },
 
-        getShadowChild(type, selector) { 
-            const s = (type ? this.$.#pvt.tagType(type) : "") + (selector || "") ;
+        getShadowChild(type, selector) {
+            const s = (type ? this.$.#pvt.tagType(type) : "") + (selector || "");
             return this.$.#pvt.shadowRoot.querySelector(s);
         },
-        getShadowChildren(type, selector) { 
-            const s = (type ? this.$.#pvt.tagType(type) : "") + (selector || "") ;
+        getShadowChildren(type, selector) {
+            const s = (type ? this.$.#pvt.tagType(type) : "") + (selector || "");
             return this.$.#pvt.shadowRoot.querySelectorAll(s);
         },
         tagType(name) {
@@ -300,19 +300,19 @@ const Base = abstract(class Base extends HTMLElement {
         },
         make(tag, attributes, properties) {
             let retval = document.createElement(tag);
-            if (attributes && (typeof(attributes) == "object")) {
+            if (attributes && (typeof (attributes) == "object")) {
                 for (let key in attributes) {
                     retval.setAttribute(key, attributes[key]);
                 }
             }
-            if (properties && (typeof(properties) == "object")) {
+            if (properties && (typeof (properties) == "object")) {
                 for (let key in properties) {
                     switch (key) {
                         case "children":
                             for (let child of properties.children) {
                                 if (child instanceof Node)
                                     retval.appendChild(child);
-                                else if (typeof(child) === "string")
+                                else if (typeof (child) === "string")
                                     retval.appendChild(document.createTextNode(child));
                             }
                             break;
@@ -340,7 +340,7 @@ const Base = abstract(class Base extends HTMLElement {
                 }
             }
             return retval;
-        
+
         },
         validateParent(type, message) {
             const pvt = this.$.#pvt;
@@ -349,9 +349,9 @@ const Base = abstract(class Base extends HTMLElement {
             let parent = this.parentElement;
             let found = false;
             for (let t of type) {
-                if (typeof(t) == "string") {
+                if (typeof (t) == "string") {
                     found = pvt.isTagType(parent, pvt.tagType(t));
-                } else if (typeof(t) == "function") {
+                } else if (typeof (t) == "function") {
                     found = (parent instanceof t);
                 }
                 if (found) break;
@@ -369,12 +369,12 @@ const Base = abstract(class Base extends HTMLElement {
             for (let child of this.children) {
                 let found = false;
                 for (let t of type) {
-                    if (typeof(t) == "string") {
+                    if (typeof (t) == "string") {
                         if (pvt.isTagType(child, pvt.tagType(t))) {
                             found = true;
                             break;
                         }
-                    } else if (typeof(t) == "function") {
+                    } else if (typeof (t) == "function") {
                         if (child instanceof t) {
                             found = true;
                             break;
@@ -415,12 +415,12 @@ const Base = abstract(class Base extends HTMLElement {
 
             while (parent && (parent != document.body)) {
                 for (let t of type) {
-                    if (typeof(t) == "string") {
+                    if (typeof (t) == "string") {
                         if (pvt.isTagType(parent, pvt.tagType(t))) {
                             found = true;
                             break;
                         }
-                    } else if (typeof(t) == "function") {
+                    } else if (typeof (t) == "function") {
                         if (parent instanceof t) {
                             found = true;
                             break;
@@ -438,8 +438,8 @@ const Base = abstract(class Base extends HTMLElement {
         },
         tagError() {
             this.$.#shadowRoot.innerHTML = "";
-            this.$.#shadowRoot.appendChild(this.$.#pvt.make("h3", 
-                { style:"background-color: red; color: yellow; font-weight: bold;" },
+            this.$.#shadowRoot.appendChild(this.$.#pvt.make("h3",
+                { style: "background-color: red; color: yellow; font-weight: bold;" },
                 { innerHTML: "ERROR!" }));
         },
         registerEvents(pvt, map) {
@@ -461,7 +461,7 @@ const Base = abstract(class Base extends HTMLElement {
             }
         },
         onWait(e) {
-            let {tag, method, params} = e.detail;
+            let { tag, method, params } = e.detail;
             this.$.#waitbox.add(tag, method, params);
         }
     });
@@ -473,11 +473,11 @@ const Base = abstract(class Base extends HTMLElement {
         const pvt = this.#pvt;
 
         if (document.body.hasAttribute("data-debug")) {
-            this.#shadowRoot = this.attachShadow({mode: "open"});
+            this.#shadowRoot = this.attachShadow({ mode: "open" });
         } else {
-            this.#shadowRoot = this.attachShadow({mode: "closed"});
+            this.#shadowRoot = this.attachShadow({ mode: "closed" });
         }
-        
+
         // Lazy style registration
         const tag = this.tagName.toLowerCase();
         if (!Base.#themeCache.has(tag)) {
@@ -510,7 +510,7 @@ const Base = abstract(class Base extends HTMLElement {
 
         //pvt.updateStyles({details: [ this.tagName.toLowerCase()]});
         Base.#themeCache.addEventListener("styleUpdate", pvt.updateStyles);
-        
+
         this.fireEvent("render");
     }
 
@@ -524,7 +524,7 @@ const Base = abstract(class Base extends HTMLElement {
                 app.fireEvent("removeComponent", this.id);
             }
         }
-        
+
         Base.#themeCache.removeEventListener("styleUpdate", pvt.updateStyles);
     }
 
@@ -545,6 +545,14 @@ const Base = abstract(class Base extends HTMLElement {
 
     get isRendered() {
         return this.$.#pvt.shadowRoot.innerHTML.length > 0;
+    }
+
+    /**
+     * Returns all shadow DOM slots of this element.
+     * @returns {string[]}
+     */
+    get slots() {
+        return Array.from(this.$.#pvt.shadowRoot.querySelectorAll("slot")).map(s => s.getAttribute("name"));
     }
 });
 

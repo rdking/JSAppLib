@@ -112,14 +112,6 @@ const ControlBase = abstract(class ControlBase extends Base {
         }
         return 0; // Or handle the "not in-app" case as needed
     }
-
-    /**
-     * Returns all slots of this element whether in the light DOM or shadow DOM.
-     * @returns {string[]}
-     */
-    get slots() {
-        return this.#pvt.shadowRoot.querySelectorAll("slot").map(s => s.getAttribute("name"));
-    }
 });
 
 export default ControlBase;
